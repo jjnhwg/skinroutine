@@ -1,73 +1,46 @@
-import { useState } from "react";
-import type { SaveRoutineResponse } from "./types";
-import "./App.css";
+import { DropletIcon } from "./components/Icons";
+import { TabBar } from "./components/TabBar";
+import { ToastProvider } from "./components/Toast";
+import { todayStr } from "./lib/dates";
+import { useRoute } from "./lib/router";
+import { LogScreen } from "./screens/LogScreen";
+import { ProductsScreen } from "./screens/ProductsScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { TimelineScreen } from "./screens/TimelineScreen";
+import { StoreProvider } from "./store";
 
-const ROUTINE_PRODUCTS = ["Cleanser", "Moisturizer", "Sunscreen"];
-
-function App() {
-  // Tracks which products are checked — keyed by product name
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
-  const [message, setMessage] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  function handleCheckboxChange(product: string, isChecked: boolean) {
-    setChecked((prev) => ({ ...prev, [product]: isChecked }));
-    setMessage(null); // Clear old confirmation when user changes selections
-  }
-
-  async function handleSave() {
-    const checkedProducts = ROUTINE_PRODUCTS.filter((product) => checked[product]);
-
-    setIsSaving(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch("/api/routine/today", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ products: checkedProducts }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save routine");
-      }
-
-      const data: SaveRoutineResponse = await response.json();
-      setMessage(data.message);
-    } catch {
-      setMessage("Something went wrong. Is the Flask server running?");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
+function Screens() {
+  const { tab, date } = useRoute();
   return (
-    <div className="app">
-      <h1>Today's Skincare Routine</h1>
-      <p className="subtitle">Check off what you used today, then save.</p>
-
-      <ul className="checklist">
-        {ROUTINE_PRODUCTS.map((product) => (
-          <li key={product}>
-            <label>
-              <input
-                type="checkbox"
-                checked={checked[product] ?? false}
-                onChange={(e) => handleCheckboxChange(product, e.target.checked)}
-              />
-              {product}
-            </label>
-          </li>
-        ))}
-      </ul>
-
-      <button type="button" onClick={handleSave} disabled={isSaving}>
-        {isSaving ? "Saving..." : "Save Today's Routine"}
-      </button>
-
-      {message && <p className="confirmation">{message}</p>}
-    </div>
+    <>
+      <main id="app" tabIndex={-1}>
+        {tab === "timeline" && <TimelineScreen />}
+        {tab === "products" && <ProductsScreen />}
+        {tab === "settings" && <SettingsScreen />}
+        {tab === "log" && <LogScreen date={date ?? todayStr()} />}
+      </main>
+      <TabBar current={tab} />
+    </>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <ToastProvider>
+      <StoreProvider>
+        <header className="top">
+          <div className="inner">
+            <div className="logo" aria-hidden="true">
+              <DropletIcon />
+            </div>
+            <div>
+              <h1>Skin Test Log</h1>
+              <p>Track your routine, log your skin, see what helps.</p>
+            </div>
+          </div>
+        </header>
+        <Screens />
+      </StoreProvider>
+    </ToastProvider>
+  );
+}
