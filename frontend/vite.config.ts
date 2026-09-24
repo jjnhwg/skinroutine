@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     // Forward /api requests to Flask so fetch("/api/...") works during development
     proxy: {
-      "/api": "http://localhost:5000",
+      "/api": "http://localhost:5001",
     },
   },
 })
