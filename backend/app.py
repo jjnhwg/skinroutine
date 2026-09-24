@@ -24,9 +24,6 @@ def save_today_routine():
 
     save_routine_log(products)
 
-
-    #kjsnefkjsndfkjdsnfjksdnfjkd
-
     return jsonify({"message": "Routine saved for today."})
 
 
