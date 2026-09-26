@@ -49,6 +49,10 @@ export interface CatalogItem {
   color: string;
   slot: Slot;
   label: string;
+  /** Photo of the real product, when it came from an online search. */
+  imageUrl?: string;
+  /** Where an online result was found, e.g. "nudieglow.com". */
+  source?: string;
 }
 
 export type ProductShape = "tube" | "pump" | "dropper" | "jar" | "tall" | "small" | "patch";
@@ -71,4 +75,17 @@ export interface SaveRoutineRequest {
 /** Shape of the response Flask sends back after a successful save. */
 export interface SaveRoutineResponse {
   message: string;
+}
+
+/** One real product found by Flask's online search. */
+export interface ProductSearchResult {
+  brand: string;
+  name: string;
+  /** Remote photo URL; load it through fetchProductImage to keep it. */
+  image: string;
+  source: string;
+}
+
+export interface ProductSearchResponse {
+  products: ProductSearchResult[];
 }
