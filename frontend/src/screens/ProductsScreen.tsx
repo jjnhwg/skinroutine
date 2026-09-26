@@ -8,6 +8,7 @@ import { SLOT_LABELS } from "../lib/constants";
 import { LONG_DATE, daysBetween, prettyDate, todayStr } from "../lib/dates";
 import { computeInsights, insightCopy } from "../lib/domain";
 import { PRODUCT_IMAGE_MAX, resizeImage } from "../lib/image";
+import { loadProductPhoto } from "../lib/productPhoto";
 import { uid } from "../lib/storage";
 import { useStore } from "../store";
 import type { CatalogItem, Insight, Product, Slot } from "../types";
@@ -31,6 +32,9 @@ export function ProductsScreen() {
   const [notes, setNotes] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const startRef = useRef<HTMLInputElement>(null);
+  // The catalog item whose photo is still downloading; cleared when the user
+  // picks their own image, so a late download can't overwrite it.
+  const photoFor = useRef<CatalogItem | null>(null);
 
   const insights = useMemo(() => {
     const list = computeInsights(products, logs);
@@ -57,6 +61,7 @@ export function ProductsScreen() {
     setStartedOn(today);
     setNotes("");
     setImage(null);
+    photoFor.current = null;
   }
 
   function addProduct(e: React.FormEvent) {
@@ -78,14 +83,24 @@ export function ProductsScreen() {
     toast(`Added ${trimmed}`);
   }
 
-  function pickFromCatalog(item: CatalogItem) {
+  async function pickFromCatalog(item: CatalogItem) {
     setSheetOpen(false);
-    setImage(productArt(item));
+    setImage(productArt(item)); // shown until the real photo arrives
     setBrand(item.brand);
     setName(item.name);
     setSlot(item.slot);
     toast("Pick when you started, then tap Add");
     requestAnimationFrame(() => startRef.current?.focus());
+
+    photoFor.current = item;
+    let photo: string | null = null;
+    try {
+      photo = await loadProductPhoto(item);
+    } catch {
+      // Offline or the shop said no: the drawn bottle stays.
+    }
+    if (photo && photoFor.current === item) setImage(photo);
+    if (photoFor.current === item) photoFor.current = null;
   }
 
   async function onNewImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -96,8 +111,9 @@ export function ProductsScreen() {
       toast("Only images can be added.");
       return;
     }
+    photoFor.current = null;
     try {
-      setImage(await resizeImage(file, PRODUCT_IMAGE_MAX, true));
+      setImage(await resizeImage(file, PRODUCT_IMAGE_MAX, "crop"));
     } catch {
       toast("Couldn't read that image.");
     }
@@ -113,7 +129,7 @@ export function ProductsScreen() {
     }
     let next: string;
     try {
-      next = await resizeImage(file, PRODUCT_IMAGE_MAX, true);
+      next = await resizeImage(file, PRODUCT_IMAGE_MAX, "crop");
     } catch {
       toast("Couldn't read that image.");
       return;
@@ -292,7 +308,14 @@ export function ProductsScreen() {
             <div className="muted" style={{ fontSize: 13 }}>
               Add a photo of the bottle so it's easy to spot in your routine.{" "}
               {image && (
-                <button type="button" className="link-btn" onClick={() => setImage(null)}>
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => {
+                    photoFor.current = null;
+                    setImage(null);
+                  }}
+                >
                   Remove
                 </button>
               )}

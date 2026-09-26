@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SearchIcon } from "./Icons";
+import { searchProducts } from "../lib/api";
 import { CATALOG, CATEGORIES, PASTELS, guessKind, productArt } from "../lib/catalog";
-import type { CatalogItem } from "../types";
+import type { CatalogItem, ProductSearchResult } from "../types";
 
 type OnlineState = "idle" | "loading" | "done" | "error";
 
@@ -11,33 +12,53 @@ const OPEN_BEAUTY_FACTS =
 interface OpenBeautyProduct {
   product_name?: string;
   brands?: string;
+  image_front_url?: string;
 }
 
-/** Turn Open Beauty Facts rows into catalog items with generated art. */
-function toCatalogItems(rows: OpenBeautyProduct[]): CatalogItem[] {
-  const seen = new Set<string>();
-  return rows
+/**
+ * Ask Open Beauty Facts directly. Only used when Flask is down: it works
+ * without the server, but knows few Korean brands.
+ */
+async function searchOpenBeautyFacts(term: string): Promise<ProductSearchResult[]> {
+  const url = `${OPEN_BEAUTY_FACTS}${encodeURIComponent(
+    term,
+  )}&search_simple=1&action=process&json=1&page_size=24&fields=product_name,brands,image_front_url`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(String(res.status));
+  const data = (await res.json()) as { products?: OpenBeautyProduct[] };
+  return (data.products ?? [])
     .filter((p) => p.product_name)
     .map((p) => ({
       brand: (p.brands ?? "").split(",")[0].trim(),
       name: (p.product_name as string).trim(),
-    }))
+      image: p.image_front_url ?? "",
+      source: "openbeautyfacts.org",
+    }));
+}
+
+/** Turn search results into catalog items; generated art stands in for a missing photo. */
+function toCatalogItems(rows: ProductSearchResult[]): CatalogItem[] {
+  const seen = new Set<string>();
+  return rows
     .filter((p) => {
       const key = `${p.brand}|${p.name}`.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     })
-    .slice(0, 18)
+    .slice(0, 24)
     .map((p, i) => {
       const [category, shape] = guessKind(p.name);
       return {
-        ...p,
+        brand: p.brand,
+        name: p.name,
         category,
         shape,
         slot: category === "Sunscreen" ? ("AM" as const) : ("BOTH" as const),
         color: PASTELS[(p.brand.length + p.name.length + i) % PASTELS.length],
         label: (p.brand || p.name).split(/\s+/)[0].slice(0, 8).toUpperCase(),
+        imageUrl: p.image || undefined,
+        source: p.source,
       };
     });
 }
@@ -90,14 +111,15 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
 
   async function searchOnline() {
     setOnlineState("loading");
+    const query = term.trim();
     try {
-      const url = `${OPEN_BEAUTY_FACTS}${encodeURIComponent(
-        term.trim(),
-      )}&search_simple=1&action=process&json=1&page_size=24&fields=product_name,brands`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as { products?: OpenBeautyProduct[] };
-      setOnline(toCatalogItems(data.products ?? []));
+      let rows: ProductSearchResult[];
+      try {
+        rows = await searchProducts(query);
+      } catch {
+        rows = await searchOpenBeautyFacts(query);
+      }
+      setOnline(toCatalogItems(rows));
       setOnlineState("done");
     } catch {
       setOnlineState("error");
@@ -108,11 +130,25 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
 
   const item = (it: CatalogItem, key: string) => (
     <button key={key} type="button" className="cat-item" onClick={() => onPick(it)}>
-      <img src={productArt(it)} alt="" />
+      <img
+        src={it.imageUrl ?? productArt(it)}
+        alt=""
+        loading="lazy"
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = productArt(it);
+        }}
+      />
       <span>
         <span className="brand">{it.brand}</span>
         <br />
         <span className="n">{it.name}</span>
+        {it.source && (
+          <>
+            <br />
+            <span className="src">{it.source}</span>
+          </>
+        )}
       </span>
     </button>
   );
@@ -189,7 +225,7 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
           {onlineState === "done" && (
             <>
               <h3 className="section-h" style={{ margin: "22px 0 10px" }}>
-                From Open Beauty Facts
+                Found online
               </h3>
               {online.length ? (
                 <div className="catalog">{online.map((it, i) => item(it, `o${i}`))}</div>
@@ -215,7 +251,7 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
               </button>
               <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
                 {canSearch
-                  ? "Uses the free Open Beauty Facts database."
+                  ? "Searches Open Beauty Facts and K-beauty shops for photos."
                   : "Type a name above first."}
               </div>
             </div>

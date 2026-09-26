@@ -25,9 +25,10 @@ src/
 │   ├── domain.ts    routineFor, usedOn, computeInsights, insightCopy
 │   ├── catalog.ts   product catalog + generated bottle SVGs
 │   ├── image.ts     canvas downscaling
+│   ├── productPhoto.ts  real product photo for a picked catalog item
 │   ├── avatar.ts    per-product colour and initials
 │   ├── router.ts    useRoute() over the URL hash
-│   └── api.ts       POST to the Flask endpoint
+│   └── api.ts       calls to the Flask endpoints
 ├── components/      Avatar, CatalogSheet, Icons, Lightbox, TabBar, Toast
 └── screens/         Log, Timeline, Products, Settings
 ```
@@ -43,6 +44,20 @@ a mirror, not the save: if the backend is down the entry is still stored locally
 and a toast says so. Photos are resized to JPEG data URLs before storage, so the
 quota is reachable; a rejected write is rolled back and reported rather than
 silently dropped.
+
+## Product photos
+
+Picking a product from the catalog stores a real photo of it when one can be
+found. Flask's `/api/products/search` asks Open Beauty Facts plus three
+Shopify-based K-beauty shops (Nudie Glow, Dodoskin, Soko Glam) — Open Beauty
+Facts alone barely covers Korean brands, and the shops send no CORS headers,
+so the browser can't ask them itself. Built-in items are looked up by brand
+and name when picked.
+
+The chosen photo is downloaded through `/api/products/image` (only from
+allow-listed hosts), padded to a square on a canvas and kept as a data URL like
+any uploaded photo. Without Flask, the catalog search falls back to Open Beauty
+Facts directly, and anything without a photo keeps its generated bottle.
 
 Settings → Export backup writes a JSON file; Import either replaces everything or
 merges, with the backup winning on a shared date.
