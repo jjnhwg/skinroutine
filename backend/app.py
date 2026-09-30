@@ -1,11 +1,13 @@
 """Flask API for the skincare routine checker."""
 
+from datetime import date
+
 from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from requests import RequestException
 
 from product_search import fetch_image, search_products
-from storage import save_routine_log
+from storage import get_routine_log, get_routine_logs, save_routine_log
 
 app = Flask(__name__)
 CORS(app)  # Lets the React app (different port) talk to this server
@@ -27,6 +29,23 @@ def save_today_routine():
     save_routine_log(products)
 
     return jsonify({"message": "Routine saved for today."})
+
+
+@app.route("/api/routine/today", methods=["GET"])
+def get_today_routine():
+    """Send back what was saved for today, if anything."""
+    log = get_routine_log(date.today().isoformat())
+
+    if log is None:
+        return jsonify({"error": "Nothing saved for today yet"}), 404
+
+    return jsonify(log)
+
+
+@app.route("/api/routine", methods=["GET"])
+def list_routines():
+    """Send back every saved day's routine, oldest first."""
+    return jsonify({"logs": get_routine_logs()})
 
 
 @app.route("/api/products/search")
