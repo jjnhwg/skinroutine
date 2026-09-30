@@ -32,6 +32,7 @@ export function ProductsScreen() {
   const [notes, setNotes] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const startRef = useRef<HTMLInputElement>(null);
+  const brandRef = useRef<HTMLInputElement>(null);
   // The catalog item whose photo is still downloading; cleared when the user
   // picks their own image, so a late download can't overwrite it.
   const photoFor = useRef<CatalogItem | null>(null);
@@ -101,6 +102,18 @@ export function ProductsScreen() {
     }
     if (photo && photoFor.current === item) setImage(photo);
     if (photoFor.current === item) photoFor.current = null;
+  }
+
+  /** Came from the picker with a product it didn't have: start the form from the search. */
+  function addOwnFromCatalog(typed: string) {
+    setSheetOpen(false);
+    photoFor.current = null;
+    setImage(null);
+    setBrand("");
+    setName(typed);
+    setSlot("BOTH");
+    toast("Add the brand and a photo if you like, then tap Add");
+    requestAnimationFrame(() => brandRef.current?.focus());
   }
 
   async function onNewImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -328,6 +341,7 @@ export function ProductsScreen() {
           <input
             type="text"
             id="pbrand"
+            ref={brandRef}
             placeholder="e.g. The Ordinary"
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
@@ -420,7 +434,11 @@ export function ProductsScreen() {
       )}
 
       {sheetOpen && (
-        <CatalogSheet onPick={pickFromCatalog} onClose={() => setSheetOpen(false)} />
+        <CatalogSheet
+          onPick={pickFromCatalog}
+          onAddOwn={addOwnFromCatalog}
+          onClose={() => setSheetOpen(false)}
+        />
       )}
     </>
   );

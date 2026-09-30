@@ -65,11 +65,13 @@ function toCatalogItems(rows: ProductSearchResult[]): CatalogItem[] {
 
 interface CatalogSheetProps {
   onPick: (item: CatalogItem) => void;
+  /** Leave the sheet to type in a product that isn't listed, starting from the search. */
+  onAddOwn: (name: string) => void;
   onClose: () => void;
 }
 
 /** Bottom sheet for choosing a product from the built-in list or online. */
-export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
+export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
   const [category, setCategory] = useState("All");
   const [term, setTerm] = useState("");
   const [online, setOnline] = useState<CatalogItem[]>([]);
@@ -127,6 +129,12 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
   }
 
   const canSearch = term.trim().length >= 2;
+
+  const addOwn = (label: string) => (
+    <button type="button" className="link-btn" onClick={() => onAddOwn(term.trim())}>
+      {label} {term.trim() && `“${term.trim()}”`} yourself
+    </button>
+  );
 
   const item = (it: CatalogItem, key: string) => (
     <button key={key} type="button" className="cat-item" onClick={() => onPick(it)}>
@@ -220,6 +228,8 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
           {onlineState === "error" && (
             <div className="online">
               Couldn't reach the online database. Check your connection and try again.
+              <br />
+              {addOwn("Or add")}
             </div>
           )}
           {onlineState === "done" && (
@@ -228,10 +238,26 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
                 Found online
               </h3>
               {online.length ? (
-                <div className="catalog">{online.map((it, i) => item(it, `o${i}`))}</div>
+                <>
+                  <div className="catalog">{online.map((it, i) => item(it, `o${i}`))}</div>
+                  <div className="online">
+                    Not the right one?
+                    <br />
+                    {addOwn("Add")}
+                  </div>
+                </>
               ) : (
                 <div className="online">
-                  Nothing found online either. Close this and type it in yourself.
+                  Nothing found online either.
+                  <br />
+                  <button
+                    type="button"
+                    className="btn small"
+                    style={{ marginTop: 8 }}
+                    onClick={() => onAddOwn(term.trim())}
+                  >
+                    Add {term.trim() && `“${term.trim()}”`} yourself
+                  </button>
                 </div>
               )}
             </>
@@ -254,6 +280,7 @@ export function CatalogSheet({ onPick, onClose }: CatalogSheetProps) {
                   ? "Searches Open Beauty Facts and K-beauty shops for photos."
                   : "Type a name above first."}
               </div>
+              {term.trim() && <div style={{ marginTop: 4 }}>{addOwn("Or add")}</div>}
             </div>
           )}
         </div>
