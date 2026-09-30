@@ -10,4 +10,11 @@ export default defineConfig({
       "/api": "http://localhost:5001",
     },
   },
+  preview: {
+    // Same for `npm run preview`, which otherwise has no /api and silently
+    // falls back to Open Beauty Facts alone
+    proxy: {
+      "/api": "http://localhost:5001",
+    },
+  },
 })
