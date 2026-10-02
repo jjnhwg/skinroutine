@@ -12,3 +12,6 @@ frontend/dist/
 
 # Local docs
 /README.md
+
+# Secrets
+.env
