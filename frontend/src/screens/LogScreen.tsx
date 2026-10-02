@@ -172,6 +172,15 @@ export function LogScreen({ date }: { date: string }) {
         </div>
       </div>
 
+      {existing && (
+        <div className="editing-note" role="status">
+          <span>
+            Editing your saved entry for <b>{date === today ? "today" : prettyDate(date)}</b>
+          </span>
+          <a href="#/timeline">Back to timeline</a>
+        </div>
+      )}
+
       <div className="card">
         <div className="card-head">
           <h2 id="routine-h">
