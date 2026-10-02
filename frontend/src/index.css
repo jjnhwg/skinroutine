@@ -166,6 +166,10 @@ button { font: inherit; cursor: pointer; }
 .history-item .date { font-size: 13px; color: var(--text-muted); font-weight: 600; }
 .history-item .date a { color: var(--text); text-decoration: none; }
 .history-item .date a:hover { text-decoration: underline; }
+.history-item .date-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.edit-link { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: 13px; font-weight: 600; text-decoration: none; padding: 4px 2px; }
+.editing-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin: 14px 0; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
+.editing-note a { font-weight: 600; text-decoration: none; }
 .history-item.event .body { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
 .used { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
 

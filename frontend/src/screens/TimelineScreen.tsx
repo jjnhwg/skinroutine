@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Avatar } from "../components/Avatar";
-import { CameraIcon } from "../components/Icons";
+import { CameraIcon, PencilIcon } from "../components/Icons";
 import { Lightbox } from "../components/Lightbox";
 import { RATING_LABELS, RATINGS, STRIP_DAYS } from "../lib/constants";
 import { addDays, prettyDate, todayStr } from "../lib/dates";
@@ -106,9 +106,18 @@ export function TimelineScreen() {
                 <div className="history-item" key={log.id}>
                   <div className="bar" style={{ background: ratingColor(log.rating) }} />
                   <div className="body">
-                    <div className="date">
-                      <a href={`#/log/${log.logDate}`}>{prettyDate(log.logDate)}</a> ·{" "}
-                      {log.rating} {RATING_LABELS[log.rating]}
+                    <div className="date-row">
+                      <div className="date">
+                        <a href={`#/log/${log.logDate}`}>{prettyDate(log.logDate)}</a> ·{" "}
+                        {log.rating} {RATING_LABELS[log.rating]}
+                      </div>
+                      <a
+                        className="edit-link"
+                        href={`#/log/${log.logDate}`}
+                        aria-label={`Edit entry for ${prettyDate(log.logDate)}`}
+                      >
+                        <PencilIcon size={12} /> Edit
+                      </a>
                     </div>
                     {log.tags.length > 0 && (
                       <div className="chips" style={{ marginTop: 6 }}>
