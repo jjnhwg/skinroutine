@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "../components/Avatar";
 import { CatalogSheet } from "../components/CatalogSheet";
 import { BottleIcon, CameraIcon, ChevronRightIcon, PencilIcon } from "../components/Icons";
@@ -131,6 +131,27 @@ export function ProductsScreen() {
       toast("Couldn't read that image.");
     }
   }
+
+  useEffect(() => {
+    if (!addOpen || sheetOpen) return;
+    async function onPaste(e: ClipboardEvent) {
+      const item = Array.from(e.clipboardData?.items ?? []).find(
+        (i) => i.kind === "file" && i.type.startsWith("image/"),
+      );
+      const file = item?.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+      photoFor.current = null;
+      try {
+        setImage(await resizeImage(file, PRODUCT_IMAGE_MAX, "pad"));
+        toast("Photo pasted");
+      } catch {
+        toast("Couldn't read that image.");
+      }
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [addOpen, sheetOpen, toast]);
 
   async function changeProductImage(id: string, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -319,7 +340,8 @@ export function ProductsScreen() {
               />
             </label>
             <div className="muted" style={{ fontSize: 13 }}>
-              Add a photo of the bottle so it's easy to spot in your routine.{" "}
+              Add a photo of the bottle so it's easy to spot in your routine, or copy one from the
+              web and paste it here (⌘V).{" "}
               {image && (
                 <button
                   type="button"
