@@ -147,7 +147,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
   letting you answer "followed my usual routine" or "skip" for each.
 - **What changes:** Backend: missed-day logic, plus confirm and skip endpoints.
 
-### ⬜ Step 19: Missed-day prompt
+### ✅ Step 19: Missed-day prompt
 - **What we're doing:** When you open the app, it asks about each missed day,
   one at a time.
 - **What changes:** Frontend: a `MissedDaysPrompt` popup.

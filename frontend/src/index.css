@@ -184,6 +184,7 @@ button { font: inherit; cursor: pointer; }
 .legend .legend-confirmed::before { background: #fff; box-shadow: inset 0 0 0 2px var(--r2); }
 .legend .legend-hatched::before { background: repeating-linear-gradient(135deg, var(--border-strong) 0 2px, #fff 2px 4px); }
 .sheet.short { height: auto; max-height: 85vh; }
+.sheet.prompt { padding-bottom: env(safe-area-inset-bottom); }
 .detail-row { display: flex; align-items: center; gap: 8px; font-size: 16px; }
 .detail-row .dot { width: 14px; height: 14px; border-radius: 50%; }
 .detail-line { margin: 8px 0 0; font-size: 14px; }

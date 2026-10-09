@@ -34,5 +34,5 @@ export function useRoute(): Route {
 }
 
 export function navigate(to: string): void {
-  location.hash = to.startsWith("#") ? to : `#/${to}`;
+  location.hash = to.startsWith("#") ? to : `#/${to.replace(/^\//, "")}`;
 }

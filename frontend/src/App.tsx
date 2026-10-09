@@ -1,5 +1,6 @@
 import { SettingsProvider, useSettings } from "./api/useSettings";
 import { DropletIcon } from "./components/Icons";
+import { MissedDaysPrompt } from "./components/MissedDaysPrompt";
 import { TabBar } from "./components/TabBar";
 import { ToastProvider } from "./components/Toast";
 import { useRoute } from "./lib/router";
@@ -40,6 +41,7 @@ export default function App() {
       </header>
       <SettingsProvider>
         <Screens />
+        <MissedDaysPrompt />
       </SettingsProvider>
     </ToastProvider>
   );
