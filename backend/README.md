@@ -63,6 +63,7 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | POST   | `/api/trials`              | Start one (default 21 days); warns if it overlaps        |
 | POST   | `/api/trials/{id}/end`     | End a running trial early                                |
 | GET    | `/api/trials/{id}/verdict` | Before vs during averages, label, flags, first/last photo |
+| GET    | `/api/insights/suspects`   | "collecting" until 14 logged days, then ranked suspects  |
 | GET    | `/api/photo-days`          | `{dates: [...]}`: every day with a photo, oldest first   |
 | GET    | `/api/tags`                | Lifestyle tags (`?include_hidden=true` for all)          |
 | POST   | `/api/tags`                | Add a tag (`{name}`, ≤ 40 chars; 409 if it exists)       |

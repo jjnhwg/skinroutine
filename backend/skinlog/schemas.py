@@ -265,3 +265,40 @@ class Verdict(BaseModel):
     label: Literal["better", "worse", "no_clear_change"] | None
     flags: VerdictFlags
     photos: VerdictPhotos
+
+
+class Factor(BaseModel):
+    kind: Literal["product", "tag"]
+    id: int
+    name: str
+
+
+class GroupAverage(BaseModel):
+    avg: float
+    days: int
+
+
+class Recent(BaseModel):
+    hits: int
+    total: int
+
+
+class Suspect(BaseModel):
+    factor: Factor
+    kind: Literal["breakouts", "dryness", "redness", "oiliness"]
+    sentence: str
+    after: GroupAverage
+    otherwise: GroupAverage
+    recent: Recent
+
+
+class LowContrast(Factor):
+    reason: str
+
+
+class SuspectsOut(BaseModel):
+    status: Literal["collecting", "ready"]
+    logged_days: int
+    required: int
+    suspects: list[Suspect]
+    low_contrast: list[LowContrast]

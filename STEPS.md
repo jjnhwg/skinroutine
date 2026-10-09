@@ -174,7 +174,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 8 — Suspects (insights)
 
-### ⬜ Step 23: Suspects calculation
+### ✅ Step 23: Suspects calculation
 - **What we're doing:** Finding products and habits that tend to come before
   breakouts or reactions. This only starts after 14 logged days.
 - **What changes:** Backend: the suspects analysis and endpoint. A "golden"
