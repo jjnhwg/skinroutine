@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDay, listDays } from "../api/days";
+import { getDay, getPhotoDays, listDays } from "../api/days";
 import { listProducts } from "../api/products";
 import { listTags } from "../api/tags";
 import { day, NO_ZONES, product } from "../test/fixtures";
@@ -43,6 +43,7 @@ beforeEach(() => {
       photos: { front: "/api/files/u1/f.jpg", left: null, right: null },
     }),
   );
+  vi.mocked(getPhotoDays).mockReset().mockResolvedValue(["2026-09-01", "2026-10-01"]);
   vi.mocked(listProducts).mockReset().mockResolvedValue([
     product(1, "Cleanser", { type: "cleanser" }),
     product(2, "Retinol", { type: "treatment" }),
@@ -101,5 +102,29 @@ describe("TimelineScreen", () => {
 
     expect(await screen.findByText("September 2026")).toBeInTheDocument();
     await waitFor(() => expect(listDays).toHaveBeenLastCalledWith("2026-08-31", "2026-10-04"));
+  });
+});
+
+describe("Timeline photo comparison", () => {
+  it("opens from the Timeline with the default dates", async () => {
+    const user = userEvent.setup();
+    renderWithApp(<TimelineScreen />);
+
+    await user.click(await screen.findByRole("button", { name: /Compare photos/ }));
+
+    expect(await screen.findByRole("dialog", { name: "Compare photos" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Before date")).toHaveValue("2026-09-01");
+  });
+
+  it("opens from a day with that day on the left", async () => {
+    const user = userEvent.setup();
+    renderWithApp(<TimelineScreen />);
+    await waitFor(() => expect(cell("2026-10-01")).toHaveClass("score-4"));
+    await user.click(cell("2026-10-01"));
+
+    await user.click(await screen.findByRole("button", { name: "Compare with…" }));
+
+    expect(await screen.findByLabelText("Before date")).toHaveValue("2026-10-01");
+    expect(screen.queryByRole("dialog", { name: /Thursday/ })).not.toBeInTheDocument();
   });
 });

@@ -35,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(files.router, prefix="/api")
     app.include_router(routine.router, prefix="/api")
     app.include_router(days.router, prefix="/api")
+    app.include_router(days.photo_days_router, prefix="/api")
     app.include_router(tags.router, prefix="/api")
     app.include_router(legacy.router, prefix="/api")
     return app

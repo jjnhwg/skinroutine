@@ -56,6 +56,7 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | GET    | `/api/days?from=&to=`      | Saved days in a range (≤ 92 days), for the calendar      |
 | PUT    | `/api/days/{date}/photos/{front\|left\|right}` | Upload a skin photo (save the day first) |
 | DELETE | `/api/days/{date}/photos/{angle}` | Remove that photo                                 |
+| GET    | `/api/photo-days`          | `{dates: [...]}`: every day with a photo, oldest first   |
 | GET    | `/api/tags`                | Lifestyle tags (`?include_hidden=true` for all)          |
 | POST   | `/api/tags`                | Add a tag (`{name}`, ≤ 40 chars; 409 if it exists)       |
 | PATCH  | `/api/tags/{id}`           | Rename or hide/show a tag. Tags are never deleted.       |

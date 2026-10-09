@@ -135,7 +135,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
   - The old store, types and insight code are deleted.
   - ✅ The transition window ends here.
 
-### ⬜ Step 17: Photo compare
+### ✅ Step 17: Photo compare
 - **What we're doing:** Picking any two dates and seeing their photos side by
   side.
 - **What changes:** Frontend: a `PhotoCompare` sheet, opened from the Timeline.

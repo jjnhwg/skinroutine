@@ -164,6 +164,10 @@ class DayOut(BaseModel):
     planned: Planned
 
 
+class PhotoDays(BaseModel):
+    dates: list[date]
+
+
 class DaySummary(BaseModel):
     """One calendar cell."""
 

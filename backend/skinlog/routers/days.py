@@ -9,10 +9,12 @@ from skinlog.db import get_db
 from skinlog.deps import current_user
 from skinlog.models import Angle, User
 from skinlog.photos import PhotoStore, get_photo_store, read_photo
-from skinlog.schemas import DayIn, DayOut, DaySummary
+from skinlog.schemas import DayIn, DayOut, DaySummary, PhotoDays
 from skinlog.services import days as service
 
 router = APIRouter(prefix="/days")
+# Not under /days, where /days/{date} would try to read "with-photos" as a date.
+photo_days_router = APIRouter()
 
 
 @router.get("")
@@ -60,3 +62,8 @@ def delete_photo(
 ) -> Response:
     service.remove_photo(db, store, user, day, angle)
     return Response(status_code=204)
+
+
+@photo_days_router.get("/photo-days")
+def photo_days(user: User = Depends(current_user), db: Session = Depends(get_db)) -> PhotoDays:
+    return PhotoDays(dates=service.photo_dates(db, user))

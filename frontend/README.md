@@ -25,7 +25,7 @@ src/
 │   ├── settings.ts  GET/PATCH /api/settings; useSettings.tsx loads them and "today"
 │   ├── products.ts  /api/products; useProducts.ts keeps the list fresh
 │   ├── routine.ts   /api/routine: the saved AM/PM lists and what's planned
-│   ├── days.ts      /api/days: one day, save it, list a range, day photos
+│   ├── days.ts      /api/days: one day, save it, list a range, day photos, photo-days
 │   ├── tags.ts      /api/tags; useTags.ts keeps the list fresh
 │   └── legacy.ts    reads the old app's localStorage data and moves it to the server
 ├── lib/
@@ -38,7 +38,7 @@ src/
 │   └── api.ts       product search calls
 ├── components/      CheckInForm, RoutineChecklist, PhotoCapture, TagPicker, DayDetail,
 │                    RoutineEditor, ProductForm, ProductThumb, TagSettings, CatalogSheet,
-│                    Icons, Lightbox, TabBar, Toast
+│                    PhotoCompare, PhotoPair, Icons, Lightbox, TabBar, Toast
 ├── screens/         Log, Timeline, Products, Settings
 └── test/            setup, render helper, fixtures
 ```

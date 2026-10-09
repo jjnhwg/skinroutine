@@ -191,3 +191,15 @@ def remove_photo(db: Session, store: PhotoStore, user: User, day: date, angle: A
     log.photos.remove(photo)
     db.commit()
     store.delete(key)
+
+
+def photo_dates(db: Session, user: User) -> list[date]:
+    """Every date with at least one photo, oldest first (for picking photos to compare)."""
+    query = (
+        select(DayLog.date)
+        .join(Photo, Photo.day_log_id == DayLog.id)
+        .where(DayLog.user_id == user.id)
+        .distinct()
+        .order_by(DayLog.date)
+    )
+    return list(db.scalars(query))

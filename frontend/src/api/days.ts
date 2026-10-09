@@ -25,3 +25,8 @@ export function uploadDayPhoto(date: string, angle: Angle, photo: Blob): Promise
 export function deleteDayPhoto(date: string, angle: Angle): Promise<void> {
   return apiSend<void>("DELETE", `/api/days/${date}/photos/${angle}`);
 }
+
+/** Every date with at least one photo, oldest first. */
+export async function getPhotoDays(): Promise<string[]> {
+  return (await apiGet<{ dates: string[] }>("/api/photo-days")).dates;
+}

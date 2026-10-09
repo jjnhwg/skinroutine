@@ -25,10 +25,12 @@ interface DayDetailProps {
   products: Product[];
   tags: Tag[];
   onClose: () => void;
+  /** Open the photo comparison with this day on the left. */
+  onCompare: (date: string) => void;
 }
 
 /** Everything saved for one day, read-only, with a link to edit it. */
-export function DayDetail({ date, products, tags, onClose }: DayDetailProps) {
+export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetailProps) {
   const [day, setDay] = useState<Day | null>(null);
   const [failed, setFailed] = useState(false);
   const [viewing, setViewing] = useState<number | null>(null);
@@ -161,6 +163,16 @@ export function DayDetail({ date, products, tags, onClose }: DayDetailProps) {
                     </button>
                   ))}
                 </div>
+              )}
+              {photos.length > 0 && (
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ marginTop: 12, width: "100%" }}
+                  onClick={() => onCompare(date)}
+                >
+                  Compare with…
+                </button>
               )}
             </>
           )}

@@ -108,3 +108,20 @@ def test_other_users_day_photos_stay_hidden(client, db_session, other_user, phot
     assert client.get("/api/days/2026-10-06").json()["photos"]["front"] is None
     assert client.put("/api/days/2026-10-06/photos/front", files=upload()).status_code == 409
     assert client.get(f"/api/files/{key}").status_code == 404
+
+
+def test_photo_days_lists_every_date_with_a_photo(client, frozen_now, db_session, other_user):
+    for day in ["2026-10-01", "2026-09-15", "2026-10-03"]:
+        client.put(f"/api/days/{day}", json={"skin_score": 2, "zones": ZONES, "dryness": 0, "redness": 0, "oiliness": 0})
+    client.put("/api/days/2026-10-01/photos/left", files=upload())
+    client.put("/api/days/2026-09-15/photos/front", files=upload())
+    theirs = DayLog(user_id=other_user.id, date=date(2026, 8, 1), status="logged")
+    db_session.add(theirs)
+    db_session.flush()
+    db_session.add(Photo(day_log_id=theirs.id, angle="front", path="u2/x.jpg"))
+    db_session.commit()
+
+    response = client.get("/api/photo-days")
+
+    assert response.status_code == 200
+    assert response.json() == {"dates": ["2026-09-15", "2026-10-01"]}

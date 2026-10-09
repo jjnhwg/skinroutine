@@ -5,7 +5,8 @@ import { useProducts } from "../api/useProducts";
 import { useSettings } from "../api/useSettings";
 import { useTags } from "../api/useTags";
 import { DayDetail } from "../components/DayDetail";
-import { ChevronLeftIcon, ChevronRightIcon } from "../components/Icons";
+import { CameraIcon, ChevronLeftIcon, ChevronRightIcon } from "../components/Icons";
+import { PhotoCompare } from "../components/PhotoCompare";
 import { RATING_LABELS, RATINGS, WEEKDAYS } from "../lib/constants";
 import { addDays, fmt, prettyDate } from "../lib/dates";
 import type { Rating } from "../types";
@@ -57,6 +58,8 @@ export function TimelineScreen() {
   const [summaries, setSummaries] = useState<Record<string, DaySummary>>({});
   const [error, setError] = useState("");
   const [open, setOpen] = useState<string | null>(null);
+  // null = closed; "" = default dates; a date = that day on the left.
+  const [comparing, setComparing] = useState<string | null>(null);
 
   const grid = useMemo(() => gridFor(month), [month]);
 
@@ -77,6 +80,10 @@ export function TimelineScreen() {
     <>
       <h2 className="page-title">Timeline</h2>
       <p className="page-sub">Tap a day to see what you logged.</p>
+
+      <button type="button" className="btn" onClick={() => setComparing("")}>
+        <CameraIcon size={18} /> Compare photos
+      </button>
 
       <div className="card">
         <div className="datebar" style={{ marginBottom: 12 }}>
@@ -142,7 +149,19 @@ export function TimelineScreen() {
       </div>
 
       {open && (
-        <DayDetail date={open} products={products} tags={tags} onClose={() => setOpen(null)} />
+        <DayDetail
+          date={open}
+          products={products}
+          tags={tags}
+          onClose={() => setOpen(null)}
+          onCompare={(date) => {
+            setOpen(null);
+            setComparing(date);
+          }}
+        />
+      )}
+      {comparing !== null && (
+        <PhotoCompare initialDate={comparing || undefined} onClose={() => setComparing(null)} />
       )}
     </>
   );
