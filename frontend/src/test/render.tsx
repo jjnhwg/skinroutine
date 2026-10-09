@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import { vi } from "vitest";
 import { getSettings } from "../api/settings";
 import type { Settings } from "../api/types";
-import { SettingsProvider } from "../api/useSettings";
+import { SettingsProvider } from "../api/SettingsProvider";
 import { ToastProvider } from "../components/Toast";
 
 export const TEST_SETTINGS: Settings = {

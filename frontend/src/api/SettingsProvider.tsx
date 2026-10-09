@@ -1,23 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { getSettings, updateSettings } from "./settings";
 import type { Settings, SettingsPatch } from "./types";
-
-interface SettingsState {
-  settings: Settings;
-  /** The user's local date from the server, YYYY-MM-DD. */
-  today: string;
-  /** Save a change; rejects with ApiError so the caller can show the detail. */
-  update: (patch: SettingsPatch) => Promise<Settings>;
-}
-
-const SettingsContext = createContext<SettingsState | null>(null);
-
-export function useSettings(): SettingsState {
-  const state = useContext(SettingsContext);
-  if (!state) throw new Error("useSettings must be used inside SettingsProvider");
-  return state;
-}
+import { SettingsContext } from "./useSettings";
 
 /** Loads settings once; the app waits for them because they say what "today" is. */
 export function SettingsProvider({ children }: { children: ReactNode }) {

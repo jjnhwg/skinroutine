@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ApiError } from "../api/http";
 import type { Tag } from "../api/types";
 import { useTags } from "../api/useTags";
-import { useToast } from "./Toast";
+import { useToast } from "./useToast";
 
 const MAX_NAME = 40;
 

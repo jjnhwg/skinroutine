@@ -6,7 +6,7 @@ import { importLegacy } from "../api/legacy";
 import { createTag, listTags, updateTag } from "../api/tags";
 import { getSettings, sendTestEmail, updateSettings } from "../api/settings";
 import type { Settings } from "../api/types";
-import { SettingsProvider } from "../api/useSettings";
+import { SettingsProvider } from "../api/SettingsProvider";
 import { ToastProvider } from "../components/Toast";
 import { SettingsScreen } from "./SettingsScreen";
 

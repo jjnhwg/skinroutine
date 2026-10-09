@@ -4,7 +4,7 @@ import { endTrial, getVerdict } from "../api/trials";
 import type { Trial, Verdict, VerdictWindow } from "../api/types";
 import { LONG_DATE, prettyDate } from "../lib/dates";
 import { PhotoPair } from "./PhotoPair";
-import { useToast } from "./Toast";
+import { useToast } from "./useToast";
 
 const MIN_DAYS = 5;
 

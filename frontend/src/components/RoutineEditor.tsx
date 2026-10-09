@@ -5,7 +5,7 @@ import type { Product, RoutineItem, Schedule, TimeOfDay, Weekday } from "../api/
 import { WEEKDAYS } from "../lib/constants";
 import { ChevronLeftIcon, ChevronRightIcon } from "./Icons";
 import { ProductThumb } from "./ProductThumb";
-import { useToast } from "./Toast";
+import { useToast } from "./useToast";
 
 const TITLES: Record<TimeOfDay, string> = { am: "Morning", pm: "Night" };
 

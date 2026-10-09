@@ -1,7 +1,7 @@
 import type { Angle } from "../api/types";
 import { PHOTO_MAX, resizeImage } from "../lib/image";
 import { CameraIcon } from "./Icons";
-import { useToast } from "./Toast";
+import { useToast } from "./useToast";
 
 const LABELS: Record<Angle, string> = { front: "Front", left: "Left side", right: "Right side" };
 const ALT: Record<Angle, string> = { front: "Front photo", left: "Left photo", right: "Right photo" };

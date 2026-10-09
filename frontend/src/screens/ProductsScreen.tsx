@@ -9,7 +9,7 @@ import { ProductForm } from "../components/ProductForm";
 import type { PhotoChange } from "../components/ProductForm";
 import { ProductThumb } from "../components/ProductThumb";
 import { RoutineEditor } from "../components/RoutineEditor";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/useToast";
 import { TrialVerdict } from "../components/TrialVerdict";
 import { PRODUCT_TYPE_LABELS } from "../lib/constants";
 import { LONG_DATE, daysBetween, prettyDate } from "../lib/dates";

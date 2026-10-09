@@ -6,7 +6,7 @@ import type { LegacyData } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
 import { TagSettings } from "../components/TagSettings";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/useToast";
 
 /** A backup file exported by the old browser-only app. */
 function looksLikeBackup(data: unknown): data is LegacyData {

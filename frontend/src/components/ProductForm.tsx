@@ -8,7 +8,7 @@ import { loadProductPhoto } from "../lib/productPhoto";
 import type { CatalogItem } from "../types";
 import { CatalogSheet } from "./CatalogSheet";
 import { CameraIcon, ChevronRightIcon } from "./Icons";
-import { useToast } from "./Toast";
+import { useToast } from "./useToast";
 
 /** The four bottles shown stacked on the "choose from popular" button. */
 const TEASER_INDEXES = [9, 0, 20, 24];

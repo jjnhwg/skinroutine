@@ -1,14 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { ToastContext } from "./useToast";
 
 const TOAST_MS = 2200;
-
-const ToastContext = createContext<(message: string) => void>(() => {});
-
-/** Call this from anywhere under ToastProvider to flash a message. */
-export function useToast() {
-  return useContext(ToastContext);
-}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState("");

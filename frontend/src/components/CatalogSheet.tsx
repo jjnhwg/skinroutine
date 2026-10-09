@@ -16,7 +16,7 @@ interface OpenBeautyProduct {
 }
 
 /**
- * Ask Open Beauty Facts directly. Only used when Flask is down: it works
+ * Ask Open Beauty Facts directly. Only used when the backend is down: it works
  * without the server, but knows few Korean brands.
  */
 async function searchOpenBeautyFacts(term: string): Promise<ProductSearchResult[]> {

@@ -1,4 +1,5 @@
-import { SettingsProvider, useSettings } from "./api/useSettings";
+import { SettingsProvider } from "./api/SettingsProvider";
+import { useSettings } from "./api/useSettings";
 import { DropletIcon } from "./components/Icons";
 import { MissedDaysPrompt } from "./components/MissedDaysPrompt";
 import { TabBar } from "./components/TabBar";

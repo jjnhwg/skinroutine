@@ -1,5 +1,5 @@
 import { apiGet, apiSend } from "./http";
-import type { Planned, Routine, Schedule, TimeOfDay } from "./types";
+import type { Routine, Schedule, TimeOfDay } from "./types";
 
 export function getRoutine(): Promise<Routine> {
   return apiGet<Routine>("/api/routine");
@@ -11,8 +11,4 @@ export function saveRoutine(
   items: { product_id: number; schedule: Schedule }[],
 ): Promise<Routine> {
   return apiSend<Routine>("PUT", `/api/routine/${timeOfDay}`, { items });
-}
-
-export function getPlanned(date: string): Promise<Planned> {
-  return apiGet<Planned>(`/api/routine/planned?date=${date}`);
 }

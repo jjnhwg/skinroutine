@@ -21,6 +21,18 @@ Settings come from `backend/.env` (copy `.env.example`); all are optional.
 `DATABASE_URL` and `PHOTO_DIR` say where data lives; the `EMAIL_*`, `SMTP_*` and
 `APP_URL` values set up reminder emails.
 
+## Demo data
+
+```bash
+.venv/bin/python -m skinlog.seed --demo --db sqlite:///./demo.db
+DATABASE_URL=sqlite:///./demo.db uvicorn skinlog.main:app --reload --port 8000
+```
+
+Migrates that database and fills it with 21 days ending today: three products, an
+AM/PM routine, breakouts planted 2 days after each Mystery Serum use (the same
+pattern the golden suspects test checks, from `skinlog/demo.py`), a few tags and a
+running moisturizer trial. Refuses a database that already has logs unless `--force`.
+
 ## Daily reminder emails
 
 `python -m skinlog.reminders` sends each due reminder once: at the user's
@@ -38,6 +50,10 @@ set your reminder time to a minute that has passed and run
 sends one immediately.
 
 ## Run
+
+Tests cover every endpoint, the analysis (a hand-checked trial verdict and a golden
+suspects history), and that `alembic upgrade head` builds exactly what the models say.
+
 
 ```bash
 uvicorn skinlog.main:app --reload --port 8000   # http://localhost:8000/api/health

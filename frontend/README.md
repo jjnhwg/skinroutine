@@ -17,12 +17,12 @@ npm test         # vitest (jsdom + Testing Library)
 
 ```
 src/
-├── App.tsx          Shell: header, hash-routed screen, tab bar, SettingsProvider
+├── App.tsx          Shell: header, hash-routed screen, tab bar, missed-day prompt
 ├── types.ts         Catalog item and product-search shapes, the 1–5 Rating
 ├── api/
 │   ├── http.ts      apiGet / apiSend / apiUpload; non-2xx throws ApiError
 │   ├── types.ts     shapes the backend sends (Settings, Product, Day, Tag, …)
-│   ├── settings.ts  GET/PATCH /api/settings; useSettings.tsx loads them and "today"
+│   ├── settings.ts  /api/settings; SettingsProvider loads them, useSettings reads them (and "today")
 │   ├── products.ts  /api/products; useProducts.ts keeps the list fresh
 │   ├── routine.ts   /api/routine: the saved AM/PM lists and what's planned
 │   ├── days.ts      /api/days: one day, save it, list a range, day photos, photo-days
@@ -42,7 +42,7 @@ src/
 ├── components/      CheckInForm, RoutineChecklist, PhotoCapture, TagPicker, DayDetail,
 │                    RoutineEditor, ProductForm, ProductThumb, TagSettings, CatalogSheet,
 │                    PhotoCompare, PhotoPair, MissedDaysPrompt, TrialVerdict, SuspectChart,
-│                    Icons, Lightbox, TabBar, Toast
+│                    Icons, Lightbox, TabBar, Toast (+ useToast)
 ├── screens/         Log, Timeline, Insights, Products, Settings
 └── test/            setup, render helper, fixtures
 ```

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { confirmRoutine, getMissedDays, skipDay } from "../api/missed";
 import { prettyDate } from "../lib/dates";
 import { navigate } from "../lib/router";
-import { useToast } from "./Toast";
+import { useToast } from "./useToast";
 
 const DAY_NAME: Intl.DateTimeFormatOptions = { weekday: "long", month: "short", day: "numeric" };
 

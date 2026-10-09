@@ -198,7 +198,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 10 — Wrap-up
 
-### ⬜ Step 26: Demo seed, docs, cleanup
+### ✅ Step 26: Demo seed, docs, cleanup
 - **What we're doing:**
   - Adding a one-command demo database so the whole app can be checked end to
     end.

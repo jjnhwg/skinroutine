@@ -947,4 +947,4 @@ Suggested commit: "chore: add demo data, setup docs, and remove the Supabase lef
 - [x] 20 Trials API · [x] 21 Verdict · [x] 22 Trials UI
 - [x] 23 Suspects · [x] 24 Insights screen
 - [x] 25 Reminders
-- [ ] 26 Seed, docs, cleanup
+- [x] 26 Seed, docs, cleanup

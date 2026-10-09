@@ -12,7 +12,7 @@ import { Lightbox } from "../components/Lightbox";
 import { PhotoCapture } from "../components/PhotoCapture";
 import { RoutineChecklist } from "../components/RoutineChecklist";
 import { TagPicker } from "../components/TagPicker";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/useToast";
 import { addDays, prettyDate, relativeDay } from "../lib/dates";
 import { dataUrlToBlob } from "../lib/image";
 import { navigate } from "../lib/router";

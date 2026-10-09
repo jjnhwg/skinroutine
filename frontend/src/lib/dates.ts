@@ -2,16 +2,12 @@
  * Date helpers that work on plain YYYY-MM-DD strings.
  *
  * Everything stays in UTC internally so a log never shifts a day when the
- * user crosses a timezone or daylight saving kicks in.
+ * user crosses a timezone or daylight saving kicks in. "Today" always comes
+ * from the server (useSettings), never from this device's clock.
  */
 
 export function fmt(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-}
-
-export function todayStr(): string {
-  const d = new Date();
-  return fmt(d.getFullYear(), d.getMonth() + 1, d.getDate());
 }
 
 export function addDays(s: string, n: number): string {
