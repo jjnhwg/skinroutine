@@ -1,7 +1,10 @@
+from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
+from skinlog import clock
 from skinlog.db import Base, get_db, make_engine
 from skinlog.main import create_app
 from skinlog.models import User
@@ -34,3 +37,13 @@ def other_user(db_session) -> User:
     db_session.add(user)
     db_session.commit()
     return user
+
+
+FROZEN_NOW = datetime(2026, 10, 9, 15, 0, tzinfo=timezone.utc)  # 11:00 in New York
+
+
+@pytest.fixture
+def frozen_now(monkeypatch) -> datetime:
+    """Pin the clock: "today" is 2026-10-09 for the default New York user."""
+    monkeypatch.setattr(clock, "now_utc", lambda: FROZEN_NOW)
+    return FROZEN_NOW

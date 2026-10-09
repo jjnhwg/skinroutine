@@ -37,5 +37,12 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | GET    | `/api/health`              | `{"status": "ok"}`                                       |
 | GET    | `/api/settings`            | Reminder and insight settings, plus `today` in your zone |
 | PATCH  | `/api/settings`            | Change any of those settings                             |
+| GET    | `/api/products`            | Your products by name (`?include_retired=true` for all)  |
+| POST   | `/api/products`            | Add a product                                            |
+| GET    | `/api/products/{id}`       | One product                                              |
+| PATCH  | `/api/products/{id}`       | Edit name, brand, type or start date                     |
+| POST   | `/api/products/{id}/retire` | Retire (optional `retired_on`, default today)           |
+| POST   | `/api/products/{id}/unretire` | Bring a retired product back                          |
+| DELETE | `/api/products/{id}`       | Always 409 — retire instead, so history is kept          |
 | GET    | `/api/products/search?q=`  | Real products with photos (422 if `q` is under 2 chars)  |
 | GET    | `/api/products/image?url=` | Proxies a product photo from an allow-listed host        |

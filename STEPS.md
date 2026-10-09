@@ -42,7 +42,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 2 — Products
 
-### ⬜ Step 4: Products API
+### ✅ Step 4: Products API
 - **What we're doing:** Storing products on the server. You can add, edit and
   retire them. Products can't be deleted, so your history is kept.
 - **What changes:** Backend only: a `products` table and the `/api/products`
