@@ -10,7 +10,7 @@ npm run build    # tsc -b && vite build
 npm run lint     # oxlint
 ```
 
-`/api/*` is proxied to Flask on port 5001 (see `vite.config.ts`).
+`/api/*` is proxied to the FastAPI backend on port 8000 (see `vite.config.ts`).
 
 ## Layout
 
@@ -28,7 +28,7 @@ src/
 │   ├── productPhoto.ts  real product photo for a picked catalog item
 │   ├── avatar.ts    per-product colour and initials
 │   ├── router.ts    useRoute() over the URL hash
-│   └── api.ts       calls to the Flask endpoints
+│   └── api.ts       calls to the backend API
 ├── components/      Avatar, CatalogSheet, Icons, Lightbox, TabBar, Toast
 └── screens/         Log, Timeline, Products, Settings
 ```
@@ -37,18 +37,16 @@ src/
 
 Entries and products are kept in `localStorage` under `skin-test-log-v1`, the
 same key the prototype uses — so the browser is the source of truth and the app
-works offline.
+works offline. The backend is only used for the online product search below.
 
-Saving **today's** entry also POSTs the used product names to Flask. That call is
-a mirror, not the save: if the backend is down the entry is still stored locally
-and a toast says so. Photos are resized to JPEG data URLs before storage, so the
+Photos are resized to JPEG data URLs before storage, so the
 quota is reachable; a rejected write is rolled back and reported rather than
 silently dropped.
 
 ## Product photos
 
 Picking a product from the catalog stores a real photo of it when one can be
-found. Flask's `/api/products/search` asks Open Beauty Facts plus three
+found. The backend's `/api/products/search` asks Open Beauty Facts plus three
 Shopify-based K-beauty shops (Nudie Glow, Dodoskin, Soko Glam) — Open Beauty
 Facts alone barely covers Korean brands, and the shops send no CORS headers,
 so the browser can't ask them itself. Built-in items are looked up by brand
@@ -56,7 +54,7 @@ and name when picked.
 
 The chosen photo is downloaded through `/api/products/image` (only from
 allow-listed hosts), padded to a square on a canvas and kept as a data URL like
-any uploaded photo. Without Flask, the catalog search falls back to Open Beauty
+any uploaded photo. Without the backend, the catalog search falls back to Open Beauty
 Facts directly, and anything without a photo keeps its generated bottle.
 
 Settings → Export backup writes a JSON file; Import either replaces everything or

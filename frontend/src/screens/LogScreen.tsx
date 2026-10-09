@@ -9,7 +9,6 @@ import {
 } from "../components/Icons";
 import { Lightbox } from "../components/Lightbox";
 import { useToast } from "../components/Toast";
-import { saveRoutineToServer } from "../lib/api";
 import { RATING_LABELS, RATINGS, SLOT_LABELS, TAGS } from "../lib/constants";
 import { addDays, prettyDate, relativeDay, todayStr } from "../lib/dates";
 import { routineFor, usedOn } from "../lib/domain";
@@ -118,14 +117,6 @@ export function LogScreen({ date }: { date: string }) {
     }));
     if (!ok) return;
     toast(existing ? "Entry updated" : "Entry saved");
-
-    // Mirror today's routine to Flask; a failure here doesn't lose the entry.
-    if (date === today) {
-      const names = routine.filter((p) => draft.used.includes(p.id)).map((p) => p.name);
-      saveRoutineToServer(names).catch(() => {
-        toast("Saved locally — the server is offline.");
-      });
-    }
   }
 
   function remove() {

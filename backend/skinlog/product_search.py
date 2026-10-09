@@ -37,7 +37,7 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 # Finished searches, keyed by the squashed query. The shops rate-limit
 # (HTTP 429) if asked too often, so a repeat search is answered from here.
-# Like storage.py, this empties when the server restarts.
+# This empties when the server restarts.
 _cache: dict[str, list[dict]] = {}
 
 

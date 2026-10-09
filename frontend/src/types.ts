@@ -67,17 +67,7 @@ export interface Insight {
   overlappingProductIds: string[];
 }
 
-/** Shape of the data we send to Flask when saving today's routine. */
-export interface SaveRoutineRequest {
-  products: string[];
-}
-
-/** Shape of the response Flask sends back after a successful save. */
-export interface SaveRoutineResponse {
-  message: string;
-}
-
-/** One real product found by Flask's online search. */
+/** One real product found by the API's online search. */
 export interface ProductSearchResult {
   brand: string;
   name: string;
