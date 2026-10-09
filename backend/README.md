@@ -59,6 +59,7 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | GET    | `/api/tags`                | Lifestyle tags (`?include_hidden=true` for all)          |
 | POST   | `/api/tags`                | Add a tag (`{name}`, ≤ 40 chars; 409 if it exists)       |
 | PATCH  | `/api/tags/{id}`           | Rename or hide/show a tag. Tags are never deleted.       |
+| POST   | `/api/import/legacy`       | Move an old-app backup in (≤ 50 MB). Never overwrites.  |
 
 A schedule is `{"kind": "daily"}` or `{"kind": "weekdays", "days": ["mon", "wed", "fri"]}`.
 Weekdays are always `"mon"`…`"sun"`.

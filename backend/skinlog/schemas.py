@@ -160,6 +160,7 @@ class DayOut(BaseModel):
     product_uses: list[ProductUseIO]
     tag_ids: list[int]
     photos: DayPhotos
+    imported: bool
     planned: Planned
 
 

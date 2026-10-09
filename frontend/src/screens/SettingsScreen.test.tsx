@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/http";
+import { importLegacy } from "../api/legacy";
 import { getSettings, updateSettings } from "../api/settings";
 import type { Settings } from "../api/types";
 import { SettingsProvider } from "../api/useSettings";
@@ -10,6 +11,7 @@ import { StoreProvider } from "../store";
 import { SettingsScreen } from "./SettingsScreen";
 
 vi.mock("../api/settings");
+vi.mock("../api/legacy");
 
 const SAVED: Settings = {
   email: "me@example.com",
@@ -36,6 +38,7 @@ function renderScreen() {
 beforeEach(() => {
   vi.mocked(getSettings).mockReset().mockResolvedValue(SAVED);
   vi.mocked(updateSettings).mockReset();
+  vi.mocked(importLegacy).mockReset();
 });
 
 describe("SettingsScreen reminders & insights", () => {
@@ -106,5 +109,66 @@ describe("SettingsProvider", () => {
 
     await waitFor(() => expect(screen.getByLabelText("Email")).toBeInTheDocument());
     expect(getSettings).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("Move this browser's data to the server", () => {
+  const stored = {
+    products: [
+      {
+        id: "a1",
+        brand: "CeraVe",
+        name: "Cleanser",
+        slot: "BOTH",
+        image: null,
+        startedOn: "2026-09-01",
+        stoppedOn: null,
+        notes: "",
+      },
+    ],
+    logs: [
+      {
+        id: "l1",
+        logDate: "2026-09-02",
+        rating: 2,
+        tags: [],
+        note: "",
+        usedProductIds: ["a1"],
+        photos: [],
+      },
+    ],
+  };
+
+  it("posts the stored data after confirming and shows the report", async () => {
+    localStorage.setItem("skin-test-log-v1", JSON.stringify(stored));
+    vi.mocked(importLegacy).mockResolvedValue({
+      products_created: 1,
+      days_created: 1,
+      days_skipped: 0,
+      photos_saved: 0,
+      warnings: ["Cleanser had a note, which products no longer keep"],
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole("button", { name: "Move this browser's data to the server" }));
+
+    expect(importLegacy).toHaveBeenCalledWith({ app: "skin-test-log", version: 1, ...stored });
+    const report = await screen.findByRole("status", { name: "Import report" });
+    expect(report).toHaveTextContent("1 product");
+    expect(report).toHaveTextContent("1 day");
+    expect(report).toHaveTextContent("Cleanser had a note");
+  });
+
+  it("does nothing without confirmation", async () => {
+    localStorage.setItem("skin-test-log-v1", JSON.stringify(stored));
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole("button", { name: "Move this browser's data to the server" }));
+
+    expect(importLegacy).not.toHaveBeenCalled();
   });
 });

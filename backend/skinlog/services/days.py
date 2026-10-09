@@ -77,6 +77,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         product_uses=uses,
         tag_ids=sorted(t.tag_id for t in log.tags) if log else [],
         photos=DayPhotos(**{p.angle: file_url(p.path) for p in log.photos} if log else {}),
+        imported=log.imported if log else False,
         planned=Planned(**planned),
     )
 
@@ -121,6 +122,7 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
         log = DayLog(user_id=user.id, date=day)
         db.add(log)
     log.status = DayStatus.LOGGED
+    log.imported = False
     log.skin_score = body.skin_score
     log.dryness = body.dryness
     log.redness = body.redness

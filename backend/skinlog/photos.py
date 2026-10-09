@@ -65,16 +65,15 @@ def owner_of(key: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def read_photo(file: UploadFile) -> tuple[bytes, str]:
-    """Return (bytes, extension) for an acceptable upload, or raise 413/415.
+def check_photo(data: bytes, content_type: str) -> str:
+    """Return the file extension for acceptable image bytes, or raise 413/415.
 
     Both the declared content type and the file's first bytes must agree, so a
     text file labelled image/png is refused.
     """
-    allowed = ALLOWED_TYPES.get(file.content_type or "")
+    allowed = ALLOWED_TYPES.get(content_type)
     if allowed is None:
         raise HTTPException(415, "Use a JPEG, PNG or WebP image")
-    data = file.file.read(MAX_PHOTO_BYTES + 1)
     if len(data) > MAX_PHOTO_BYTES:
         raise HTTPException(413, "Photos must be 5 MB or smaller")
     ext, signatures = allowed
@@ -83,4 +82,10 @@ def read_photo(file: UploadFile) -> tuple[bytes, str]:
         looks_right = looks_right and data[8:12] == b"WEBP"
     if not looks_right:
         raise HTTPException(415, "That file isn't the image type it claims to be")
-    return data, ext
+    return ext
+
+
+def read_photo(file: UploadFile) -> tuple[bytes, str]:
+    """Return (bytes, extension) for an acceptable upload, or raise 413/415."""
+    data = file.file.read(MAX_PHOTO_BYTES + 1)
+    return data, check_photo(data, file.content_type or "")

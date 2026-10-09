@@ -5,7 +5,17 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from skinlog.routers import catalog, days, files, health, products, routine, settings, tags
+from skinlog.routers import (
+    catalog,
+    days,
+    files,
+    health,
+    legacy,
+    products,
+    routine,
+    settings,
+    tags,
+)
 
 
 def create_app() -> FastAPI:
@@ -26,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(routine.router, prefix="/api")
     app.include_router(days.router, prefix="/api")
     app.include_router(tags.router, prefix="/api")
+    app.include_router(legacy.router, prefix="/api")
     return app
 
 

@@ -96,6 +96,9 @@ class DayLog(Base):
     redness: Mapped[int | None]
     oiliness: Mapped[int | None]
     notes: Mapped[str] = mapped_column(Text, default="")
+    # Moved over from the old browser app: it has a score but no zones or reactions,
+    # so analysis uses it for exposures only. Saving the day clears it.
+    imported: Mapped[bool] = mapped_column(default=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiError } from "../api/http";
-import type { SettingsPatch } from "../api/types";
+import { importLegacy } from "../api/legacy";
+import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
 import { useToast } from "../components/Toast";
 import { todayStr } from "../lib/dates";
@@ -164,6 +165,103 @@ function ReminderSettings() {
   );
 }
 
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** Sends the old localStorage data (or a backup file) to the server. Days already there win. */
+function MoveToServer() {
+  const { products, logs } = useStore();
+  const toast = useToast();
+  const [report, setReport] = useState<ImportReport | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function send(data: AppState, source: string) {
+    const ok = confirm(
+      `Move ${plural(data.products.length, "product")} and ` +
+        `${plural(data.logs.length, "entry", "entries")} from ${source} to the server?\n\n` +
+        "Days already on the server are kept as they are. Running this twice is safe.",
+    );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      setReport(
+        await importLegacy({
+          app: BACKUP_APP,
+          version: BACKUP_VERSION,
+          products: data.products,
+          logs: data.logs,
+        }),
+      );
+    } catch (err) {
+      toast(err instanceof ApiError ? err.detail : "Couldn't reach the server.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    let data: unknown;
+    try {
+      data = JSON.parse(await file.text());
+    } catch {
+      toast("That file isn't valid JSON.");
+      return;
+    }
+    if (!looksLikeBackup(data)) {
+      toast("That doesn't look like a Skin Test Log backup.");
+      return;
+    }
+    await send(data, "that backup");
+  }
+
+  return (
+    <div style={{ marginTop: 18 }}>
+      <h3 className="section-h">Move to the server</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        The app is moving your log to the server so it works on any device. Old entries come over
+        with their score, notes, products and photos; they never recorded zones or reactions.
+      </p>
+      <div className="row">
+        <button
+          type="button"
+          className="btn primary grow"
+          disabled={busy || (products.length === 0 && logs.length === 0)}
+          onClick={() => send({ products, logs }, "this browser")}
+        >
+          Move this browser's data to the server
+        </button>
+        <label className="btn grow">
+          Move a backup file
+          <input
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            disabled={busy}
+            onChange={sendFile}
+          />
+        </label>
+      </div>
+      {report && (
+        <div className="warn" role="status" aria-label="Import report">
+          Moved {plural(report.products_created, "product")} and{" "}
+          {plural(report.days_created, "day")}, with {plural(report.photos_saved, "photo")}.
+          {report.days_skipped > 0 &&
+            ` Skipped ${plural(report.days_skipped, "day")} already on the server.`}
+          {report.warnings.length > 0 && (
+            <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+              {report.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SettingsScreen() {
   const { products, logs, replaceAll } = useStore();
   const toast = useToast();
@@ -265,6 +363,8 @@ export function SettingsScreen() {
             />
           </label>
         </div>
+
+        <MoveToServer />
       </div>
     </>
   );

@@ -1,0 +1,76 @@
+{
+  "app": "skin-test-log",
+  "version": 1,
+  "exportedAt": "2026-09-30T12:00:00.000Z",
+  "products": [
+    {
+      "id": "a1",
+      "brand": "CeraVe",
+      "name": "Hydrating Facial Cleanser",
+      "slot": "BOTH",
+      "image": null,
+      "startedOn": "2026-09-01",
+      "stoppedOn": null,
+      "notes": ""
+    },
+    {
+      "id": "b2",
+      "brand": "The Ordinary",
+      "name": "Niacinamide 10% Serum",
+      "slot": "PM",
+      "image": "data:image/jpeg;base64,/9j/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      "startedOn": "2026-09-05",
+      "stoppedOn": "2026-09-20",
+      "notes": "Pea-sized"
+    }
+  ],
+  "logs": [
+    {
+      "id": "l1",
+      "logDate": "2026-09-02",
+      "rating": 2,
+      "tags": [
+        "Pimple"
+      ],
+      "note": "ok",
+      "usedProductIds": [
+        "a1"
+      ],
+      "photos": []
+    },
+    {
+      "id": "l2",
+      "logDate": "2026-09-06",
+      "rating": 4,
+      "tags": [],
+      "note": "",
+      "photos": []
+    },
+    {
+      "id": "l3",
+      "logDate": "2026-09-07",
+      "rating": 3,
+      "tags": [
+        "Redness",
+        "Dryness"
+      ],
+      "note": "itchy",
+      "usedProductIds": [
+        "a1",
+        "b2"
+      ],
+      "photos": [
+        "data:image/jpeg;base64,/9j/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+      ]
+    },
+    {
+      "id": "l4",
+      "logDate": "2026-09-25",
+      "rating": 1,
+      "tags": [],
+      "note": "",
+      "usedProductIds": [],
+      "photos": []
+    }
+  ]
+}

@@ -59,3 +59,12 @@ export type Routine = Record<TimeOfDay, RoutineItem[]>;
 
 /** Product ids planned for a date, in routine order. */
 export type Planned = Record<TimeOfDay, number[]>;
+
+/** What POST /api/import/legacy did. */
+export interface ImportReport {
+  products_created: number;
+  days_created: number;
+  days_skipped: number;
+  photos_saved: number;
+  warnings: string[];
+}

@@ -97,7 +97,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend: a `photos` table and upload endpoints, reusing the
   photo storage from step 5.
 
-### ⬜ Step 12: Legacy import
+### ✅ Step 12: Legacy import
 - **What we're doing:** Moving your old browser data into the database without
   losing anything.
 - **What changes:**
