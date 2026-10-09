@@ -48,7 +48,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend only: a `products` table and the `/api/products`
   endpoints.
 
-### ⬜ Step 5: Product photos
+### ✅ Step 5: Product photos
 - **What we're doing:** Uploading a photo for each product.
 - **What changes:** Backend only: photos are saved to local disk behind a
   swappable storage class, with checks on type and size.

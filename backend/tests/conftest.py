@@ -8,6 +8,7 @@ from skinlog import clock
 from skinlog.db import Base, get_db, make_engine
 from skinlog.main import create_app
 from skinlog.models import User
+from skinlog.photos import LocalDiskPhotoStore, get_photo_store
 
 
 @pytest.fixture
@@ -24,9 +25,15 @@ def db_session(tmp_path) -> Session:
 
 
 @pytest.fixture
-def client(db_session) -> TestClient:
+def photo_store(tmp_path) -> LocalDiskPhotoStore:
+    return LocalDiskPhotoStore(tmp_path / "photos")
+
+
+@pytest.fixture
+def client(db_session, photo_store) -> TestClient:
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db_session
+    app.dependency_overrides[get_photo_store] = lambda: photo_store
     return TestClient(app)
 
 

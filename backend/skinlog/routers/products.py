@@ -1,11 +1,12 @@
 """The user's products: create, list, edit, retire. No hard delete."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from skinlog.db import get_db
 from skinlog.deps import current_user
 from skinlog.models import User
+from skinlog.photos import PhotoStore, get_photo_store, read_photo
 from skinlog.schemas import ProductCreate, ProductOut, ProductUpdate, RetireBody
 from skinlog.services import products as service
 
@@ -61,6 +62,30 @@ def unretire_product(
     product_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> ProductOut:
     return ProductOut.of(service.unretire_product(db, user, product_id))
+
+
+@router.put("/{product_id}/photo")
+def put_photo(
+    product_id: int,
+    file: UploadFile = File(...),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    store: PhotoStore = Depends(get_photo_store),
+) -> ProductOut:
+    service.get_product(db, user, product_id)
+    data, ext = read_photo(file)
+    return ProductOut.of(service.set_photo(db, store, user, product_id, data, ext))
+
+
+@router.delete("/{product_id}/photo", status_code=204)
+def delete_photo(
+    product_id: int,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    store: PhotoStore = Depends(get_photo_store),
+) -> Response:
+    service.remove_photo(db, store, user, product_id)
+    return Response(status_code=204)
 
 
 @router.delete("/{product_id}")

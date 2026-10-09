@@ -44,5 +44,8 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | POST   | `/api/products/{id}/retire` | Retire (optional `retired_on`, default today)           |
 | POST   | `/api/products/{id}/unretire` | Bring a retired product back                          |
 | DELETE | `/api/products/{id}`       | Always 409 — retire instead, so history is kept          |
+| PUT    | `/api/products/{id}/photo` | Upload a photo (multipart `file`; JPEG/PNG/WebP, ≤ 5 MB) |
+| DELETE | `/api/products/{id}/photo` | Remove the photo                                         |
+| GET    | `/api/files/{key}`         | A stored photo (only your own)                           |
 | GET    | `/api/products/search?q=`  | Real products with photos (422 if `q` is under 2 chars)  |
 | GET    | `/api/products/image?url=` | Proxies a product photo from an allow-listed host        |

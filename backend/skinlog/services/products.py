@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from skinlog import clock
 from skinlog.models import Product, User
+from skinlog.photos import PhotoStore
 from skinlog.schemas import ProductCreate, ProductUpdate
 
 
@@ -69,3 +70,24 @@ def unretire_product(db: Session, user: User, product_id: int) -> Product:
     product.retired_on = None
     db.commit()
     return product
+
+
+def set_photo(
+    db: Session, store: PhotoStore, user: User, product_id: int, data: bytes, ext: str
+) -> Product:
+    product = get_product(db, user, product_id)
+    old_key = product.photo_path
+    product.photo_path = store.save(user.id, data, ext)
+    db.commit()
+    if old_key:
+        store.delete(old_key)
+    return product
+
+
+def remove_photo(db: Session, store: PhotoStore, user: User, product_id: int) -> None:
+    product = get_product(db, user, product_id)
+    old_key = product.photo_path
+    product.photo_path = None
+    db.commit()
+    if old_key:
+        store.delete(old_key)

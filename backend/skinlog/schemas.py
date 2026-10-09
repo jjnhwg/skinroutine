@@ -8,6 +8,10 @@ from pydantic import AfterValidator, BaseModel, Field
 from skinlog.models import Product, ProductType
 
 
+def file_url(key: str | None) -> str | None:
+    return f"/api/files/{key}" if key else None
+
+
 def _not_blank(value: str) -> str:
     value = value.strip()
     if not value:
@@ -53,7 +57,7 @@ class ProductOut(BaseModel):
             name=product.name,
             brand=product.brand,
             type=product.type,
-            photo_url=None,
+            photo_url=file_url(product.photo_path),
             started_on=product.started_on,
             retired_on=product.retired_on,
             is_retired=product.retired_on is not None,
