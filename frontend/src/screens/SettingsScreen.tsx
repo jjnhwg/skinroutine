@@ -1,27 +1,17 @@
 import { useState } from "react";
 import { ApiError } from "../api/http";
-import { importLegacy } from "../api/legacy";
+import { importLegacy, readLegacyBackup } from "../api/legacy";
+import type { LegacyData } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
 import { TagSettings } from "../components/TagSettings";
 import { useToast } from "../components/Toast";
-import { todayStr } from "../lib/dates";
-import { useStore } from "../store";
-import type { AppState, Log, Product } from "../types";
 
-const BACKUP_APP = "skin-test-log";
-const BACKUP_VERSION = 1;
-
-interface Backup extends AppState {
-  app: string;
-  version: number;
-  exportedAt: string;
-}
-
-function looksLikeBackup(data: unknown): data is Backup {
+/** A backup file exported by the old browser-only app. */
+function looksLikeBackup(data: unknown): data is LegacyData {
   if (typeof data !== "object" || data === null) return false;
-  const d = data as Partial<Backup>;
-  return d.app === BACKUP_APP && Array.isArray(d.products) && Array.isArray(d.logs);
+  const d = data as Partial<LegacyData> & { app?: unknown };
+  return d.app === "skin-test-log" && Array.isArray(d.products) && Array.isArray(d.logs);
 }
 
 const TIME_ZONES = Intl.supportedValuesOf("timeZone");
@@ -168,14 +158,14 @@ function ReminderSettings() {
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-/** Sends the old localStorage data (or a backup file) to the server. Days already there win. */
+/** Sends the old app's data (left in this browser, or a backup file) to the server. */
 function MoveToServer() {
-  const { products, logs } = useStore();
   const toast = useToast();
+  const [stored] = useState(readLegacyBackup);
   const [report, setReport] = useState<ImportReport | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function send(data: AppState, source: string) {
+  async function send(data: LegacyData, source: string) {
     const ok = confirm(
       `Move ${plural(data.products.length, "product")} and ` +
         `${plural(data.logs.length, "entry", "entries")} from ${source} to the server?\n\n` +
@@ -185,12 +175,7 @@ function MoveToServer() {
     setBusy(true);
     try {
       setReport(
-        await importLegacy({
-          app: BACKUP_APP,
-          version: BACKUP_VERSION,
-          products: data.products,
-          logs: data.logs,
-        }),
+        await importLegacy({ app: "skin-test-log", version: 1, products: data.products, logs: data.logs }),
       );
     } catch (err) {
       toast(err instanceof ApiError ? err.detail : "Couldn't reach the server.");
@@ -218,21 +203,24 @@ function MoveToServer() {
   }
 
   return (
-    <div style={{ marginTop: 18 }}>
-      <h3 className="section-h">Move to the server</h3>
+    <div className="card">
+      <h2>Data from the old app</h2>
       <p className="muted" style={{ marginTop: 0 }}>
-        The app is moving your log to the server so it works on any device. Old entries come over
-        with their score, notes, products and photos; they never recorded zones or reactions.
+        Your log now lives on the server. If the old version of this app kept entries in this
+        browser, or you exported a backup from it, move them over here. Old entries come with their
+        score, notes, products and photos; they never recorded zones or reactions.
       </p>
       <div className="row">
-        <button
-          type="button"
-          className="btn primary grow"
-          disabled={busy || (products.length === 0 && logs.length === 0)}
-          onClick={() => send({ products, logs }, "this browser")}
-        >
-          Move this browser's data to the server
-        </button>
+        {stored && (
+          <button
+            type="button"
+            className="btn primary grow"
+            disabled={busy}
+            onClick={() => send(stored, "this browser")}
+          >
+            Move this browser's data to the server
+          </button>
+        )}
         <label className="btn grow">
           Move a backup file
           <input
@@ -264,110 +252,14 @@ function MoveToServer() {
 }
 
 export function SettingsScreen() {
-  const { products, logs, replaceAll } = useStore();
-  const toast = useToast();
-
-  const photoCount = logs.reduce((sum, l) => sum + l.photos.length, 0);
-
-  function exportBackup() {
-    const payload: Backup = {
-      app: BACKUP_APP,
-      version: BACKUP_VERSION,
-      exportedAt: new Date().toISOString(),
-      products,
-      logs,
-    };
-    const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `skin-test-log-${todayStr()}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }
-
-  async function importBackup(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
-    let data: unknown;
-    try {
-      data = JSON.parse(await file.text());
-    } catch {
-      toast("That file isn't valid JSON.");
-      return;
-    }
-    if (!looksLikeBackup(data)) {
-      toast("That doesn't look like a Skin Test Log backup.");
-      return;
-    }
-
-    const replace = confirm(
-      `Backup has ${data.products.length} products and ${data.logs.length} entries.\n\n` +
-        "OK = replace everything here\nCancel = merge (backup wins on the same day)",
-    );
-
-    let next: AppState;
-    if (replace) {
-      next = { products: data.products, logs: data.logs };
-    } else {
-      const ids = new Set(data.products.map((p: Product) => p.id));
-      const dates = new Set(data.logs.map((l: Log) => l.logDate));
-      next = {
-        products: [...products.filter((p) => !ids.has(p.id)), ...data.products],
-        logs: [...logs.filter((l) => !dates.has(l.logDate)), ...data.logs],
-      };
-    }
-    if (replaceAll(next)) toast("Backup imported");
-  }
-
   return (
     <>
       <h2 className="page-title">Settings</h2>
-      <p className="page-sub">Reminders, insights, tags and backups.</p>
+      <p className="page-sub">Reminders, insights and tags.</p>
 
       <ReminderSettings />
       <TagSettings />
-
-      <div className="card">
-        <h2>Backup</h2>
-        <div className="warn" style={{ marginTop: 0 }}>
-          Your log lives only in this browser. Clearing browser data or switching phones deletes
-          everything unless you've exported a backup.
-        </div>
-
-        <div className="stats" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-          <div className="stat">
-            <b>{products.length}</b>
-            <span>products</span>
-          </div>
-          <div className="stat">
-            <b>{logs.length}</b>
-            <span>entries</span>
-          </div>
-          <div className="stat">
-            <b>{photoCount}</b>
-            <span>photos</span>
-          </div>
-        </div>
-
-        <div className="row" style={{ marginTop: 14 }}>
-          <button className="btn primary grow" onClick={exportBackup}>
-            Export backup
-          </button>
-          <label className="btn grow">
-            Import backup
-            <input
-              type="file"
-              accept="application/json,.json"
-              className="sr-only"
-              onChange={importBackup}
-            />
-          </label>
-        </div>
-
-        <MoveToServer />
-      </div>
+      <MoveToServer />
     </>
   );
 }

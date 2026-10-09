@@ -8,11 +8,14 @@ import { getSettings, updateSettings } from "../api/settings";
 import type { Settings } from "../api/types";
 import { SettingsProvider } from "../api/useSettings";
 import { ToastProvider } from "../components/Toast";
-import { StoreProvider } from "../store";
 import { SettingsScreen } from "./SettingsScreen";
 
 vi.mock("../api/settings");
-vi.mock("../api/legacy");
+// Only the network call; readLegacyBackup really reads localStorage.
+vi.mock("../api/legacy", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../api/legacy")>()),
+  importLegacy: vi.fn(),
+}));
 vi.mock("../api/tags");
 
 const SAVED: Settings = {
@@ -28,11 +31,9 @@ const SAVED: Settings = {
 function renderScreen() {
   return render(
     <ToastProvider>
-      <StoreProvider>
-        <SettingsProvider>
-          <SettingsScreen />
-        </SettingsProvider>
-      </StoreProvider>
+      <SettingsProvider>
+        <SettingsScreen />
+      </SettingsProvider>
     </ToastProvider>,
   );
 }

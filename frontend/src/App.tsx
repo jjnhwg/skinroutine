@@ -7,7 +7,6 @@ import { LogScreen } from "./screens/LogScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { TimelineScreen } from "./screens/TimelineScreen";
-import { StoreProvider } from "./store";
 
 function Screens() {
   const { tab, date } = useRoute();
@@ -28,22 +27,20 @@ function Screens() {
 export default function App() {
   return (
     <ToastProvider>
-      <StoreProvider>
-        <header className="top">
-          <div className="inner">
-            <div className="logo" aria-hidden="true">
-              <DropletIcon />
-            </div>
-            <div>
-              <h1>Skin Test Log</h1>
-              <p>Track your routine, log your skin, see what helps.</p>
-            </div>
+      <header className="top">
+        <div className="inner">
+          <div className="logo" aria-hidden="true">
+            <DropletIcon />
           </div>
-        </header>
-        <SettingsProvider>
-          <Screens />
-        </SettingsProvider>
-      </StoreProvider>
+          <div>
+            <h1>Skin Test Log</h1>
+            <p>Track your routine, log your skin, see what helps.</p>
+          </div>
+        </div>
+      </header>
+      <SettingsProvider>
+        <Screens />
+      </SettingsProvider>
     </ToastProvider>
   );
 }

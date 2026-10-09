@@ -126,7 +126,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
   guide overlay so shots line up from day to day.
 - **What changes:** Frontend: a `PhotoCapture` component on the Log screen.
 
-### ⬜ Step 16: Timeline + drop the local store
+### ✅ Step 16: Timeline + drop the local store
 - **What we're doing:** Making the Timeline a month calendar colored by skin
   score. Tapping a day shows everything you logged for it. The old browser
   storage is removed for good.

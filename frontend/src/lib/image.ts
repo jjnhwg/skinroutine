@@ -6,8 +6,8 @@
 export type SquareFit = "crop" | "pad";
 
 /**
- * Downscale an image to a JPEG data URL before it goes into
- * localStorage — full-size camera photos would blow the quota immediately.
+ * Downscale an image to a JPEG data URL before uploading it — full-size
+ * camera photos are several MB and slow to send from a phone.
  */
 export async function resizeImage(
   file: Blob,

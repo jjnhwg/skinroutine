@@ -17,49 +17,42 @@ npm test         # vitest (jsdom + Testing Library)
 
 ```
 src/
-├── App.tsx          Shell: header, hash-routed screen, tab bar
-├── store.tsx        products + logs, persisted on every commit
-├── types.ts         Product, Log, AppState, Insight, … (local store shapes)
+├── App.tsx          Shell: header, hash-routed screen, tab bar, SettingsProvider
+├── types.ts         Catalog item and product-search shapes, the 1–5 Rating
 ├── api/
 │   ├── http.ts      apiGet / apiSend / apiUpload; non-2xx throws ApiError
-│   ├── types.ts     shapes the backend sends (Settings, …)
-│   ├── settings.ts  GET/PATCH /api/settings
-│   ├── products.ts  /api/products: list, create, edit, retire, photo upload
-│   ├── useProducts.ts  product list + actions that refresh it
+│   ├── types.ts     shapes the backend sends (Settings, Product, Day, Tag, …)
+│   ├── settings.ts  GET/PATCH /api/settings; useSettings.tsx loads them and "today"
+│   ├── products.ts  /api/products; useProducts.ts keeps the list fresh
 │   ├── routine.ts   /api/routine: the saved AM/PM lists and what's planned
-│   ├── days.ts      /api/days: one day's log, save it, list a range
-│   ├── legacy.ts    move the old localStorage data to the server
+│   ├── days.ts      /api/days: one day, save it, list a range, day photos
 │   ├── tags.ts      /api/tags; useTags.ts keeps the list fresh
-│   └── useSettings.tsx  SettingsProvider: loads settings and the server's "today"
+│   └── legacy.ts    reads the old app's localStorage data and moves it to the server
 ├── lib/
 │   ├── dates.ts     UTC-safe helpers over YYYY-MM-DD strings
-│   ├── storage.ts   localStorage read/write
-│   ├── domain.ts    routineFor, usedOn (old local store)
 │   ├── catalog.ts   product catalog + generated bottle SVGs
-│   ├── image.ts     canvas downscaling
+│   ├── image.ts     canvas downscaling, data URL → Blob
 │   ├── productPhoto.ts  real product photo for a picked catalog item
-│   ├── avatar.ts    per-product colour and initials
+│   ├── avatar.ts    per-product colour
 │   ├── router.ts    useRoute() over the URL hash
 │   └── api.ts       product search calls
-├── components/      CheckInForm, RoutineChecklist, RoutineEditor, TagPicker, TagSettings,
-│                    ProductForm, ProductThumb,
-│                    CatalogSheet, Avatar (old Timeline), Icons, Lightbox, TabBar, Toast
-└── screens/         Log, Timeline, Products, Settings
+├── components/      CheckInForm, RoutineChecklist, PhotoCapture, TagPicker, DayDetail,
+│                    RoutineEditor, ProductForm, ProductThumb, TagSettings, CatalogSheet,
+│                    Icons, Lightbox, TabBar, Toast
+├── screens/         Log, Timeline, Products, Settings
+└── test/            setup, render helper, fixtures
 ```
 
 ## Where the data lives
 
-**Products, the routine and daily logs** live on the server. The Log screen
-loads `/api/days/<date>` (pre-ticked from the routine when unsaved) and saves
-with `PUT`. The Timeline still reads the old entries in `localStorage`
-(`skin-test-log-v1`) until it moves to the API; Settings → Move to the server
-copies them over. The backend also holds settings (Settings → Reminders & insights) and
-the online product search below. The app waits for settings on load and shows a
-Retry button if the server can't be reached.
+Everything lives on the server: products and their photos, the routine, each
+day's log and photos, tags and settings. The app never decides "today" itself;
+it uses the date the server sends with the settings, in your time zone.
 
-Photos are resized to JPEG data URLs before storage, so the
-quota is reachable; a rejected write is rolled back and reported rather than
-silently dropped.
+The old version of the app kept everything in this browser's `localStorage`
+(`skin-test-log-v1`). Settings → *Data from the old app* moves that (or an
+exported backup file) to the server. That reader in `api/legacy.ts` is the only
+code that still touches `localStorage`.
 
 ## Product photos
 
@@ -72,11 +65,8 @@ and name when picked.
 
 The chosen photo is downloaded through `/api/products/image` (only from
 allow-listed hosts), padded to a square on a canvas and kept as a data URL like
-any uploaded photo. Without the backend, the catalog search falls back to Open Beauty
+any uploaded photo, then uploaded. Without the backend, the catalog search falls back to Open Beauty
 Facts directly, and anything without a photo keeps its generated bottle.
-
-Settings → Export backup writes a JSON file; Import either replaces everything or
-merges, with the backup winning on a shared date.
 
 ## Styling
 

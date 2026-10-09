@@ -942,7 +942,7 @@ Suggested commit: "chore: add demo data, setup docs, and remove the Supabase lef
 - [x] 4 Products API · [x] 5 Product photos · [x] 6 Products screen
 - [x] 7 Routine API · [x] 8 Routine editor
 - [x] 9 Day log API · [x] 10 Tags · [x] 11 Day photos · [x] 12 Legacy import
-- [x] 13 Log screen · [x] 14 Tags UI · [x] 15 Photo capture · [ ] 16 Timeline + drop local store · [ ] 17 Photo compare
+- [x] 13 Log screen · [x] 14 Tags UI · [x] 15 Photo capture · [x] 16 Timeline + drop local store · [ ] 17 Photo compare
 - [ ] 18 Missed-days API · [ ] 19 Missed-day prompt
 - [ ] 20 Trials API · [ ] 21 Verdict · [ ] 22 Trials UI
 - [ ] 23 Suspects · [ ] 24 Insights screen
