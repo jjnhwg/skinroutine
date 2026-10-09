@@ -3,11 +3,13 @@ import { getDay, saveDay } from "../api/days";
 import { ApiError } from "../api/http";
 import type { Day, ProductUse } from "../api/types";
 import { useProducts } from "../api/useProducts";
+import { useTags } from "../api/useTags";
 import { useSettings } from "../api/useSettings";
 import { CheckInForm } from "../components/CheckInForm";
 import type { CheckIn } from "../components/CheckInForm";
 import { ChevronLeftIcon, ChevronRightIcon } from "../components/Icons";
 import { RoutineChecklist } from "../components/RoutineChecklist";
+import { TagPicker } from "../components/TagPicker";
 import { useToast } from "../components/Toast";
 import { addDays, prettyDate, relativeDay } from "../lib/dates";
 import { navigate } from "../lib/router";
@@ -27,12 +29,14 @@ function checkInFrom(day: Day): CheckIn {
 export function LogScreen({ date }: { date: string }) {
   const { today } = useSettings();
   const { products } = useProducts();
+  const { tags } = useTags();
   const toast = useToast();
 
   const [day, setDay] = useState<Day | null>(null);
   const [loadError, setLoadError] = useState("");
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
   const [uses, setUses] = useState<ProductUse[]>([]);
+  const [tagIds, setTagIds] = useState<number[]>([]);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -41,6 +45,7 @@ export function LogScreen({ date }: { date: string }) {
     setDay(next);
     setCheckIn(checkInFrom(next));
     setUses(next.product_uses);
+    setTagIds(next.tag_ids);
     setNotes(next.notes);
     setError("");
   }
@@ -76,7 +81,7 @@ export function LogScreen({ date }: { date: string }) {
         oiliness: checkIn.oiliness,
         notes: notes.trim(),
         product_uses: uses,
-        tag_ids: day.tag_ids,
+        tag_ids: tagIds,
       });
       load(result);
       toast(saved ? "Entry updated" : "Entry saved");
@@ -172,7 +177,9 @@ export function LogScreen({ date }: { date: string }) {
           </div>
 
           <div className="card">
-            <label className="field" htmlFor="note" style={{ marginTop: 0 }}>
+            <h2>End of day</h2>
+            <TagPicker tags={tags} selected={tagIds} onChange={setTagIds} />
+            <label className="field" htmlFor="note" style={{ marginTop: 18 }}>
               Notes
             </label>
             <textarea

@@ -124,3 +124,10 @@ export interface DaySummary {
   total_breakouts: number;
   has_photos: boolean;
 }
+
+export interface Tag {
+  id: number;
+  name: string;
+  is_default: boolean;
+  hidden: boolean;
+}

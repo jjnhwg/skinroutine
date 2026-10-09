@@ -3,6 +3,7 @@ import { ApiError } from "../api/http";
 import { importLegacy } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
+import { TagSettings } from "../components/TagSettings";
 import { useToast } from "../components/Toast";
 import { todayStr } from "../lib/dates";
 import { useStore } from "../store";
@@ -323,9 +324,10 @@ export function SettingsScreen() {
   return (
     <>
       <h2 className="page-title">Settings</h2>
-      <p className="page-sub">Reminders, insights, and backups.</p>
+      <p className="page-sub">Reminders, insights, tags and backups.</p>
 
       <ReminderSettings />
+      <TagSettings />
 
       <div className="card">
         <h2>Backup</h2>

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDay, saveDay } from "../api/days";
 import { ApiError } from "../api/http";
 import { listProducts } from "../api/products";
+import { listTags } from "../api/tags";
 import { day, NO_ZONES, product } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
 import { LogScreen } from "./LogScreen";
@@ -11,6 +12,7 @@ import { LogScreen } from "./LogScreen";
 vi.mock("../api/settings");
 vi.mock("../api/days");
 vi.mock("../api/products");
+vi.mock("../api/tags");
 
 const CLEANSER = product(1, "Cleanser", { type: "cleanser" });
 const RETINOL = product(2, "Retinol", { type: "treatment" });
@@ -33,6 +35,10 @@ beforeEach(() => {
   vi.mocked(listProducts).mockReset().mockResolvedValue([CLEANSER, RETINOL]);
   vi.mocked(getDay).mockReset();
   vi.mocked(saveDay).mockReset();
+  vi.mocked(listTags).mockReset().mockResolvedValue([
+    { id: 7, name: "Bad sleep", is_default: true, hidden: false },
+    { id: 8, name: "Alcohol", is_default: true, hidden: false },
+  ]);
 });
 
 describe("LogScreen", () => {
@@ -62,6 +68,7 @@ describe("LogScreen", () => {
     await user.click(screen.getByRole("button", { name: /Retinol/ }));
     await user.click(screen.getByRole("button", { name: "More on nose" }));
     await user.type(screen.getByLabelText("Notes"), "!");
+    await user.click(await screen.findByRole("button", { name: "Alcohol" }));
     await user.click(screen.getByRole("button", { name: "Update entry" }));
 
     expect(saveDay).toHaveBeenCalledWith("2026-10-05", {
@@ -75,8 +82,7 @@ describe("LogScreen", () => {
         { product_id: 1, time_of_day: "am" },
         { product_id: 2, time_of_day: "pm" },
       ],
-      // Kept as loaded until the Log screen gets its tag picker.
-      tag_ids: [7],
+      tag_ids: [7, 8],
     });
     expect(await screen.findByText("Entry updated")).toBeInTheDocument();
   });

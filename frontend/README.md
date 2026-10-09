@@ -29,6 +29,7 @@ src/
 │   ├── routine.ts   /api/routine: the saved AM/PM lists and what's planned
 │   ├── days.ts      /api/days: one day's log, save it, list a range
 │   ├── legacy.ts    move the old localStorage data to the server
+│   ├── tags.ts      /api/tags; useTags.ts keeps the list fresh
 │   └── useSettings.tsx  SettingsProvider: loads settings and the server's "today"
 ├── lib/
 │   ├── dates.ts     UTC-safe helpers over YYYY-MM-DD strings
@@ -40,7 +41,8 @@ src/
 │   ├── avatar.ts    per-product colour and initials
 │   ├── router.ts    useRoute() over the URL hash
 │   └── api.ts       product search calls
-├── components/      CheckInForm, RoutineChecklist, RoutineEditor, ProductForm, ProductThumb,
+├── components/      CheckInForm, RoutineChecklist, RoutineEditor, TagPicker, TagSettings,
+│                    ProductForm, ProductThumb,
 │                    CatalogSheet, Avatar (old Timeline), Icons, Lightbox, TabBar, Toast
 └── screens/         Log, Timeline, Products, Settings
 ```

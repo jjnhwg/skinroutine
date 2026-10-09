@@ -115,7 +115,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Frontend: the Log screen stops using browser storage. New
   `CheckInForm` and `RoutineChecklist` components.
 
-### ⬜ Step 14: Tags UI
+### ✅ Step 14: Tags UI
 - **What we're doing:** Adding one-tap tags on the Log screen, and managing
   tags in Settings.
 - **What changes:** Frontend: a `TagPicker` component and a Tags section in
