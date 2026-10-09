@@ -54,3 +54,6 @@ export function dataUrlToBlob(dataUrl: string): Blob {
   const bytes = Uint8Array.from(atob(payload), (c) => c.charCodeAt(0));
   return new Blob([bytes], { type });
 }
+
+/** Longest edge for a day's skin photo. */
+export const PHOTO_MAX = 900;

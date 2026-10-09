@@ -121,7 +121,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Frontend: a `TagPicker` component and a Tags section in
   Settings.
 
-### ⬜ Step 15: Photo capture
+### ✅ Step 15: Photo capture
 - **What we're doing:** Taking front and side photos from your phone, with a
   guide overlay so shots line up from day to day.
 - **What changes:** Frontend: a `PhotoCapture` component on the Log screen.

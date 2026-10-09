@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
-import { getDay, saveDay } from "../api/days";
+import { deleteDayPhoto, getDay, saveDay, uploadDayPhoto } from "../api/days";
 import { ApiError } from "../api/http";
-import type { Day, ProductUse } from "../api/types";
+import type { Angle, Day, ProductUse } from "../api/types";
 import { useProducts } from "../api/useProducts";
 import { useTags } from "../api/useTags";
 import { useSettings } from "../api/useSettings";
 import { CheckInForm } from "../components/CheckInForm";
 import type { CheckIn } from "../components/CheckInForm";
 import { ChevronLeftIcon, ChevronRightIcon } from "../components/Icons";
+import { Lightbox } from "../components/Lightbox";
+import { PhotoCapture } from "../components/PhotoCapture";
 import { RoutineChecklist } from "../components/RoutineChecklist";
 import { TagPicker } from "../components/TagPicker";
 import { useToast } from "../components/Toast";
 import { addDays, prettyDate, relativeDay } from "../lib/dates";
+import { dataUrlToBlob } from "../lib/image";
 import { navigate } from "../lib/router";
+
+const ANGLES: Angle[] = ["front", "left", "right"];
+const NO_PENDING: Record<Angle, string | null> = { front: null, left: null, right: null };
 
 /** The editable parts of a day, filled from what the server sent. */
 function checkInFrom(day: Day): CheckIn {
@@ -40,6 +46,9 @@ export function LogScreen({ date }: { date: string }) {
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  // Photos picked before the day exists on the server; uploaded right after saving.
+  const [pending, setPending] = useState(NO_PENDING);
+  const [viewing, setViewing] = useState<number | null>(null);
 
   function load(next: Day) {
     setDay(next);
@@ -47,7 +56,40 @@ export function LogScreen({ date }: { date: string }) {
     setUses(next.product_uses);
     setTagIds(next.tag_ids);
     setNotes(next.notes);
+    setPending(NO_PENDING);
     setError("");
+  }
+
+  /** Keep the form as the user left it; only the photos changed on the server. */
+  function setPhotos(change: Partial<Day["photos"]>) {
+    setDay((current) => (current ? { ...current, photos: { ...current.photos, ...change } } : current));
+  }
+
+  async function upload(angle: Angle, dataUrl: string) {
+    try {
+      setPhotos((await uploadDayPhoto(date, angle, dataUrlToBlob(dataUrl))).photos);
+    } catch (err) {
+      toast(err instanceof ApiError ? err.detail : `Couldn't upload the ${angle} photo.`);
+    }
+  }
+
+  function pickPhoto(angle: Angle, dataUrl: string) {
+    if (day?.status === "none") setPending((p) => ({ ...p, [angle]: dataUrl }));
+    else void upload(angle, dataUrl);
+  }
+
+  async function removePhoto(angle: Angle) {
+    if (pending[angle]) {
+      setPending((p) => ({ ...p, [angle]: null }));
+      return;
+    }
+    if (!confirm(`Remove the ${angle} photo?`)) return;
+    try {
+      await deleteDayPhoto(date, angle);
+      setPhotos({ [angle]: null });
+    } catch {
+      toast(`Couldn't remove the ${angle} photo.`);
+    }
   }
 
   useEffect(() => {
@@ -63,6 +105,10 @@ export function LogScreen({ date }: { date: string }) {
   }, [date]);
 
   const saved = day?.status === "logged";
+  const shownPhotos = ANGLES.flatMap((angle) => {
+    const url = pending[angle] ?? day?.photos[angle];
+    return url ? [{ angle, url }] : [];
+  });
 
   async function save() {
     if (!day || !checkIn) return;
@@ -83,8 +129,13 @@ export function LogScreen({ date }: { date: string }) {
         product_uses: uses,
         tag_ids: tagIds,
       });
+      const waiting = pending;
       load(result);
       toast(saved ? "Entry updated" : "Entry saved");
+      for (const angle of ANGLES) {
+        const dataUrl = waiting[angle];
+        if (dataUrl) await upload(angle, dataUrl);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Couldn't save — is the server running?");
     } finally {
@@ -177,6 +228,25 @@ export function LogScreen({ date }: { date: string }) {
           </div>
 
           <div className="card">
+            <h2>Photos</h2>
+            <p className="muted" style={{ margin: "-6px 0 0" }}>
+              Optional. Line your face up with the outline, in the same light each day.
+            </p>
+            <div className="captures">
+              {ANGLES.map((angle) => (
+                <PhotoCapture
+                  key={angle}
+                  angle={angle}
+                  url={pending[angle] ?? day.photos[angle]}
+                  onPick={(dataUrl) => pickPhoto(angle, dataUrl)}
+                  onRemove={() => void removePhoto(angle)}
+                  onOpen={() => setViewing(shownPhotos.findIndex((p) => p.angle === angle))}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="card">
             <h2>End of day</h2>
             <TagPicker tags={tags} selected={tagIds} onChange={setTagIds} />
             <label className="field" htmlFor="note" style={{ marginTop: 18 }}>
@@ -201,6 +271,14 @@ export function LogScreen({ date }: { date: string }) {
               {saved ? "Update entry" : "Save entry"}
             </button>
           </div>
+
+          {viewing !== null && viewing >= 0 && (
+            <Lightbox
+              photos={shownPhotos.map((p) => p.url)}
+              startIndex={viewing}
+              onClose={() => setViewing(null)}
+            />
+          )}
         </>
       )}
     </>
