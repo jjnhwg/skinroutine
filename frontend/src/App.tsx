@@ -1,3 +1,4 @@
+import { SettingsProvider } from "./api/useSettings";
 import { DropletIcon } from "./components/Icons";
 import { TabBar } from "./components/TabBar";
 import { ToastProvider } from "./components/Toast";
@@ -39,7 +40,9 @@ export default function App() {
             </div>
           </div>
         </header>
-        <Screens />
+        <SettingsProvider>
+          <Screens />
+        </SettingsProvider>
       </StoreProvider>
     </ToastProvider>
   );

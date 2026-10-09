@@ -8,6 +8,7 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # tsc -b && vite build
 npm run lint     # oxlint
+npm test         # vitest (jsdom + Testing Library)
 ```
 
 `/api/*` is proxied to the FastAPI backend on port 8000 (see `vite.config.ts`).
@@ -18,7 +19,12 @@ npm run lint     # oxlint
 src/
 ├── App.tsx          Shell: header, hash-routed screen, tab bar
 ├── store.tsx        products + logs, persisted on every commit
-├── types.ts         Product, Log, AppState, Insight, …
+├── types.ts         Product, Log, AppState, Insight, … (local store shapes)
+├── api/
+│   ├── http.ts      apiGet / apiSend / apiUpload; non-2xx throws ApiError
+│   ├── types.ts     shapes the backend sends (Settings, …)
+│   ├── settings.ts  GET/PATCH /api/settings
+│   └── useSettings.tsx  SettingsProvider: loads settings and the server's "today"
 ├── lib/
 │   ├── dates.ts     UTC-safe helpers over YYYY-MM-DD strings
 │   ├── storage.ts   localStorage read/write
@@ -28,7 +34,7 @@ src/
 │   ├── productPhoto.ts  real product photo for a picked catalog item
 │   ├── avatar.ts    per-product colour and initials
 │   ├── router.ts    useRoute() over the URL hash
-│   └── api.ts       calls to the backend API
+│   └── api.ts       product search calls
 ├── components/      Avatar, CatalogSheet, Icons, Lightbox, TabBar, Toast
 └── screens/         Log, Timeline, Products, Settings
 ```
@@ -37,7 +43,9 @@ src/
 
 Entries and products are kept in `localStorage` under `skin-test-log-v1`, the
 same key the prototype uses — so the browser is the source of truth and the app
-works offline. The backend is only used for the online product search below.
+works offline. The backend holds settings (Settings → Reminders & insights) and
+the online product search below. The app waits for settings on load and shows a
+Retry button if the server can't be reached.
 
 Photos are resized to JPEG data URLs before storage, so the
 quota is reachable; a rejected write is rolled back and reported rather than

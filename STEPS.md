@@ -33,7 +33,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
     `GET`/`PATCH /api/settings`.
   - No visible change in the app yet.
 
-### ⬜ Step 3: Frontend tests + settings UI
+### ✅ Step 3: Frontend tests + settings UI
 - **What we're doing:** Adding tests to the frontend, plus a Settings section
   where you can edit those settings.
 - **What changes:**
