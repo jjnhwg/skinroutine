@@ -16,3 +16,7 @@ frontend/dist/
 
 # Secrets
 .env
+
+# Local database and uploaded photos
+backend/*.db
+backend/data/

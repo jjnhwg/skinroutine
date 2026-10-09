@@ -24,7 +24,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
   - Frontend: the proxy now points at port 8000, and the "save routine to
     server" call is removed.
 
-### ⬜ Step 2: Database + settings
+### ✅ Step 2: Database + settings
 - **What we're doing:** Giving the app a real database (SQLite) with one user
   (you) and settings: time zone, reminder time and the insights look-ahead
   window. The server becomes the one place that decides what "today" is.

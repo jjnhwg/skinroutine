@@ -3,3 +3,5 @@ uvicorn[standard]==0.54.0
 requests==2.32.3
 python-dotenv==1.2.1
 python-multipart==0.0.32
+sqlalchemy==2.1.4
+alembic==1.20.0

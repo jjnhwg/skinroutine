@@ -938,7 +938,7 @@ Suggested commit: "chore: add demo data, setup docs, and remove the Supabase lef
 
 - [ ] Decisions in §0 confirmed (especially 6, the skin score direction)
 - [ ] Backup exported from the current app (before prompt 6)
-- [x] 1 FastAPI skeleton · [ ] 2 DB + settings · [ ] 3 Frontend tests + settings UI
+- [x] 1 FastAPI skeleton · [x] 2 DB + settings · [ ] 3 Frontend tests + settings UI
 - [ ] 4 Products API · [ ] 5 Product photos · [ ] 6 Products screen
 - [ ] 7 Routine API · [ ] 8 Routine editor
 - [ ] 9 Day log API · [ ] 10 Tags · [ ] 11 Day photos · [ ] 12 Legacy import

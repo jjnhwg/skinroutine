@@ -1,9 +1,11 @@
 """FastAPI app for the skincare test log."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from skinlog.routers import catalog, health
+from skinlog.routers import catalog, health, settings
 
 
 def create_app() -> FastAPI:
@@ -15,9 +17,21 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_exception_handler(RequestValidationError, _validation_error)
     app.include_router(health.router, prefix="/api")
     app.include_router(catalog.router, prefix="/api")
+    app.include_router(settings.router, prefix="/api")
     return app
+
+
+async def _validation_error(_request: Request, error: RequestValidationError) -> JSONResponse:
+    """FastAPI's usual 422 list, minus pydantic's "Value error, " prefix, so the UI can show
+    the message as-is."""
+    detail = [
+        {"loc": item["loc"], "msg": item["msg"].removeprefix("Value error, ")}
+        for item in error.errors()
+    ]
+    return JSONResponse({"detail": detail}, status_code=422)
 
 
 app = create_app()
