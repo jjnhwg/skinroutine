@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiError } from "../api/http";
 import { importLegacy, readLegacyBackup } from "../api/legacy";
+import { sendTestEmail } from "../api/settings";
 import type { LegacyData } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
@@ -31,6 +32,16 @@ function ReminderSettings() {
 
   // The saved zone may be an alias the browser doesn't list; keep it selectable.
   const zones = TIME_ZONES.includes(settings.timezone) ? TIME_ZONES : [settings.timezone, ...TIME_ZONES];
+
+  async function testEmail() {
+    setError("");
+    try {
+      await sendTestEmail();
+      toast(`Test email sent to ${settings.email}`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.detail : "Couldn't send — is the server running?");
+    }
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -149,9 +160,14 @@ function ReminderSettings() {
         </div>
       )}
 
-      <button type="submit" className="btn primary" style={{ marginTop: 14 }} disabled={saving}>
-        Save settings
-      </button>
+      <div className="row" style={{ marginTop: 14 }}>
+        <button type="submit" className="btn primary" disabled={saving}>
+          Save settings
+        </button>
+        <button type="button" className="btn ghost" onClick={testEmail}>
+          Send test email
+        </button>
+      </div>
     </form>
   );
 }

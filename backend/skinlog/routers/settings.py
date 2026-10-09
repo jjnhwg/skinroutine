@@ -3,14 +3,16 @@
 import re
 from zoneinfo import available_timezones
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from skinlog import clock
 from skinlog.db import get_db
+from skinlog.email import EmailSender, get_email_sender
 from skinlog.deps import current_user
 from skinlog.models import User
+from skinlog.reminders import SUBJECT, reminder_body
 
 router = APIRouter(prefix="/settings")
 
@@ -96,3 +98,14 @@ def update_settings(
         setattr(user, key, value)
     db.commit()
     return _out(user)
+
+
+@router.post("/test-email", status_code=204)
+def send_test_email(
+    user: User = Depends(current_user), sender: EmailSender = Depends(get_email_sender)
+) -> Response:
+    """Send the reminder right now, whatever the time, to check delivery works."""
+    if not user.email:
+        raise HTTPException(422, "Add an email address first")
+    sender.send(user.email, SUBJECT, reminder_body())
+    return Response(status_code=204)

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/http";
 import { importLegacy } from "../api/legacy";
 import { createTag, listTags, updateTag } from "../api/tags";
-import { getSettings, updateSettings } from "../api/settings";
+import { getSettings, sendTestEmail, updateSettings } from "../api/settings";
 import type { Settings } from "../api/types";
 import { SettingsProvider } from "../api/useSettings";
 import { ToastProvider } from "../components/Toast";
@@ -41,6 +41,7 @@ function renderScreen() {
 beforeEach(() => {
   vi.mocked(getSettings).mockReset().mockResolvedValue(SAVED);
   vi.mocked(updateSettings).mockReset();
+  vi.mocked(sendTestEmail).mockReset();
   vi.mocked(importLegacy).mockReset();
   vi.mocked(listTags).mockReset().mockResolvedValue([
     { id: 4, name: "Bad sleep", is_default: true, hidden: false },
@@ -229,5 +230,28 @@ describe("Tags", () => {
     await user.type(screen.getByLabelText("New tag"), "Swam");
     await user.click(screen.getByRole("button", { name: "Add tag" }));
     expect(createTag).toHaveBeenCalledWith("Swam");
+  });
+});
+
+describe("Send test email", () => {
+  it("sends one now", async () => {
+    vi.mocked(sendTestEmail).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole("button", { name: "Send test email" }));
+
+    expect(sendTestEmail).toHaveBeenCalled();
+    expect(await screen.findByText("Test email sent to me@example.com")).toBeInTheDocument();
+  });
+
+  it("shows why it couldn't", async () => {
+    vi.mocked(sendTestEmail).mockRejectedValue(new ApiError(422, "Add an email address first"));
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole("button", { name: "Send test email" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Add an email address first");
   });
 });

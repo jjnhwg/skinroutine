@@ -188,7 +188,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 9 — Reminders
 
-### ⬜ Step 25: Daily email reminder
+### ✅ Step 25: Daily email reminder
 - **What we're doing:** Emailing you at your chosen time if today isn't logged
   yet. It can be turned off in Settings.
 - **What changes:**

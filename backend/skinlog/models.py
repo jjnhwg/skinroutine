@@ -24,6 +24,8 @@ class User(Base):
     reminder_enabled: Mapped[bool] = mapped_column(default=True)
     lookahead_min_days: Mapped[int] = mapped_column(default=1)
     lookahead_max_days: Mapped[int] = mapped_column(default=5)
+    # The user's local date of the last reminder, so each day gets at most one.
+    last_reminder_sent_on: Mapped[date | None] = mapped_column(Date)
 
 
 class ProductType(StrEnum):

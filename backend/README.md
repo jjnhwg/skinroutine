@@ -17,9 +17,25 @@ alembic upgrade head   # creates skinlog.db with the single user
 Run `alembic upgrade head` again after pulling changes that add a migration in
 `alembic/versions/`. The app doesn't migrate on startup.
 
-Settings come from `backend/.env` (copy `.env.example`); both are optional:
-`DATABASE_URL` (default `sqlite:///./skinlog.db`) and `PHOTO_DIR` (default
-`./data/photos`).
+Settings come from `backend/.env` (copy `.env.example`); all are optional.
+`DATABASE_URL` and `PHOTO_DIR` say where data lives; the `EMAIL_*`, `SMTP_*` and
+`APP_URL` values set up reminder emails.
+
+## Daily reminder emails
+
+`python -m skinlog.reminders` sends each due reminder once: at the user's
+reminder time (in their time zone), only if today isn't logged yet, at most once a
+day. Run it from cron every 15 minutes, from `backend/`:
+
+```cron
+*/15 * * * * cd /path/to/skinroutine/backend && .venv/bin/python -m skinlog.reminders >> reminders.log 2>&1
+```
+
+The machine running cron has to be on at reminder time, so this belongs on the
+server that hosts the app (still an open question in SPEC.MD). To try it locally,
+set your reminder time to a minute that has passed and run
+`EMAIL_BACKEND=console python -m skinlog.reminders`. Settings → *Send test email*
+sends one immediately.
 
 ## Run
 
@@ -37,6 +53,7 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | GET    | `/api/health`              | `{"status": "ok"}`                                       |
 | GET    | `/api/settings`            | Reminder and insight settings, plus `today` in your zone |
 | PATCH  | `/api/settings`            | Change any of those settings                             |
+| POST   | `/api/settings/test-email` | Send the reminder email now (422 without an email)       |
 | GET    | `/api/products`            | Your products by name (`?include_retired=true` for all)  |
 | POST   | `/api/products`            | Add a product                                            |
 | GET    | `/api/products/{id}`       | One product                                              |
