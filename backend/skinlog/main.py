@@ -11,6 +11,7 @@ from skinlog.routers import (
     files,
     health,
     legacy,
+    missed,
     products,
     routine,
     settings,
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     app.include_router(days.photo_days_router, prefix="/api")
     app.include_router(tags.router, prefix="/api")
     app.include_router(legacy.router, prefix="/api")
+    app.include_router(missed.router, prefix="/api")
     return app
 
 

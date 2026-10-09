@@ -142,7 +142,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 6 — Missed days
 
-### ⬜ Step 18: Missed-days API
+### ✅ Step 18: Missed-days API
 - **What we're doing:** Finding days in the last week you didn't log, and
   letting you answer "followed my usual routine" or "skip" for each.
 - **What changes:** Backend: missed-day logic, plus confirm and skip endpoints.
