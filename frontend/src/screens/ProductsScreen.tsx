@@ -1,159 +1,58 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Avatar } from "../components/Avatar";
-import { CatalogSheet } from "../components/CatalogSheet";
-import { BottleIcon, CameraIcon, ChevronRightIcon, PencilIcon } from "../components/Icons";
+import { useEffect, useState } from "react";
+import type { Product, ProductInput } from "../api/types";
+import { useProducts } from "../api/useProducts";
+import { useSettings } from "../api/useSettings";
+import { BottleIcon, PencilIcon } from "../components/Icons";
+import { ProductForm } from "../components/ProductForm";
+import type { PhotoChange } from "../components/ProductForm";
+import { ProductThumb } from "../components/ProductThumb";
 import { useToast } from "../components/Toast";
-import { CATALOG, productArt } from "../lib/catalog";
-import { SLOT_LABELS } from "../lib/constants";
-import { LONG_DATE, daysBetween, prettyDate, todayStr } from "../lib/dates";
-import { computeInsights, insightCopy } from "../lib/domain";
-import { PRODUCT_IMAGE_MAX, resizeImage } from "../lib/image";
-import { loadProductPhoto } from "../lib/productPhoto";
-import { uid } from "../lib/storage";
-import { useStore } from "../store";
-import type { CatalogItem, Insight, Product, Slot } from "../types";
-
-/** The four bottles shown stacked on the "choose from popular" button. */
-const TEASER_INDEXES = [9, 0, 20, 24];
+import { PRODUCT_TYPE_LABELS } from "../lib/constants";
+import { LONG_DATE, daysBetween, prettyDate } from "../lib/dates";
+import { PRODUCT_IMAGE_MAX, dataUrlToBlob, resizeImage } from "../lib/image";
 
 export function ProductsScreen() {
-  const { products, logs, commit } = useStore();
+  const { products, loading, error, create, update, retire, unretire, uploadPhoto, removePhoto } =
+    useProducts();
+  const { today } = useSettings();
   const toast = useToast();
-  const today = todayStr();
 
-  const [addOpen, setAddOpen] = useState(products.length === 0);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [showRetired, setShowRetired] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
-  const [brand, setBrand] = useState("");
-  const [name, setName] = useState("");
-  const [slot, setSlot] = useState<Slot>("BOTH");
-  const [startedOn, setStartedOn] = useState(today);
-  const [notes, setNotes] = useState("");
-  const [image, setImage] = useState<string | null>(null);
-  const startRef = useRef<HTMLInputElement>(null);
-  const brandRef = useRef<HTMLInputElement>(null);
-  // The catalog item whose photo is still downloading; cleared when the user
-  // picks their own image, so a late download can't overwrite it.
-  const photoFor = useRef<CatalogItem | null>(null);
+  const active = products.filter((p) => !p.is_retired);
+  const retired = products.filter((p) => p.is_retired);
 
-  const insights = useMemo(() => {
-    const list = computeInsights(products, logs);
-    return Object.fromEntries(list.map((i) => [i.productId, i])) as Record<string, Insight>;
-  }, [products, logs]);
-
-  const active = useMemo(
-    () =>
-      products.filter((p) => !p.stoppedOn).sort((a, b) => b.startedOn.localeCompare(a.startedOn)),
-    [products],
-  );
-  const stopped = useMemo(
-    () =>
-      products
-        .filter((p) => p.stoppedOn)
-        .sort((a, b) => (b.stoppedOn as string).localeCompare(a.stoppedOn as string)),
-    [products],
-  );
-
-  function resetForm() {
-    setBrand("");
-    setName("");
-    setSlot("BOTH");
-    setStartedOn(today);
-    setNotes("");
-    setImage(null);
-    photoFor.current = null;
-  }
-
-  function addProduct(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const product: Product = {
-      id: uid(),
-      brand: brand.trim(),
-      name: trimmed,
-      slot,
-      image,
-      startedOn: startedOn || today,
-      stoppedOn: null,
-      notes: notes.trim(),
-    };
-    if (!commit((c) => ({ ...c, products: [...c.products, product] }))) return;
-    resetForm();
-    toast(`Added ${trimmed}`);
-  }
-
-  async function pickFromCatalog(item: CatalogItem) {
-    setSheetOpen(false);
-    setImage(productArt(item)); // shown until the real photo arrives
-    setBrand(item.brand);
-    setName(item.name);
-    setSlot(item.slot);
-    toast("Pick when you started, then tap Add");
-    requestAnimationFrame(() => startRef.current?.focus());
-
-    photoFor.current = item;
-    let photo: string | null = null;
-    try {
-      photo = await loadProductPhoto(item);
-    } catch {
-      // Offline or the shop said no: the drawn bottle stays.
-    }
-    if (photo && photoFor.current === item) setImage(photo);
-    if (photoFor.current === item) photoFor.current = null;
-  }
-
-  /** Came from the picker with a product it didn't have: start the form from the search. */
-  function addOwnFromCatalog(typed: string) {
-    setSheetOpen(false);
-    photoFor.current = null;
-    setImage(null);
-    setBrand("");
-    setName(typed);
-    setSlot("BOTH");
-    toast("Add the brand and a photo if you like, then tap Add");
-    requestAnimationFrame(() => brandRef.current?.focus());
-  }
-
-  async function onNewImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast("Only images can be added.");
-      return;
-    }
-    photoFor.current = null;
-    try {
-      setImage(await resizeImage(file, PRODUCT_IMAGE_MAX, "crop"));
-    } catch {
-      toast("Couldn't read that image.");
-    }
-  }
-
+  // A new user lands on the add form instead of an empty list.
   useEffect(() => {
-    if (!addOpen || sheetOpen) return;
-    async function onPaste(e: ClipboardEvent) {
-      const item = Array.from(e.clipboardData?.items ?? []).find(
-        (i) => i.kind === "file" && i.type.startsWith("image/"),
-      );
-      const file = item?.getAsFile();
-      if (!file) return;
-      e.preventDefault();
-      photoFor.current = null;
-      try {
-        setImage(await resizeImage(file, PRODUCT_IMAGE_MAX, "pad"));
-        toast("Photo pasted");
-      } catch {
-        toast("Couldn't read that image.");
-      }
-    }
-    window.addEventListener("paste", onPaste);
-    return () => window.removeEventListener("paste", onPaste);
-  }, [addOpen, sheetOpen, toast]);
+    if (!loading && !error && products.length === 0) setAddOpen(true);
+  }, [loading, error, products.length]);
 
-  async function changeProductImage(id: string, e: React.ChangeEvent<HTMLInputElement>) {
+  /** Apply a photo change once the product exists; the product itself is already saved. */
+  async function applyPhoto(id: number, photo: PhotoChange) {
+    try {
+      if (photo.kind === "set") await uploadPhoto(id, dataUrlToBlob(photo.dataUrl));
+      if (photo.kind === "remove") await removePhoto(id);
+    } catch {
+      toast("Saved, but the photo didn't upload.");
+    }
+  }
+
+  async function addProduct(input: ProductInput, photo: PhotoChange) {
+    const created = await create(input);
+    await applyPhoto(created.id, photo);
+    toast(`Added ${created.name}`);
+  }
+
+  async function editProduct(id: number, input: ProductInput, photo: PhotoChange) {
+    await update(id, input);
+    await applyPhoto(id, photo);
+    setEditingId(null);
+    toast("Product updated");
+  }
+
+  async function changePhoto(p: Product, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -161,53 +60,54 @@ export function ProductsScreen() {
       toast("Only images can be added.");
       return;
     }
-    let next: string;
     try {
-      next = await resizeImage(file, PRODUCT_IMAGE_MAX, "crop");
-    } catch {
-      toast("Couldn't read that image.");
-      return;
-    }
-    if (
-      commit((c) => ({
-        ...c,
-        products: c.products.map((p) => (p.id === id ? { ...p, image: next } : p)),
-      }))
-    ) {
+      const resized = await resizeImage(file, PRODUCT_IMAGE_MAX, "crop");
+      await uploadPhoto(p.id, dataUrlToBlob(resized));
       toast("Photo updated");
+    } catch {
+      toast("Couldn't update the photo.");
     }
   }
 
-  function stopUsing(product: Product) {
-    const stopDate = today < product.startedOn ? product.startedOn : today;
-    if (
-      commit((c) => ({
-        ...c,
-        products: c.products.map((p) => (p.id === product.id ? { ...p, stoppedOn: stopDate } : p)),
-      }))
-    ) {
-      toast(`Stopped ${product.name}`);
+  async function retireOne(p: Product) {
+    if (!confirm(`Retire ${p.name}? It leaves your routine but stays in your history.`)) return;
+    try {
+      await retire(p.id);
+      toast(`Retired ${p.name}`);
+    } catch {
+      toast(`Couldn't retire ${p.name}.`);
     }
   }
 
-  function deleteProduct(id: string) {
-    if (commit((c) => ({ ...c, products: c.products.filter((p) => p.id !== id) }))) {
-      setPendingDelete(null);
-      toast("Product deleted");
+  async function unretireOne(p: Product) {
+    if (!confirm(`Start using ${p.name} again?`)) return;
+    try {
+      await unretire(p.id);
+      toast(`${p.name} is back`);
+    } catch {
+      toast(`Couldn't bring back ${p.name}.`);
     }
   }
-
-  const nameOf = (id: string) => products.find((p) => p.id === id)?.name ?? "";
 
   function productRow(p: Product) {
-    const ins = insights[p.id];
-    const copy = insightCopy(p, ins);
-    const confirming = pendingDelete === p.id;
+    if (editingId === p.id) {
+      return (
+        <div className="product" key={p.id}>
+          <ProductForm
+            initial={p}
+            today={today}
+            submitLabel="Save changes"
+            onSubmit={(input, photo) => editProduct(p.id, input, photo)}
+            onCancel={() => setEditingId(null)}
+          />
+        </div>
+      );
+    }
     return (
       <div className="product" key={p.id}>
         <div className="head">
           <label className="avatar-btn" title="Change photo">
-            <Avatar product={p} size="lg" />
+            <ProductThumb product={p} size="lg" />
             <span className="edit">
               <PencilIcon />
             </span>
@@ -216,77 +116,43 @@ export function ProductsScreen() {
               accept="image/*"
               className="sr-only"
               aria-label={`Change photo for ${p.name}`}
-              onChange={(e) => changeProductImage(p.id, e)}
+              onChange={(e) => changePhoto(p, e)}
             />
           </label>
           <div className="grow">
             {p.brand && <div className="brand">{p.brand}</div>}
             <h3>{p.name}</h3>
             <div className="muted">
-              {SLOT_LABELS[p.slot]} ·{" "}
-              {p.stoppedOn
-                ? `${prettyDate(p.startedOn, LONG_DATE)} – ${prettyDate(p.stoppedOn, LONG_DATE)}`
-                : `Day ${daysBetween(p.startedOn, today) + 1} · since ${prettyDate(
-                    p.startedOn,
+              {PRODUCT_TYPE_LABELS[p.type]} ·{" "}
+              {p.retired_on
+                ? `${prettyDate(p.started_on, LONG_DATE)} – ${prettyDate(p.retired_on, LONG_DATE)}`
+                : `Day ${daysBetween(p.started_on, today) + 1} · since ${prettyDate(
+                    p.started_on,
                     LONG_DATE,
                   )}`}
             </div>
-            {p.notes && <div style={{ fontSize: 14, marginTop: 2 }}>{p.notes}</div>}
           </div>
         </div>
-
-        <div className="stats">
-          <div className="stat">
-            <b>{ins.entriesSinceStart}</b>
-            <span>entries</span>
-          </div>
-          <div className="stat">
-            <b>{ins.roughDays}</b>
-            <span>rough days</span>
-          </div>
-          <div className="stat">
-            <b>{ins.avgBeforeStart?.toFixed(1) ?? "–"}</b>
-            <span>avg before</span>
-          </div>
-          <div className="stat">
-            <b>{ins.avgSinceStart?.toFixed(1) ?? "–"}</b>
-            <span>avg since</span>
-          </div>
-        </div>
-
-        <div className="insight">
-          {copy.lead && (
-            <span className={copy.verdict === "helps" ? "good" : "bad"}>{copy.lead} </span>
-          )}
-          {copy.text}
-        </div>
-
-        {ins.overlappingProductIds.length > 0 && (
-          <div className="warn" role="note">
-            ⚠ You started {ins.overlappingProductIds.map(nameOf).join(", ")} within a week of{" "}
-            {p.name}, so it's hard to tell which one is making the difference. Try adding one new
-            product at a time.
-          </div>
-        )}
 
         <div className="row" style={{ marginTop: 12 }}>
-          {!p.stoppedOn && (
-            <button className="btn small" onClick={() => stopUsing(p)}>
-              Stop using
+          <button className="btn small" onClick={() => setEditingId(p.id)}>
+            Edit
+          </button>
+          {p.is_retired ? (
+            <button
+              className="btn small ghost"
+              aria-label={`Use ${p.name} again`}
+              onClick={() => unretireOne(p)}
+            >
+              Use again
             </button>
-          )}
-          {confirming ? (
-            <>
-              <button className="btn small danger" onClick={() => deleteProduct(p.id)}>
-                Yes, delete
-              </button>
-              <button className="btn small ghost" onClick={() => setPendingDelete(null)}>
-                Cancel
-              </button>
-            </>
           ) : (
-            <button className="btn small ghost danger" onClick={() => setPendingDelete(p.id)}>
-              Delete
+            <button
+              className="btn small ghost"
+              aria-label={`Retire ${p.name}`}
+              onClick={() => retireOne(p)}
+            >
+              Retire
             </button>
           )}
         </div>
@@ -297,7 +163,7 @@ export function ProductsScreen() {
   return (
     <>
       <h2 className="page-title">Products</h2>
-      <p className="page-sub">What you're testing, and how your skin has responded.</p>
+      <p className="page-sub">What you use, with a photo so it's easy to spot.</p>
 
       <details
         className="card add"
@@ -310,130 +176,22 @@ export function ProductsScreen() {
           </span>
           Add a product
         </summary>
-        <form className="content" onSubmit={addProduct}>
-          <button type="button" className="pick-btn" onClick={() => setSheetOpen(true)}>
-            <span className="stack" aria-hidden="true">
-              {TEASER_INDEXES.map((i) => (
-                <img key={i} src={productArt(CATALOG[i])} alt="" />
-              ))}
-            </span>
-            <span className="grow">
-              <b style={{ display: "block", fontSize: 15 }}>Choose from popular products</b>
-              <span className="muted" style={{ fontSize: 13 }}>
-                {CATALOG.length}+ products, or search online
-              </span>
-            </span>
-            <ChevronRightIcon />
-          </button>
-
-          <div className="or">or type your own</div>
-
-          <div className="img-pick" style={{ marginTop: 12 }}>
-            <label className="preview" style={{ cursor: "pointer" }}>
-              {image ? <img src={image} alt="" /> : <CameraIcon />}
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                aria-label="Product photo"
-                onChange={onNewImage}
-              />
-            </label>
-            <div className="muted" style={{ fontSize: 13 }}>
-              Add a photo of the bottle so it's easy to spot in your routine, or copy one from the
-              web and paste it here (⌘V).{" "}
-              {image && (
-                <button
-                  type="button"
-                  className="link-btn"
-                  onClick={() => {
-                    photoFor.current = null;
-                    setImage(null);
-                  }}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-
-          <label className="field" htmlFor="pbrand">
-            Brand <span className="muted" style={{ fontWeight: 400 }}>(optional)</span>
-          </label>
-          <input
-            type="text"
-            id="pbrand"
-            ref={brandRef}
-            placeholder="e.g. The Ordinary"
-            value={brand}
-            onChange={(e) => setBrand(e.target.value)}
-          />
-
-          <label className="field" htmlFor="pname">
-            Name
-          </label>
-          <input
-            type="text"
-            id="pname"
-            required
-            placeholder="e.g. Azelaic Acid Suspension 10%"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-
-          <div className="row">
-            <div className="grow">
-              <label className="field" htmlFor="pslot">
-                When
-              </label>
-              <select
-                id="pslot"
-                value={slot}
-                onChange={(e) => setSlot(e.target.value as Slot)}
-              >
-                <option value="AM">Morning</option>
-                <option value="PM">Night</option>
-                <option value="BOTH">Morning + night</option>
-              </select>
-            </div>
-            <div className="grow">
-              <label className="field" htmlFor="pstart">
-                Started on
-              </label>
-              <input
-                type="date"
-                id="pstart"
-                ref={startRef}
-                value={startedOn}
-                max={today}
-                required
-                onChange={(e) => setStartedOn(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <label className="field" htmlFor="pnotes">
-            Notes <span className="muted" style={{ fontWeight: 400 }}>(optional)</span>
-          </label>
-          <input
-            type="text"
-            id="pnotes"
-            placeholder="Pea-sized amount, after toner"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-
-          <button className="btn primary" style={{ marginTop: 16, width: "100%" }}>
-            Add product
-          </button>
-        </form>
+        {addOpen && <ProductForm today={today} submitLabel="Add product" onSubmit={addProduct} />}
       </details>
+
+      {error && (
+        <div className="warn" role="alert">
+          {error}
+        </div>
+      )}
 
       <div className="card">
         <h2 className="section-h">
           Using now <span className="count">{active.length}</span>
         </h2>
-        {active.length ? (
+        {loading ? (
+          <p className="muted">Loading…</p>
+        ) : active.length ? (
           active.map(productRow)
         ) : (
           <div className="empty">
@@ -446,21 +204,18 @@ export function ProductsScreen() {
         )}
       </div>
 
-      {stopped.length > 0 && (
+      {retired.length > 0 && (
         <div className="card">
-          <h2 className="section-h">
-            Stopped <span className="count">{stopped.length}</span>
-          </h2>
-          {stopped.map(productRow)}
+          <button
+            type="button"
+            className="toggle"
+            aria-pressed={showRetired}
+            onClick={() => setShowRetired((v) => !v)}
+          >
+            Show retired ({retired.length})
+          </button>
+          {showRetired && <div style={{ marginTop: 14 }}>{retired.map(productRow)}</div>}
         </div>
-      )}
-
-      {sheetOpen && (
-        <CatalogSheet
-          onPick={pickFromCatalog}
-          onAddOwn={addOwnFromCatalog}
-          onClose={() => setSheetOpen(false)}
-        />
       )}
     </>
   );

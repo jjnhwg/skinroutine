@@ -49,3 +49,11 @@ export const PHOTO_MAX = 900;
 
 /** Side length for a square product thumbnail. */
 export const PRODUCT_IMAGE_MAX = 400;
+
+/** Turn a resized data URL back into a Blob for uploading. */
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, payload] = dataUrl.split(",");
+  const type = header.match(/^data:([^;]+)/)?.[1] ?? "application/octet-stream";
+  const bytes = Uint8Array.from(atob(payload), (c) => c.charCodeAt(0));
+  return new Blob([bytes], { type });
+}

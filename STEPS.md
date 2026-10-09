@@ -53,7 +53,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend only: photos are saved to local disk behind a
   swappable storage class, with checks on type and size.
 
-### ⬜ Step 6: Products screen
+### ✅ Step 6: Products screen
 - **What we're doing:** Switching the Products screen to the server. You can
   add, edit, photograph (upload or paste) and retire products. Products without
   a photo show an icon for their type.

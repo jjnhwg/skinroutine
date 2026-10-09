@@ -24,26 +24,30 @@ src/
 │   ├── http.ts      apiGet / apiSend / apiUpload; non-2xx throws ApiError
 │   ├── types.ts     shapes the backend sends (Settings, …)
 │   ├── settings.ts  GET/PATCH /api/settings
+│   ├── products.ts  /api/products: list, create, edit, retire, photo upload
+│   ├── useProducts.ts  product list + actions that refresh it
 │   └── useSettings.tsx  SettingsProvider: loads settings and the server's "today"
 ├── lib/
 │   ├── dates.ts     UTC-safe helpers over YYYY-MM-DD strings
 │   ├── storage.ts   localStorage read/write
-│   ├── domain.ts    routineFor, usedOn, computeInsights, insightCopy
+│   ├── domain.ts    routineFor, usedOn (old local store)
 │   ├── catalog.ts   product catalog + generated bottle SVGs
 │   ├── image.ts     canvas downscaling
 │   ├── productPhoto.ts  real product photo for a picked catalog item
 │   ├── avatar.ts    per-product colour and initials
 │   ├── router.ts    useRoute() over the URL hash
 │   └── api.ts       product search calls
-├── components/      Avatar, CatalogSheet, Icons, Lightbox, TabBar, Toast
+├── components/      Avatar, CatalogSheet, Icons, Lightbox, ProductForm, ProductThumb, TabBar, Toast
 └── screens/         Log, Timeline, Products, Settings
 ```
 
 ## Where the data lives
 
-Entries and products are kept in `localStorage` under `skin-test-log-v1`, the
-same key the prototype uses — so the browser is the source of truth and the app
-works offline. The backend holds settings (Settings → Reminders & insights) and
+**Products** live on the server (`/api/products`), with photos uploaded as JPEG
+files. **Entries** are still kept in `localStorage` under `skin-test-log-v1`, the
+same key the prototype uses, until the Log and Timeline screens move to the API.
+Until then the Log screen still reads the old local product list. The backend
+also holds settings (Settings → Reminders & insights) and
 the online product search below. The app waits for settings on load and shows a
 Retry button if the server can't be reached.
 

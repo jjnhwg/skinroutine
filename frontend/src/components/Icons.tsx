@@ -94,3 +94,48 @@ export const SearchIcon = ({ size = 18 }: IconProps) => (
     <path d="m20 20-3.5-3.5" />
   </svg>
 );
+
+/* Product type icons, shown when a product has no photo. */
+
+export const CleanserIcon = ({ size = 24 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={1.9}>
+    <path d="M10 2h4M12 2v4M9 6h6v3H9z" />
+    <path d="M8 9h8a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V10a1 1 0 0 1 1-1z" />
+  </svg>
+);
+
+export const TonerIcon = ({ size = 24 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={1.9}>
+    <path d="M10 2h4v3h-4z" />
+    <path d="M9 5h6l1 3v12a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V8z" />
+  </svg>
+);
+
+export const SerumIcon = ({ size = 24 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={1.9}>
+    <path d="M10.5 2h3v5h-3z" />
+    <path d="M8 9a1 1 0 0 1 1-2h6a1 1 0 0 1 1 2v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z" />
+    <path d="M12 12v4" />
+  </svg>
+);
+
+export const MoisturizerIcon = ({ size = 24 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={1.9}>
+    <rect x="4" y="6" width="16" height="4" rx="1.5" />
+    <path d="M5 10h14v8a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" />
+  </svg>
+);
+
+export const SunIcon = ({ size = 24 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={1.9}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </svg>
+);
+
+export const TubeIcon = ({ size = 24 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={1.9}>
+    <path d="M7 3h10l-1.5 13h-7z" />
+    <path d="M9.5 16h5v3h-5zM10.5 19h3v2h-3z" />
+  </svg>
+);

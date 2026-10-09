@@ -57,16 +57,6 @@ export interface CatalogItem {
 
 export type ProductShape = "tube" | "pump" | "dropper" | "jar" | "tall" | "small" | "patch";
 
-/** Per-product numbers derived from the logs. */
-export interface Insight {
-  productId: string;
-  entriesSinceStart: number;
-  roughDays: number;
-  avgSinceStart: number | null;
-  avgBeforeStart: number | null;
-  overlappingProductIds: string[];
-}
-
 /** One real product found by the API's online search. */
 export interface ProductSearchResult {
   brand: string;
