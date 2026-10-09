@@ -108,7 +108,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 5 — Daily log (frontend)
 
-### ⬜ Step 13: Log screen
+### ✅ Step 13: Log screen
 - **What we're doing:** Rewriting the daily Log screen on the server: a
   pre-ticked routine checklist, the skin check-in form and notes. Logging should
   take about a minute.

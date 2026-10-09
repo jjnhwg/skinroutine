@@ -1,7 +1,5 @@
 import type { ProductType, Weekday } from "../api/types";
-import type { Rating, Slot } from "../types";
-
-export const TAGS = ["Pimple", "Redness", "Dryness", "Oily", "Irritation", "Itchy"];
+import type { Rating } from "../types";
 
 export const RATING_LABELS: Record<Rating, string> = {
   1: "Clear",
@@ -12,12 +10,6 @@ export const RATING_LABELS: Record<Rating, string> = {
 };
 
 export const RATINGS: Rating[] = [1, 2, 3, 4, 5];
-
-export const SLOT_LABELS: Record<Slot, string> = {
-  AM: "Morning",
-  PM: "Night",
-  BOTH: "Morning + night",
-};
 
 export const STORE_KEY = "skin-test-log-v1";
 

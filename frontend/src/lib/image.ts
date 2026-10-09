@@ -44,9 +44,6 @@ export async function resizeImage(
   return canvas.toDataURL("image/jpeg", 0.8);
 }
 
-/** Longest edge for a day's skin photo. */
-export const PHOTO_MAX = 900;
-
 /** Side length for a square product thumbnail. */
 export const PRODUCT_IMAGE_MAX = 400;
 

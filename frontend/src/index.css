@@ -175,6 +175,20 @@ button { font: inherit; cursor: pointer; }
 .history-item.event .body { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
 .used { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
 
+/* check-in */
+.zone-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.stepper { border: 1px solid var(--border); border-radius: 14px; padding: 8px 10px; }
+.stepper-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 4px; }
+.stepper-row b { font-size: 20px; min-width: 2ch; text-align: center; }
+.stepper-row button { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border); background: #fff; font-size: 20px; line-height: 1; color: var(--text); }
+.stepper-row button:disabled { opacity: .35; }
+.segmented { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.segmented button { min-height: 52px; border-radius: 12px; border: 1.5px solid var(--border); background: #fff; color: var(--text); font-weight: 700; font-size: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.segmented button small { font-weight: 500; font-size: 10.5px; color: var(--text-muted); }
+.segmented button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent-soft); }
+.tile .img .avatar { width: 100%; height: 100%; border-radius: 0; font-size: 28px; }
+
 /* routine editor */
 .routine-list { list-style: none; margin: 0; padding: 0; }
 .routine-row { padding: 10px 0; border-top: 1px solid var(--border); }

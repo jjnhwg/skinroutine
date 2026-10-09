@@ -39,9 +39,9 @@ export function prettyDate(
   });
 }
 
-/** "Today", "Yesterday", or the weekday name. */
-export function relativeDay(s: string): string {
-  const n = daysBetween(s, todayStr());
+/** "Today", "Yesterday", or the weekday name, relative to the server's `today`. */
+export function relativeDay(s: string, today: string): string {
+  const n = daysBetween(s, today);
   if (n === 0) return "Today";
   if (n === 1) return "Yesterday";
   return prettyDate(s, { weekday: "long" });

@@ -1,8 +1,7 @@
-import { SettingsProvider } from "./api/useSettings";
+import { SettingsProvider, useSettings } from "./api/useSettings";
 import { DropletIcon } from "./components/Icons";
 import { TabBar } from "./components/TabBar";
 import { ToastProvider } from "./components/Toast";
-import { todayStr } from "./lib/dates";
 import { useRoute } from "./lib/router";
 import { LogScreen } from "./screens/LogScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
@@ -12,13 +11,14 @@ import { StoreProvider } from "./store";
 
 function Screens() {
   const { tab, date } = useRoute();
+  const { today } = useSettings();
   return (
     <>
       <main id="app" tabIndex={-1}>
         {tab === "timeline" && <TimelineScreen />}
         {tab === "products" && <ProductsScreen />}
         {tab === "settings" && <SettingsScreen />}
-        {tab === "log" && <LogScreen date={date ?? todayStr()} />}
+        {tab === "log" && <LogScreen date={date ?? today} />}
       </main>
       <TabBar current={tab} />
     </>

@@ -26,6 +26,9 @@ src/
 │   ├── settings.ts  GET/PATCH /api/settings
 │   ├── products.ts  /api/products: list, create, edit, retire, photo upload
 │   ├── useProducts.ts  product list + actions that refresh it
+│   ├── routine.ts   /api/routine: the saved AM/PM lists and what's planned
+│   ├── days.ts      /api/days: one day's log, save it, list a range
+│   ├── legacy.ts    move the old localStorage data to the server
 │   └── useSettings.tsx  SettingsProvider: loads settings and the server's "today"
 ├── lib/
 │   ├── dates.ts     UTC-safe helpers over YYYY-MM-DD strings
@@ -37,17 +40,18 @@ src/
 │   ├── avatar.ts    per-product colour and initials
 │   ├── router.ts    useRoute() over the URL hash
 │   └── api.ts       product search calls
-├── components/      Avatar, CatalogSheet, Icons, Lightbox, ProductForm, ProductThumb, TabBar, Toast
+├── components/      CheckInForm, RoutineChecklist, RoutineEditor, ProductForm, ProductThumb,
+│                    CatalogSheet, Avatar (old Timeline), Icons, Lightbox, TabBar, Toast
 └── screens/         Log, Timeline, Products, Settings
 ```
 
 ## Where the data lives
 
-**Products** live on the server (`/api/products`), with photos uploaded as JPEG
-files. **Entries** are still kept in `localStorage` under `skin-test-log-v1`, the
-same key the prototype uses, until the Log and Timeline screens move to the API.
-Until then the Log screen still reads the old local product list. The backend
-also holds settings (Settings → Reminders & insights) and
+**Products, the routine and daily logs** live on the server. The Log screen
+loads `/api/days/<date>` (pre-ticked from the routine when unsaved) and saves
+with `PUT`. The Timeline still reads the old entries in `localStorage`
+(`skin-test-log-v1`) until it moves to the API; Settings → Move to the server
+copies them over. The backend also holds settings (Settings → Reminders & insights) and
 the online product search below. The app waits for settings on load and shows a
 Retry button if the server can't be reached.
 

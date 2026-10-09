@@ -68,3 +68,59 @@ export interface ImportReport {
   photos_saved: number;
   warnings: string[];
 }
+
+export type ZoneName = "forehead" | "nose" | "left_cheek" | "right_cheek" | "chin" | "jawline";
+
+/** Breakout count per zone, 0–50. */
+export type Zones = Record<ZoneName, number>;
+
+export interface ProductUse {
+  product_id: number;
+  time_of_day: TimeOfDay;
+}
+
+/** "none" means nothing is saved for that date yet. */
+export type DayStatus = "none" | "logged" | "routine_confirmed" | "gap";
+
+export type Angle = "front" | "left" | "right";
+
+export interface Day {
+  date: string;
+  status: DayStatus;
+  /** 1 (clear) … 5 (flare-up) */
+  skin_score: number | null;
+  zones: Zones;
+  total_breakouts: number;
+  /** 0–3 each */
+  dryness: number | null;
+  redness: number | null;
+  oiliness: number | null;
+  notes: string;
+  /** Saved uses, or the routine's plan when status is "none". */
+  product_uses: ProductUse[];
+  tag_ids: number[];
+  photos: Record<Angle, string | null>;
+  /** Moved over from the old app: no zones or reactions were recorded. */
+  imported: boolean;
+  planned: Planned;
+}
+
+export interface DayInput {
+  skin_score: number;
+  zones: Zones;
+  dryness: number;
+  redness: number;
+  oiliness: number;
+  notes: string;
+  product_uses: ProductUse[];
+  tag_ids: number[];
+}
+
+/** One calendar cell from GET /api/days?from=&to=. */
+export interface DaySummary {
+  date: string;
+  status: Exclude<DayStatus, "none">;
+  skin_score: number | null;
+  total_breakouts: number;
+  has_photos: boolean;
+}
