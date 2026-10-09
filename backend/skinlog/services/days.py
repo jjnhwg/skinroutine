@@ -8,9 +8,11 @@ from sqlalchemy.orm import Session
 
 from skinlog import clock
 from skinlog.models import (
+    Angle,
     DayLog,
     DayStatus,
     DayTag,
+    Photo,
     Product,
     ProductUse,
     Tag,
@@ -18,7 +20,17 @@ from skinlog.models import (
     Zone,
     ZoneBreakout,
 )
-from skinlog.schemas import DayIn, DayOut, DaySummary, Planned, ProductUseIO, Zones
+from skinlog.photos import PhotoStore
+from skinlog.schemas import (
+    DayIn,
+    DayOut,
+    DayPhotos,
+    DaySummary,
+    Planned,
+    ProductUseIO,
+    Zones,
+    file_url,
+)
 from skinlog.services import routine
 
 MAX_RANGE_DAYS = 92
@@ -64,6 +76,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         notes=log.notes if log else "",
         product_uses=uses,
         tag_ids=sorted(t.tag_id for t in log.tags) if log else [],
+        photos=DayPhotos(**{p.angle: file_url(p.path) for p in log.photos} if log else {}),
         planned=Planned(**planned),
     )
 
@@ -142,6 +155,37 @@ def list_days(db: Session, user: User, start: date, end: date) -> list[DaySummar
             status=log.status,
             skin_score=log.skin_score,
             total_breakouts=sum(zone_counts(log).values()),
+            has_photos=bool(log.photos),
         )
         for log in logs
     ]
+
+
+def set_photo(
+    db: Session, store: PhotoStore, user: User, day: date, angle: Angle, data: bytes, ext: str
+) -> DayOut:
+    log = get_log(db, user, day)
+    if log is None:
+        # The upload needs a day to hang on; the screen saves the day, then uploads.
+        raise HTTPException(409, "Save the day first")
+    old = next((p for p in log.photos if p.angle == angle), None)
+    old_key = old.path if old else None
+    if old:
+        old.path = store.save(user.id, data, ext)
+    else:
+        log.photos.append(Photo(angle=angle, path=store.save(user.id, data, ext)))
+    db.commit()
+    if old_key:
+        store.delete(old_key)
+    return day_out(db, user, day)
+
+
+def remove_photo(db: Session, store: PhotoStore, user: User, day: date, angle: Angle) -> None:
+    log = get_log(db, user, day)
+    photo = next((p for p in log.photos if p.angle == angle), None) if log else None
+    if photo is None:
+        return
+    key = photo.path
+    log.photos.remove(photo)
+    db.commit()
+    store.delete(key)

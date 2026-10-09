@@ -92,7 +92,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend: the `tags` and `day_tags` tables. Days can carry
   tags.
 
-### ⬜ Step 11: Day photos
+### ✅ Step 11: Day photos
 - **What we're doing:** Adding front, left and right skin photos for each day.
 - **What changes:** Backend: a `photos` table and upload endpoints, reusing the
   photo storage from step 5.

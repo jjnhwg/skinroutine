@@ -139,6 +139,14 @@ class DayIn(BaseModel):
     tag_ids: list[int] = []
 
 
+class DayPhotos(BaseModel):
+    """URL per angle, or null."""
+
+    front: str | None = None
+    left: str | None = None
+    right: str | None = None
+
+
 class DayOut(BaseModel):
     date: date
     status: str
@@ -151,6 +159,7 @@ class DayOut(BaseModel):
     notes: str
     product_uses: list[ProductUseIO]
     tag_ids: list[int]
+    photos: DayPhotos
     planned: Planned
 
 
@@ -161,6 +170,7 @@ class DaySummary(BaseModel):
     status: str
     skin_score: int | None
     total_breakouts: int
+    has_photos: bool
 
 
 TagName = Annotated[str, Field(max_length=40), AfterValidator(_not_blank)]

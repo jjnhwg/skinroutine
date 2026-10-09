@@ -105,6 +105,7 @@ class DayLog(Base):
     zones: Mapped[list["ZoneBreakout"]] = relationship(cascade="all, delete-orphan")
     uses: Mapped[list["ProductUse"]] = relationship(cascade="all, delete-orphan")
     tags: Mapped[list["DayTag"]] = relationship(cascade="all, delete-orphan")
+    photos: Mapped[list["Photo"]] = relationship(cascade="all, delete-orphan")
 
 
 class ZoneBreakout(Base):
@@ -149,3 +150,21 @@ class DayTag(Base):
         ForeignKey("day_logs.id", ondelete="CASCADE"), primary_key=True
     )
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
+
+
+class Angle(StrEnum):
+    FRONT = "front"
+    LEFT = "left"
+    RIGHT = "right"
+
+
+class Photo(Base):
+    """One skin photo for a day; path is the PhotoStore key."""
+
+    __tablename__ = "photos"
+    __table_args__ = (UniqueConstraint("day_log_id", "angle"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    day_log_id: Mapped[int] = mapped_column(ForeignKey("day_logs.id", ondelete="CASCADE"))
+    angle: Mapped[Angle] = mapped_column(_enum(Angle))
+    path: Mapped[str] = mapped_column(String(200))

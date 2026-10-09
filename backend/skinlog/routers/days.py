@@ -2,12 +2,13 @@
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from skinlog.db import get_db
 from skinlog.deps import current_user
-from skinlog.models import User
+from skinlog.models import Angle, User
+from skinlog.photos import PhotoStore, get_photo_store, read_photo
 from skinlog.schemas import DayIn, DayOut, DaySummary
 from skinlog.services import days as service
 
@@ -34,3 +35,28 @@ def put_day(
     day: date, body: DayIn, user: User = Depends(current_user), db: Session = Depends(get_db)
 ) -> DayOut:
     return service.save_day(db, user, day, body)
+
+
+@router.put("/{day}/photos/{angle}")
+def put_photo(
+    day: date,
+    angle: Angle,
+    file: UploadFile = File(...),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    store: PhotoStore = Depends(get_photo_store),
+) -> DayOut:
+    data, ext = read_photo(file)
+    return service.set_photo(db, store, user, day, angle, data, ext)
+
+
+@router.delete("/{day}/photos/{angle}", status_code=204)
+def delete_photo(
+    day: date,
+    angle: Angle,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    store: PhotoStore = Depends(get_photo_store),
+) -> Response:
+    service.remove_photo(db, store, user, day, angle)
+    return Response(status_code=204)

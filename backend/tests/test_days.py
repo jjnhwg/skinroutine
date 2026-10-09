@@ -166,8 +166,8 @@ def test_range_returns_only_saved_days_in_range(client, frozen_now):
 
     assert response.status_code == 200
     assert response.json() == [
-        {"date": "2026-10-03", "status": "logged", "skin_score": 4, "total_breakouts": 6},
-        {"date": "2026-10-08", "status": "logged", "skin_score": 2, "total_breakouts": 6},
+        {"date": "2026-10-03", "status": "logged", "skin_score": 4, "total_breakouts": 6, "has_photos": False},
+        {"date": "2026-10-08", "status": "logged", "skin_score": 2, "total_breakouts": 6, "has_photos": False},
     ]
 
 
