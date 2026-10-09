@@ -5,7 +5,9 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
+from skinlog import clock
 from skinlog.models import Product, ProductType
+from skinlog.services import trials
 
 
 def file_url(key: str | None) -> str | None:
@@ -49,9 +51,11 @@ class ProductOut(BaseModel):
     started_on: date
     retired_on: date | None
     is_retired: bool
+    active_trial_id: int | None
 
     @classmethod
     def of(cls, product: Product) -> "ProductOut":
+        active = trials.active_trial(product, clock.today_for(product.user))
         return cls(
             id=product.id,
             name=product.name,
@@ -61,6 +65,7 @@ class ProductOut(BaseModel):
             started_on=product.started_on,
             retired_on=product.retired_on,
             is_retired=product.retired_on is not None,
+            active_trial_id=active.id if active else None,
         )
 
 
@@ -195,3 +200,32 @@ class TagOut(BaseModel):
     name: str
     is_default: bool
     hidden: bool
+
+
+class TrialCreate(BaseModel):
+    product_id: int
+    start_date: date | None = None
+    length_days: int = Field(21, ge=1, le=90)
+
+
+class TrialOut(BaseModel):
+    id: int
+    product: ProductOut
+    start_date: date
+    length_days: int
+    planned_end: date
+    ended_on: date | None
+    end_reason: str | None
+    status: str
+    day_number: int
+    overlapping_trial_ids: list[int]
+
+
+class OverlapWarning(BaseModel):
+    message: str
+    overlapping_trial_ids: list[int]
+
+
+class TrialStarted(BaseModel):
+    trial: TrialOut
+    warning: OverlapWarning | None

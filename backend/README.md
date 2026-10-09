@@ -59,6 +59,9 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | GET    | `/api/missed-days`         | `{dates}`: unlogged days in the last 7 (not today)       |
 | POST   | `/api/days/{date}/confirm-routine` | "Yes, usual routine": records that day's plan    |
 | POST   | `/api/days/{date}/skip`    | "No / Skip": marks a gap, left out of analysis           |
+| GET    | `/api/trials?status=`      | Trials with status, day number and overlaps              |
+| POST   | `/api/trials`              | Start one (default 21 days); warns if it overlaps        |
+| POST   | `/api/trials/{id}/end`     | End a running trial early                                |
 | GET    | `/api/photo-days`          | `{dates: [...]}`: every day with a photo, oldest first   |
 | GET    | `/api/tags`                | Lifestyle tags (`?include_hidden=true` for all)          |
 | POST   | `/api/tags`                | Add a tag (`{name}`, ≤ 40 chars; 409 if it exists)       |

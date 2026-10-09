@@ -22,6 +22,7 @@ def test_create_fills_defaults(client, frozen_now):
         "started_on": "2026-10-09",
         "retired_on": None,
         "is_retired": False,
+        "active_trial_id": None,
     }
 
 

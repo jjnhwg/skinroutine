@@ -51,6 +51,9 @@ class Product(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
+    user: Mapped[User] = relationship()
+    trials: Mapped[list["Trial"]] = relationship(back_populates="product")
+
 
 class RoutineItem(Base):
     """One product in the saved AM or PM routine. schedule is "daily" or e.g. "mon,wed,fri"."""
@@ -171,3 +174,24 @@ class Photo(Base):
     day_log_id: Mapped[int] = mapped_column(ForeignKey("day_logs.id", ondelete="CASCADE"))
     angle: Mapped[Angle] = mapped_column(_enum(Angle))
     path: Mapped[str] = mapped_column(String(200))
+
+
+class EndReason(StrEnum):
+    ENDED_EARLY = "ended_early"
+    PRODUCT_RETIRED = "product_retired"
+
+
+class Trial(Base):
+    """A product under test for length_days from start_date, compared with the 14 days before."""
+
+    __tablename__ = "trials"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
+    start_date: Mapped[date] = mapped_column(Date)
+    length_days: Mapped[int] = mapped_column(default=21)
+    ended_on: Mapped[date | None] = mapped_column(Date)
+    end_reason: Mapped[EndReason | None] = mapped_column(_enum(EndReason))
+
+    product: Mapped[Product] = relationship(back_populates="trials")

@@ -154,7 +154,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 7 — Trials
 
-### ⬜ Step 20: Trials API
+### ✅ Step 20: Trials API
 - **What we're doing:** Marking a product as "testing" for a set length
   (default 21 days), with a warning if trials overlap.
 - **What changes:** Backend: a `trials` table and endpoints. Retiring a product

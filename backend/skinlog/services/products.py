@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from skinlog import clock
 from skinlog.models import Product, User
 from skinlog.photos import PhotoStore
-from skinlog.services import routine
+from skinlog.services import routine, trials
 from skinlog.schemas import ProductCreate, ProductUpdate
 
 
@@ -61,6 +61,7 @@ def retire_product(db: Session, user: User, product_id: int, retired_on: date | 
         raise HTTPException(422, "A product can't be retired before it was started")
     product.retired_on = retired_on
     routine.remove_product(db, product)
+    trials.end_for_retired_product(product, retired_on)
     db.commit()
     return product
 

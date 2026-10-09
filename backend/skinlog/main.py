@@ -16,6 +16,7 @@ from skinlog.routers import (
     routine,
     settings,
     tags,
+    trials,
 )
 
 
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(tags.router, prefix="/api")
     app.include_router(legacy.router, prefix="/api")
     app.include_router(missed.router, prefix="/api")
+    app.include_router(trials.router, prefix="/api")
     return app
 
 
