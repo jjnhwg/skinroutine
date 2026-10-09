@@ -166,7 +166,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend: a shared analysis dataset and the verdict
   calculation, tested against a hand-checked 40-day example.
 
-### ⬜ Step 22: Trials UI
+### ✅ Step 22: Trials UI
 - **What we're doing:** Starting trials from the Products screen and reading
   verdicts in plain words.
 - **What changes:** Frontend: a trial badge on products, a start-trial form and

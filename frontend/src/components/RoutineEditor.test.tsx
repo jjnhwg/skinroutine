@@ -2,25 +2,13 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getRoutine, saveRoutine } from "../api/routine";
-import type { Product, Routine } from "../api/types";
+import type { Routine } from "../api/types";
+import { product } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
 import { RoutineEditor } from "./RoutineEditor";
 
 vi.mock("../api/settings");
 vi.mock("../api/routine");
-
-function product(id: number, name: string): Product {
-  return {
-    id,
-    name,
-    brand: "",
-    type: "serum",
-    photo_url: null,
-    started_on: "2026-09-01",
-    retired_on: null,
-    is_retired: false,
-  };
-}
 
 const CLEANSER = product(1, "Cleanser");
 const SERUM = product(2, "Serum");

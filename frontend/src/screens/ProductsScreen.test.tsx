@@ -8,14 +8,17 @@ import {
   uploadProductPhoto,
 } from "../api/products";
 import { getRoutine } from "../api/routine";
+import { listTrials, startTrial } from "../api/trials";
 import type { Product } from "../api/types";
 import { resizeImage } from "../lib/image";
+import { trial } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
 import { ProductsScreen } from "./ProductsScreen";
 
 vi.mock("../api/settings");
 vi.mock("../api/products");
 vi.mock("../api/routine");
+vi.mock("../api/trials");
 vi.mock("../lib/image", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/image")>()),
   resizeImage: vi.fn(),
@@ -31,6 +34,7 @@ function product(fields: Partial<Product>): Product {
     started_on: "2026-09-01",
     retired_on: null,
     is_retired: false,
+    active_trial_id: null,
     ...fields,
   };
 }
@@ -53,6 +57,8 @@ beforeEach(() => {
   vi.mocked(retireProduct).mockReset();
   vi.mocked(resizeImage).mockReset().mockResolvedValue(JPEG_DATA_URL);
   vi.mocked(getRoutine).mockReset().mockResolvedValue({ am: [], pm: [] });
+  vi.mocked(listTrials).mockReset().mockResolvedValue([]);
+  vi.mocked(startTrial).mockReset();
 });
 
 describe("ProductsScreen", () => {
@@ -162,5 +168,53 @@ describe("ProductsScreen", () => {
     await user.click(screen.getByRole("button", { name: "Retire Snail Mucin" }));
 
     await waitFor(() => expect(getRoutine).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("ProductsScreen trials", () => {
+  const CLEANSER = product({ id: 6, name: "Cleanser", type: "cleanser" });
+
+  it("starts a trial with the chosen length", async () => {
+    vi.mocked(listProducts).mockResolvedValue([ACTIVE, CLEANSER]);
+    vi.mocked(startTrial).mockResolvedValue({ trial: trial(9, CLEANSER), warning: null });
+    const confirm = vi.spyOn(window, "confirm");
+    const user = userEvent.setup();
+    renderWithApp(<ProductsScreen />);
+
+    await user.click(await screen.findByRole("button", { name: "Start a trial of Cleanser" }));
+    const length = screen.getByLabelText("Trial length (days)");
+    expect(length).toHaveValue(21);
+    await user.clear(length);
+    await user.type(length, "14");
+    await user.click(screen.getByRole("button", { name: "Start trial" }));
+
+    expect(startTrial).toHaveBeenCalledWith({ product_id: 6, start_date: "2026-10-09", length_days: 14 });
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("warns before starting a second trial, then shows the overlap", async () => {
+    const running = trial(3, { ...ACTIVE, active_trial_id: 3 }, { day_number: 5, length_days: 21 });
+    vi.mocked(listProducts).mockResolvedValue([{ ...ACTIVE, active_trial_id: 3 }, CLEANSER]);
+    vi.mocked(listTrials).mockResolvedValue([running]);
+    vi.mocked(startTrial).mockResolvedValue({
+      trial: trial(9, CLEANSER, { overlapping_trial_ids: [3] }),
+      warning: { message: "Overlaps with Snail Mucin — both verdicts will be marked overlapping.", overlapping_trial_ids: [3] },
+    });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+    const user = userEvent.setup();
+    renderWithApp(<ProductsScreen />);
+
+    expect(await screen.findByText("Trial · day 5 of 21")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Start a trial of Cleanser" }));
+    await user.click(screen.getByRole("button", { name: "Start trial" }));
+    expect(confirm.mock.calls[0][0]).toContain("Snail Mucin");
+    expect(startTrial).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Start trial" }));
+    expect(startTrial).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("status", { name: "Trial warning" })).toHaveTextContent(
+      "Overlaps with Snail Mucin",
+    );
   });
 });

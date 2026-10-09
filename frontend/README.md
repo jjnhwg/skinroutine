@@ -27,6 +27,8 @@ src/
 │   ├── routine.ts   /api/routine: the saved AM/PM lists and what's planned
 │   ├── days.ts      /api/days: one day, save it, list a range, day photos, photo-days
 │   ├── tags.ts      /api/tags; useTags.ts keeps the list fresh
+│   ├── missed.ts    /api/missed-days, confirm-routine and skip
+│   ├── trials.ts    /api/trials: list, start, end, verdict
 │   └── legacy.ts    reads the old app's localStorage data and moves it to the server
 ├── lib/
 │   ├── dates.ts     UTC-safe helpers over YYYY-MM-DD strings
@@ -38,7 +40,8 @@ src/
 │   └── api.ts       product search calls
 ├── components/      CheckInForm, RoutineChecklist, PhotoCapture, TagPicker, DayDetail,
 │                    RoutineEditor, ProductForm, ProductThumb, TagSettings, CatalogSheet,
-│                    PhotoCompare, PhotoPair, Icons, Lightbox, TabBar, Toast
+│                    PhotoCompare, PhotoPair, MissedDaysPrompt, TrialVerdict,
+│                    Icons, Lightbox, TabBar, Toast
 ├── screens/         Log, Timeline, Products, Settings
 └── test/            setup, render helper, fixtures
 ```

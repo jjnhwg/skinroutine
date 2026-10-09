@@ -208,6 +208,18 @@ button { font: inherit; cursor: pointer; }
 .photo-pair figcaption b { color: var(--text); }
 @media (max-width: 480px) { .photo-pair { grid-template-columns: 1fr; } }
 
+/* trials */
+.verdict-line { font-size: 16px; font-weight: 600; margin: 4px 0 10px; }
+.verdict-line.better { color: var(--good); }
+.verdict-line.worse { color: var(--bad); }
+.verdict-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.verdict-table th, .verdict-table td { padding: 8px 6px; border-top: 1px solid var(--border); text-align: right; }
+.verdict-table th[scope=row] { text-align: left; font-weight: 500; color: var(--text-muted); }
+.verdict-table thead th { border-top: none; font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.trial-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
+.trial-form .field { margin-top: 0; }
+.trial-form input { width: 9rem; }
+
 /* tags */
 .toggle.muted-chip { border-style: dashed; opacity: .75; }
 .tag-list { list-style: none; margin: 0; padding: 0; }

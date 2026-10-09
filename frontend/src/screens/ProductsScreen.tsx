@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Product, ProductInput } from "../api/types";
+import { ApiError } from "../api/http";
+import { listTrials, startTrial } from "../api/trials";
+import type { Product, ProductInput, Trial } from "../api/types";
 import { useProducts } from "../api/useProducts";
 import { useSettings } from "../api/useSettings";
 import { BottleIcon, PencilIcon } from "../components/Icons";
@@ -8,23 +10,92 @@ import type { PhotoChange } from "../components/ProductForm";
 import { ProductThumb } from "../components/ProductThumb";
 import { RoutineEditor } from "../components/RoutineEditor";
 import { useToast } from "../components/Toast";
+import { TrialVerdict } from "../components/TrialVerdict";
 import { PRODUCT_TYPE_LABELS } from "../lib/constants";
 import { LONG_DATE, daysBetween, prettyDate } from "../lib/dates";
 import { PRODUCT_IMAGE_MAX, dataUrlToBlob, resizeImage } from "../lib/image";
 
 export function ProductsScreen() {
-  const { products, loading, error, create, update, retire, unretire, uploadPhoto, removePhoto } =
-    useProducts();
+  const {
+    products,
+    loading,
+    error,
+    reload,
+    create,
+    update,
+    retire,
+    unretire,
+    uploadPhoto,
+    removePhoto,
+  } = useProducts();
   const { today } = useSettings();
   const toast = useToast();
 
   const [addOpen, setAddOpen] = useState(false);
   const [showRetired, setShowRetired] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [trials, setTrials] = useState<Trial[]>([]);
+  const [startingId, setStartingId] = useState<number | null>(null);
+  const [trialLength, setTrialLength] = useState("21");
+  const [trialStart, setTrialStart] = useState(today);
+  const [trialWarning, setTrialWarning] = useState("");
+  const [viewing, setViewing] = useState<Trial | null>(null);
 
   // Memoised: the routine editor reloads whenever this list changes.
   const active = useMemo(() => products.filter((p) => !p.is_retired), [products]);
   const retired = products.filter((p) => p.is_retired);
+
+  // Trials change whenever products do (starting one, retiring a product ends one).
+  useEffect(() => {
+    let live = true;
+    listTrials()
+      .then((loaded) => live && setTrials(loaded))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [products]);
+
+  const activeTrials = trials.filter((t) => t.status === "active");
+  /** The product's most recent trial (a running one is always the most recent). */
+  const trialOf = (p: Product): Trial | undefined =>
+    trials
+      .filter((t) => t.product.id === p.id)
+      .sort((a, b) => b.start_date.localeCompare(a.start_date))[0];
+
+  function openTrialForm(p: Product) {
+    setStartingId(p.id);
+    setTrialLength("21");
+    setTrialStart(today);
+  }
+
+  async function beginTrial(e: React.FormEvent, p: Product) {
+    e.preventDefault();
+    const others = activeTrials.map((t) => t.product.name);
+    if (
+      others.length > 0 &&
+      !confirm(
+        `You're already testing ${others.join(", ")}. Starting ${p.name} now means both ` +
+          "verdicts will be marked overlapping, so it's harder to tell which made the difference. " +
+          "Start anyway?",
+      )
+    ) {
+      return;
+    }
+    try {
+      const started = await startTrial({
+        product_id: p.id,
+        start_date: trialStart || today,
+        length_days: Number(trialLength),
+      });
+      setStartingId(null);
+      setTrialWarning(started.warning?.message ?? "");
+      toast(`Started a ${started.trial.length_days}-day trial of ${p.name}`);
+      await reload();
+    } catch (err) {
+      toast(err instanceof ApiError ? err.detail : "Couldn't start the trial.");
+    }
+  }
 
   // A new user lands on the add form instead of an empty list.
   useEffect(() => {
@@ -105,6 +176,8 @@ export function ProductsScreen() {
         </div>
       );
     }
+    const lastTrial = trialOf(p);
+    const running = lastTrial?.status === "active" ? lastTrial : null;
     return (
       <div className="product" key={p.id}>
         <div className="head">
@@ -124,6 +197,11 @@ export function ProductsScreen() {
           <div className="grow">
             {p.brand && <div className="brand">{p.brand}</div>}
             <h3>{p.name}</h3>
+            {running && (
+              <span className="chip" style={{ marginBottom: 4 }}>
+                Trial · day {running.day_number} of {running.length_days}
+              </span>
+            )}
             <div className="muted">
               {PRODUCT_TYPE_LABELS[p.type]} ·{" "}
               {p.retired_on
@@ -140,6 +218,24 @@ export function ProductsScreen() {
           <button className="btn small" onClick={() => setEditingId(p.id)}>
             Edit
           </button>
+          {!p.is_retired && p.active_trial_id === null && (
+            <button
+              className="btn small ghost"
+              aria-label={`Start a trial of ${p.name}`}
+              onClick={() => openTrialForm(p)}
+            >
+              Start trial
+            </button>
+          )}
+          {lastTrial && (
+            <button
+              className="btn small ghost"
+              aria-label={`See the ${p.name} trial`}
+              onClick={() => setViewing(lastTrial)}
+            >
+              Trial verdict
+            </button>
+          )}
           {p.is_retired ? (
             <button
               className="btn small ghost"
@@ -158,6 +254,44 @@ export function ProductsScreen() {
             </button>
           )}
         </div>
+
+        {startingId === p.id && (
+          <form className="trial-form" onSubmit={(e) => beginTrial(e, p)}>
+            <div>
+              <label className="field" htmlFor={`trial-len-${p.id}`}>
+                Trial length (days)
+              </label>
+              <input
+                type="number"
+                id={`trial-len-${p.id}`}
+                min={1}
+                max={90}
+                required
+                value={trialLength}
+                onChange={(e) => setTrialLength(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="field" htmlFor={`trial-start-${p.id}`}>
+                Start date
+              </label>
+              <input
+                type="date"
+                id={`trial-start-${p.id}`}
+                max={today}
+                required
+                value={trialStart}
+                onChange={(e) => setTrialStart(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="btn primary small">
+              Start trial
+            </button>
+            <button type="button" className="btn ghost small" onClick={() => setStartingId(null)}>
+              Cancel
+            </button>
+          </form>
+        )}
       </div>
     );
   }
@@ -197,6 +331,14 @@ export function ProductsScreen() {
           {error}
         </div>
       )}
+      {trialWarning && (
+        <div className="warn" role="status" aria-label="Trial warning">
+          ⚠ {trialWarning}{" "}
+          <button type="button" className="link-btn" onClick={() => setTrialWarning("")}>
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="card">
         <h2 className="section-h">
@@ -229,6 +371,17 @@ export function ProductsScreen() {
           </button>
           {showRetired && <div style={{ marginTop: 14 }}>{retired.map(productRow)}</div>}
         </div>
+      )}
+
+      {viewing && (
+        <TrialVerdict
+          trial={viewing}
+          onClose={() => setViewing(null)}
+          onEnded={() => {
+            setViewing(null);
+            void reload();
+          }}
+        />
       )}
     </>
   );

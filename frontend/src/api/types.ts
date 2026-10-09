@@ -35,6 +35,7 @@ export interface Product {
   /** YYYY-MM-DD, or null while in use. */
   retired_on: string | null;
   is_retired: boolean;
+  active_trial_id: number | null;
 }
 
 export interface ProductInput {
@@ -130,4 +131,50 @@ export interface Tag {
   name: string;
   is_default: boolean;
   hidden: boolean;
+}
+
+export type TrialStatus = "active" | "completed" | "ended_early";
+
+export interface Trial {
+  id: number;
+  product: Product;
+  start_date: string;
+  length_days: number;
+  planned_end: string;
+  ended_on: string | null;
+  end_reason: "ended_early" | "product_retired" | null;
+  status: TrialStatus;
+  /** The "5" in "day 5 of 21". */
+  day_number: number;
+  overlapping_trial_ids: number[];
+}
+
+export interface TrialStarted {
+  trial: Trial;
+  warning: { message: string; overlapping_trial_ids: number[] } | null;
+}
+
+export interface VerdictWindow {
+  start: string;
+  end: string;
+  outcome_days: number;
+  avg_breakouts: number | null;
+  avg_dryness: number | null;
+  avg_redness: number | null;
+  avg_oiliness: number | null;
+}
+
+export interface VerdictPhoto {
+  date: string;
+  angle: Angle;
+  url: string;
+}
+
+export interface Verdict {
+  before: VerdictWindow;
+  during: VerdictWindow;
+  enough_data: boolean;
+  label: "better" | "worse" | "no_clear_change" | null;
+  flags: { overlapping: boolean; ended_early: boolean; in_progress: boolean };
+  photos: { first: VerdictPhoto | null; last: VerdictPhoto | null };
 }
