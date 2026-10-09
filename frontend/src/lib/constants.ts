@@ -1,4 +1,4 @@
-import type { ProductType } from "../api/types";
+import type { ProductType, Weekday } from "../api/types";
 import type { Rating, Slot } from "../types";
 
 export const TAGS = ["Pimple", "Redness", "Dryness", "Oily", "Irritation", "Itchy"];
@@ -55,3 +55,14 @@ export const CATEGORY_TYPES: Record<string, ProductType> = {
   Sunscreen: "spf",
   Treatment: "treatment",
 };
+
+/** Monday first, matching how the server orders weekdays. */
+export const WEEKDAYS: { day: Weekday; short: string; long: string }[] = [
+  { day: "mon", short: "M", long: "Monday" },
+  { day: "tue", short: "T", long: "Tuesday" },
+  { day: "wed", short: "W", long: "Wednesday" },
+  { day: "thu", short: "T", long: "Thursday" },
+  { day: "fri", short: "F", long: "Friday" },
+  { day: "sat", short: "S", long: "Saturday" },
+  { day: "sun", short: "S", long: "Sunday" },
+];

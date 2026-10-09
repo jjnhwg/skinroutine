@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Product, ProductInput } from "../api/types";
 import { useProducts } from "../api/useProducts";
 import { useSettings } from "../api/useSettings";
@@ -6,6 +6,7 @@ import { BottleIcon, PencilIcon } from "../components/Icons";
 import { ProductForm } from "../components/ProductForm";
 import type { PhotoChange } from "../components/ProductForm";
 import { ProductThumb } from "../components/ProductThumb";
+import { RoutineEditor } from "../components/RoutineEditor";
 import { useToast } from "../components/Toast";
 import { PRODUCT_TYPE_LABELS } from "../lib/constants";
 import { LONG_DATE, daysBetween, prettyDate } from "../lib/dates";
@@ -21,7 +22,8 @@ export function ProductsScreen() {
   const [showRetired, setShowRetired] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const active = products.filter((p) => !p.is_retired);
+  // Memoised: the routine editor reloads whenever this list changes.
+  const active = useMemo(() => products.filter((p) => !p.is_retired), [products]);
   const retired = products.filter((p) => p.is_retired);
 
   // A new user lands on the add form instead of an empty list.
@@ -163,7 +165,18 @@ export function ProductsScreen() {
   return (
     <>
       <h2 className="page-title">Products</h2>
-      <p className="page-sub">What you use, with a photo so it's easy to spot.</p>
+      <p className="page-sub">Your routine, and everything in it.</p>
+
+      {!loading && !error && active.length > 0 && (
+        <div className="card">
+          <h2>Your routine</h2>
+          <p className="muted" style={{ margin: 0 }}>
+            Each day's log starts with these ticked. Set a schedule for anything you don't use
+            daily.
+          </p>
+          <RoutineEditor products={active} />
+        </div>
+      )}
 
       <details
         className="card add"

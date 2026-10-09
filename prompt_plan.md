@@ -940,7 +940,7 @@ Suggested commit: "chore: add demo data, setup docs, and remove the Supabase lef
 - [ ] Backup exported from the current app (before prompt 6)
 - [x] 1 FastAPI skeleton · [x] 2 DB + settings · [x] 3 Frontend tests + settings UI
 - [x] 4 Products API · [x] 5 Product photos · [x] 6 Products screen
-- [x] 7 Routine API · [ ] 8 Routine editor
+- [x] 7 Routine API · [x] 8 Routine editor
 - [ ] 9 Day log API · [ ] 10 Tags · [ ] 11 Day photos · [ ] 12 Legacy import
 - [ ] 13 Log screen · [ ] 14 Tags UI · [ ] 15 Photo capture · [ ] 16 Timeline + drop local store · [ ] 17 Photo compare
 - [ ] 18 Missed-days API · [ ] 19 Missed-day prompt

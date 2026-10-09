@@ -7,6 +7,7 @@ import {
   retireProduct,
   uploadProductPhoto,
 } from "../api/products";
+import { getRoutine } from "../api/routine";
 import type { Product } from "../api/types";
 import { resizeImage } from "../lib/image";
 import { renderWithApp } from "../test/render";
@@ -14,6 +15,7 @@ import { ProductsScreen } from "./ProductsScreen";
 
 vi.mock("../api/settings");
 vi.mock("../api/products");
+vi.mock("../api/routine");
 vi.mock("../lib/image", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/image")>()),
   resizeImage: vi.fn(),
@@ -50,6 +52,7 @@ beforeEach(() => {
   vi.mocked(uploadProductPhoto).mockReset();
   vi.mocked(retireProduct).mockReset();
   vi.mocked(resizeImage).mockReset().mockResolvedValue(JPEG_DATA_URL);
+  vi.mocked(getRoutine).mockReset().mockResolvedValue({ am: [], pm: [] });
 });
 
 describe("ProductsScreen", () => {
@@ -141,5 +144,18 @@ describe("ProductsScreen", () => {
     await user.click(screen.getByRole("button", { name: "Retire Snail Mucin" }));
     expect(retireProduct).toHaveBeenCalledWith(1);
     expect(confirm).toHaveBeenCalledTimes(2);
+  });
+
+  it("reloads the routine after retiring, since the server drops the product from it", async () => {
+    vi.mocked(retireProduct).mockResolvedValue({ ...ACTIVE, retired_on: "2026-10-09", is_retired: true });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    renderWithApp(<ProductsScreen />);
+    await screen.findByRole("heading", { name: "Your routine" });
+    await waitFor(() => expect(getRoutine).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole("button", { name: "Retire Snail Mucin" }));
+
+    await waitFor(() => expect(getRoutine).toHaveBeenCalledTimes(2));
   });
 });

@@ -71,7 +71,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
     date?".
   - Retiring a product takes it out of the routine.
 
-### ⬜ Step 8: Routine editor
+### ✅ Step 8: Routine editor
 - **What we're doing:** Editing those routines in the app: reorder, add,
   remove, and pick weekdays.
 - **What changes:** Frontend: a new routine editor at the top of the Products

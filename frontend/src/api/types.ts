@@ -43,3 +43,19 @@ export interface ProductInput {
   type: ProductType;
   started_on: string;
 }
+
+export type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+export type Schedule = { kind: "daily" } | { kind: "weekdays"; days: Weekday[] };
+
+export type TimeOfDay = "am" | "pm";
+
+export interface RoutineItem {
+  product: Product;
+  schedule: Schedule;
+}
+
+export type Routine = Record<TimeOfDay, RoutineItem[]>;
+
+/** Product ids planned for a date, in routine order. */
+export type Planned = Record<TimeOfDay, number[]>;

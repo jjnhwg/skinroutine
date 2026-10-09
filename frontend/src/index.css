@@ -175,6 +175,16 @@ button { font: inherit; cursor: pointer; }
 .history-item.event .body { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
 .used { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
 
+/* routine editor */
+.routine-list { list-style: none; margin: 0; padding: 0; }
+.routine-row { padding: 10px 0; border-top: 1px solid var(--border); }
+.routine-row:first-child { border-top: none; }
+.routine-row .top { display: flex; align-items: center; gap: 10px; }
+.routine-row .top b { flex: 1; min-width: 0; font-size: 15px; }
+.day-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.day-chips .toggle { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.day-chips .day-chip { width: 32px; padding: 4px 0; }
+
 /* notices and stat tiles */
 .warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); border-radius: 12px; padding: 10px 12px; font-size: 13px; margin-top: 12px; line-height: 1.45; }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
