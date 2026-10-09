@@ -86,7 +86,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend: the `day_logs`, `zone_breakouts` and
   `product_uses` tables, plus the `/api/days` endpoints.
 
-### ⬜ Step 10: Tags
+### ✅ Step 10: Tags
 - **What we're doing:** Adding lifestyle tags such as "bad sleep" and
   "alcohol". There are 7 defaults, and you can add, rename and hide your own.
 - **What changes:** Backend: the `tags` and `day_tags` tables. Days can carry

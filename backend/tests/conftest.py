@@ -9,15 +9,18 @@ from skinlog.db import Base, get_db, make_engine
 from skinlog.main import create_app
 from skinlog.models import User
 from skinlog.photos import LocalDiskPhotoStore, get_photo_store
+from skinlog.services.tags import ensure_default_tags
 
 
 @pytest.fixture
 def db_session(tmp_path) -> Session:
-    """A fresh SQLite file per test, with user 1 already in it."""
+    """A fresh SQLite file per test, with user 1 and the default tags already in it."""
     engine = make_engine(f"sqlite:///{tmp_path / 'test.db'}")
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine)()
     session.add(User(id=1))
+    session.commit()
+    ensure_default_tags(session, 1)
     session.commit()
     yield session
     session.close()

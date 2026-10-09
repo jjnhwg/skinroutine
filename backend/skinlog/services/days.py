@@ -7,7 +7,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from skinlog import clock
-from skinlog.models import DayLog, DayStatus, Product, ProductUse, User, Zone, ZoneBreakout
+from skinlog.models import (
+    DayLog,
+    DayStatus,
+    DayTag,
+    Product,
+    ProductUse,
+    Tag,
+    User,
+    Zone,
+    ZoneBreakout,
+)
 from skinlog.schemas import DayIn, DayOut, DaySummary, Planned, ProductUseIO, Zones
 from skinlog.services import routine
 
@@ -53,6 +63,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         oiliness=log.oiliness if log else None,
         notes=log.notes if log else "",
         product_uses=uses,
+        tag_ids=sorted(t.tag_id for t in log.tags) if log else [],
         planned=Planned(**planned),
     )
 
@@ -71,13 +82,28 @@ def _check_products(db: Session, user: User, day: date, uses: list[ProductUseIO]
             raise HTTPException(422, f"{product.name} was retired before this day")
 
 
+def _check_tags(db: Session, user: User, log: DayLog | None, tag_ids: list[int]) -> None:
+    """Tags must be the user's own; a hidden one may stay on a day but not be newly added."""
+    already = {t.tag_id for t in log.tags} if log else set()
+    tags = {
+        t.id: t for t in db.scalars(select(Tag).where(Tag.user_id == user.id, Tag.id.in_(tag_ids)))
+    }
+    for tag_id in set(tag_ids):
+        tag = tags.get(tag_id)
+        if tag is None:
+            raise HTTPException(422, "That tag doesn't exist")
+        if tag.hidden and tag_id not in already:
+            raise HTTPException(422, f"{tag.name} is hidden; show it again in Settings to use it")
+
+
 def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     """Create or replace the day's log. Saving always makes it a full "logged" day."""
     if day > clock.today_for(user):
         raise HTTPException(422, "You can't log a day that hasn't happened yet")
     _check_products(db, user, day, body.product_uses)
-
     log = get_log(db, user, day)
+    _check_tags(db, user, log, body.tag_ids)
+
     if log is None:
         log = DayLog(user_id=user.id, date=day)
         db.add(log)
@@ -90,10 +116,12 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     # Clear first so replaced rows are deleted before their successors are inserted.
     log.zones.clear()
     log.uses.clear()
+    log.tags.clear()
     db.flush()
     log.zones.extend(ZoneBreakout(zone=zone, count=count) for zone, count in body.zones)
     unique_uses = {(u.product_id, u.time_of_day) for u in body.product_uses}
     log.uses.extend(ProductUse(product_id=pid, time_of_day=tod) for pid, tod in unique_uses)
+    log.tags.extend(DayTag(tag_id=tag_id) for tag_id in set(body.tag_ids))
     db.commit()
     return day_out(db, user, day)
 

@@ -104,6 +104,7 @@ class DayLog(Base):
 
     zones: Mapped[list["ZoneBreakout"]] = relationship(cascade="all, delete-orphan")
     uses: Mapped[list["ProductUse"]] = relationship(cascade="all, delete-orphan")
+    tags: Mapped[list["DayTag"]] = relationship(cascade="all, delete-orphan")
 
 
 class ZoneBreakout(Base):
@@ -124,3 +125,27 @@ class ProductUse(Base):
     )
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), primary_key=True)
     time_of_day: Mapped[str] = mapped_column(String(2), primary_key=True)
+
+
+class Tag(Base):
+    """A lifestyle factor like "Bad sleep". Hidden instead of deleted, so history keeps it."""
+
+    __tablename__ = "tags"
+    __table_args__ = (UniqueConstraint("user_id", "name_key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(40))
+    # Lowercased name, so "Alcohol" and "alcohol" can't both exist.
+    name_key: Mapped[str] = mapped_column(String(40))
+    is_default: Mapped[bool] = mapped_column(default=False)
+    hidden: Mapped[bool] = mapped_column(default=False)
+
+
+class DayTag(Base):
+    __tablename__ = "day_tags"
+
+    day_log_id: Mapped[int] = mapped_column(
+        ForeignKey("day_logs.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)

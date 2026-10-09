@@ -83,6 +83,7 @@ def test_patch_rejects_invalid_values(client, patch):
 
 
 def test_missing_user_explains_how_to_fix(client, db_session):
+    db_session.execute(text("DELETE FROM tags"))
     db_session.execute(text("DELETE FROM users"))
     db_session.commit()
 

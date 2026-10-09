@@ -136,6 +136,7 @@ class DayIn(BaseModel):
     oiliness: Reaction
     notes: str = Field("", max_length=5000)
     product_uses: list[ProductUseIO] = []
+    tag_ids: list[int] = []
 
 
 class DayOut(BaseModel):
@@ -149,6 +150,7 @@ class DayOut(BaseModel):
     oiliness: int | None
     notes: str
     product_uses: list[ProductUseIO]
+    tag_ids: list[int]
     planned: Planned
 
 
@@ -159,3 +161,22 @@ class DaySummary(BaseModel):
     status: str
     skin_score: int | None
     total_breakouts: int
+
+
+TagName = Annotated[str, Field(max_length=40), AfterValidator(_not_blank)]
+
+
+class TagCreate(BaseModel):
+    name: TagName
+
+
+class TagUpdate(BaseModel):
+    name: TagName | None = None
+    hidden: bool | None = None
+
+
+class TagOut(BaseModel):
+    id: int
+    name: str
+    is_default: bool
+    hidden: bool
