@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from skinlog.models import Product, ProductType
 
@@ -104,3 +104,58 @@ class Planned(BaseModel):
 
     am: list[int]
     pm: list[int]
+
+
+Count = Annotated[int, Field(ge=0, le=50)]
+Reaction = Annotated[int, Field(ge=0, le=3)]
+
+
+class Zones(BaseModel):
+    """Breakout count per zone. All six are always sent and returned."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    forehead: Count
+    nose: Count
+    left_cheek: Count
+    right_cheek: Count
+    chin: Count
+    jawline: Count
+
+
+class ProductUseIO(BaseModel):
+    product_id: int
+    time_of_day: TimeOfDay
+
+
+class DayIn(BaseModel):
+    skin_score: int = Field(ge=1, le=5)
+    zones: Zones
+    dryness: Reaction
+    redness: Reaction
+    oiliness: Reaction
+    notes: str = Field("", max_length=5000)
+    product_uses: list[ProductUseIO] = []
+
+
+class DayOut(BaseModel):
+    date: date
+    status: str
+    skin_score: int | None
+    zones: Zones
+    total_breakouts: int
+    dryness: int | None
+    redness: int | None
+    oiliness: int | None
+    notes: str
+    product_uses: list[ProductUseIO]
+    planned: Planned
+
+
+class DaySummary(BaseModel):
+    """One calendar cell."""
+
+    date: date
+    status: str
+    skin_score: int | None
+    total_breakouts: int

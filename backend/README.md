@@ -51,6 +51,10 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | PUT    | `/api/routine/{am\|pm}`    | Replace that list; order = position                      |
 | GET    | `/api/routine/planned?date=` | Product ids planned that day: `{am: [ids], pm: [ids]}` |
 
+| GET    | `/api/days/{date}`         | One day; unsaved days come pre-filled from the routine   |
+| PUT    | `/api/days/{date}`         | Save the day's check-in, notes and products used         |
+| GET    | `/api/days?from=&to=`      | Saved days in a range (≤ 92 days), for the calendar      |
+
 A schedule is `{"kind": "daily"}` or `{"kind": "weekdays", "days": ["mon", "wed", "fri"]}`.
 Weekdays are always `"mon"`…`"sun"`.
 | GET    | `/api/products/search?q=`  | Real products with photos (422 if `q` is under 2 chars)  |

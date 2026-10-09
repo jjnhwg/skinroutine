@@ -79,7 +79,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 4 — Daily log (backend)
 
-### ⬜ Step 9: Day log API
+### ✅ Step 9: Day log API
 - **What we're doing:** Saving a day: products used, a skin score (1–5),
   breakout counts in 6 zones, dryness/redness/oiliness (0–3) and notes.
   Unsaved days come pre-filled with that day's routine.
