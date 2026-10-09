@@ -47,5 +47,11 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 | PUT    | `/api/products/{id}/photo` | Upload a photo (multipart `file`; JPEG/PNG/WebP, ≤ 5 MB) |
 | DELETE | `/api/products/{id}/photo` | Remove the photo                                         |
 | GET    | `/api/files/{key}`         | A stored photo (only your own)                           |
+| GET    | `/api/routine`             | `{am: [...], pm: [...]}`, each `{product, schedule}`     |
+| PUT    | `/api/routine/{am\|pm}`    | Replace that list; order = position                      |
+| GET    | `/api/routine/planned?date=` | Product ids planned that day: `{am: [ids], pm: [ids]}` |
+
+A schedule is `{"kind": "daily"}` or `{"kind": "weekdays", "days": ["mon", "wed", "fri"]}`.
+Weekdays are always `"mon"`…`"sun"`.
 | GET    | `/api/products/search?q=`  | Real products with photos (422 if `q` is under 2 chars)  |
 | GET    | `/api/products/image?url=` | Proxies a product photo from an allow-listed host        |

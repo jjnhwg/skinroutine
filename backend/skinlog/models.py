@@ -3,8 +3,8 @@
 from datetime import date, datetime, timezone
 from enum import StrEnum
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from skinlog.db import Base
 
@@ -50,3 +50,19 @@ class Product(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+
+
+class RoutineItem(Base):
+    """One product in the saved AM or PM routine. schedule is "daily" or e.g. "mon,wed,fri"."""
+
+    __tablename__ = "routine_items"
+    __table_args__ = (UniqueConstraint("user_id", "time_of_day", "product_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
+    time_of_day: Mapped[str] = mapped_column(String(2))
+    position: Mapped[int]
+    schedule: Mapped[str] = mapped_column(String(40))
+
+    product: Mapped[Product] = relationship()

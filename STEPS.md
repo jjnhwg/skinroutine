@@ -63,7 +63,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 
 ## Phase 3 — Saved routine
 
-### ⬜ Step 7: Routine API
+### ✅ Step 7: Routine API
 - **What we're doing:** Saving your AM and PM routines, where each product can
   run every day or on chosen weekdays (e.g. retinol Mon/Wed/Fri).
 - **What changes:**
