@@ -147,7 +147,12 @@ describe("ProductsScreen", () => {
   });
 
   it("reloads the routine after retiring, since the server drops the product from it", async () => {
-    vi.mocked(retireProduct).mockResolvedValue({ ...ACTIVE, retired_on: "2026-10-09", is_retired: true });
+    const cleanser = product({ id: 6, name: "Cleanser", type: "cleanser" });
+    const retiredSnail = { ...ACTIVE, retired_on: "2026-10-09", is_retired: true };
+    vi.mocked(listProducts)
+      .mockResolvedValueOnce([ACTIVE, cleanser])
+      .mockResolvedValue([retiredSnail, cleanser]);
+    vi.mocked(retireProduct).mockResolvedValue(retiredSnail);
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
     renderWithApp(<ProductsScreen />);
