@@ -229,3 +229,39 @@ class OverlapWarning(BaseModel):
 class TrialStarted(BaseModel):
     trial: TrialOut
     warning: OverlapWarning | None
+
+
+class Window(BaseModel):
+    start: date
+    end: date
+    outcome_days: int
+    avg_breakouts: float | None
+    avg_dryness: float | None
+    avg_redness: float | None
+    avg_oiliness: float | None
+
+
+class VerdictPhoto(BaseModel):
+    date: date
+    angle: str
+    url: str
+
+
+class VerdictFlags(BaseModel):
+    overlapping: bool
+    ended_early: bool
+    in_progress: bool
+
+
+class VerdictPhotos(BaseModel):
+    first: VerdictPhoto | None
+    last: VerdictPhoto | None
+
+
+class Verdict(BaseModel):
+    before: Window
+    during: Window
+    enough_data: bool
+    label: Literal["better", "worse", "no_clear_change"] | None
+    flags: VerdictFlags
+    photos: VerdictPhotos

@@ -1,15 +1,25 @@
-"""Product trials: start, list, end early."""
+"""Product trials: start, list, end early, and the before/after verdict."""
 
+from datetime import timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from skinlog import clock
+from skinlog.analysis.dataset import build_dataset
+from skinlog.analysis.trial_verdict import BEFORE_DAYS, verdict
 from skinlog.db import get_db
 from skinlog.deps import current_user
 from skinlog.models import Trial, User
-from skinlog.schemas import OverlapWarning, ProductOut, TrialCreate, TrialOut, TrialStarted
+from skinlog.schemas import (
+    OverlapWarning,
+    ProductOut,
+    TrialCreate,
+    TrialOut,
+    TrialStarted,
+    Verdict,
+)
 from skinlog.services import trials as service
 
 router = APIRouter(prefix="/trials")
@@ -65,3 +75,20 @@ def end_trial(
 ) -> TrialOut:
     trial = service.end_trial(db, user, trial_id)
     return _out(trial, service.list_trials(db, user), user)
+
+
+@router.get("/{trial_id}/verdict")
+def get_verdict(
+    trial_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
+) -> Verdict:
+    """Before vs during. Available any time; flags.in_progress until the trial is over.
+
+    Computed from the current logs on every request, so editing a past day changes it.
+    """
+    trial = service.get_trial(db, user, trial_id)
+    today = clock.today_for(user)
+    start = trial.start_date - timedelta(days=BEFORE_DAYS)
+    end = max(trial.start_date, min(service.end_date(trial), today))
+    records = build_dataset(db, user, start, end)
+    overlapping = bool(service.overlapping_ids(trial, service.list_trials(db, user)))
+    return Verdict(**verdict(records, trial, today, overlapping))

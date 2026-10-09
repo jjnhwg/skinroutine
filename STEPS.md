@@ -160,7 +160,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend: a `trials` table and endpoints. Retiring a product
   ends its trial early.
 
-### ⬜ Step 21: Trial verdict
+### ✅ Step 21: Trial verdict
 - **What we're doing:** Working out the before/after result for a trial: the 14
   days before vs. the trial period, plus first and last photos.
 - **What changes:** Backend: a shared analysis dataset and the verdict
