@@ -220,6 +220,23 @@ button { font: inherit; cursor: pointer; }
 .trial-form .field { margin-top: 0; }
 .trial-form input { width: 9rem; }
 
+/* insights */
+.progress { height: 10px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.progress span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.suspects { list-style: none; margin: 0; padding: 0; }
+.suspects li { border-top: 1px solid var(--border); }
+.suspects li:first-child { border-top: none; }
+.suspect { all: unset; display: block; width: 100%; box-sizing: border-box; padding: 12px 0; font-size: 15px; line-height: 1.45; cursor: pointer; }
+.suspect::after { content: " ▸"; color: var(--text-muted); }
+.suspect[aria-expanded=true]::after { content: " ▾"; }
+.suspect:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.suspect-chart { margin: 0 0 12px; }
+.suspect-chart svg { width: 100%; max-width: 320px; display: block; }
+.suspect-chart .axis { stroke: var(--border-strong); stroke-width: 1; }
+.suspect-chart .value { font-size: 13px; font-weight: 700; fill: var(--text); }
+.suspect-chart .cat { font-size: 12px; fill: var(--text-muted); }
+.suspect-chart figcaption { font-size: 12px; }
+
 /* tags */
 .toggle.muted-chip { border-style: dashed; opacity: .75; }
 .tag-list { list-style: none; margin: 0; padding: 0; }

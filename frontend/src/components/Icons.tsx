@@ -56,6 +56,12 @@ export const ProductsIcon = ({ size = 24 }: IconProps) => (
   </svg>
 );
 
+export const InsightsIcon = ({ size = 24 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={1.9}>
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+  </svg>
+);
+
 export const SettingsIcon = ({ size = 24 }: IconProps) => (
   <svg {...base} width={size} height={size} strokeWidth={1.9}>
     <circle cx="12" cy="12" r="3" />

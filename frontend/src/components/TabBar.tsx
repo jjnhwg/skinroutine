@@ -1,10 +1,11 @@
 import type { ComponentType } from "react";
-import { CalendarIcon, LogIcon, ProductsIcon, SettingsIcon } from "./Icons";
+import { CalendarIcon, InsightsIcon, LogIcon, ProductsIcon, SettingsIcon } from "./Icons";
 import type { Tab } from "../lib/router";
 
 const TABS: { id: Tab; label: string; Icon: ComponentType }[] = [
   { id: "log", label: "Log", Icon: LogIcon },
   { id: "timeline", label: "Timeline", Icon: CalendarIcon },
+  { id: "insights", label: "Insights", Icon: InsightsIcon },
   { id: "products", label: "Products", Icon: ProductsIcon },
   { id: "settings", label: "Settings", Icon: SettingsIcon },
 ];

@@ -945,6 +945,6 @@ Suggested commit: "chore: add demo data, setup docs, and remove the Supabase lef
 - [x] 13 Log screen · [x] 14 Tags UI · [x] 15 Photo capture · [x] 16 Timeline + drop local store · [x] 17 Photo compare
 - [x] 18 Missed-days API · [x] 19 Missed-day prompt
 - [x] 20 Trials API · [x] 21 Verdict · [x] 22 Trials UI
-- [x] 23 Suspects · [ ] 24 Insights screen
+- [x] 23 Suspects · [x] 24 Insights screen
 - [ ] 25 Reminders
 - [ ] 26 Seed, docs, cleanup

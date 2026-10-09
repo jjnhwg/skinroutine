@@ -178,3 +178,26 @@ export interface Verdict {
   flags: { overlapping: boolean; ended_early: boolean; in_progress: boolean };
   photos: { first: VerdictPhoto | null; last: VerdictPhoto | null };
 }
+
+export interface Factor {
+  kind: "product" | "tag";
+  id: number;
+  name: string;
+}
+
+export interface Suspect {
+  factor: Factor;
+  kind: "breakouts" | "dryness" | "redness" | "oiliness";
+  sentence: string;
+  after: { avg: number; days: number };
+  otherwise: { avg: number; days: number };
+  recent: { hits: number; total: number };
+}
+
+export interface Suspects {
+  status: "collecting" | "ready";
+  logged_days: number;
+  required: number;
+  suspects: Suspect[];
+  low_contrast: (Factor & { reason: string })[];
+}

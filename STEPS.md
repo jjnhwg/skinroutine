@@ -180,7 +180,7 @@ The full details and the prompt to paste live in `prompt_plan.md`.
 - **What changes:** Backend: the suspects analysis and endpoint. A "golden"
   test with a planted culprit proves the math works.
 
-### ⬜ Step 24: Insights screen
+### ✅ Step 24: Insights screen
 - **What we're doing:** Adding a new Insights tab that shows suspects as plain
   sentences, each with a chart you can open.
 - **What changes:** Frontend: a new tab and screen, with charts drawn in SVG

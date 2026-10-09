@@ -29,6 +29,7 @@ src/
 │   ├── tags.ts      /api/tags; useTags.ts keeps the list fresh
 │   ├── missed.ts    /api/missed-days, confirm-routine and skip
 │   ├── trials.ts    /api/trials: list, start, end, verdict
+│   ├── insights.ts  /api/insights/suspects
 │   └── legacy.ts    reads the old app's localStorage data and moves it to the server
 ├── lib/
 │   ├── dates.ts     UTC-safe helpers over YYYY-MM-DD strings
@@ -40,9 +41,9 @@ src/
 │   └── api.ts       product search calls
 ├── components/      CheckInForm, RoutineChecklist, PhotoCapture, TagPicker, DayDetail,
 │                    RoutineEditor, ProductForm, ProductThumb, TagSettings, CatalogSheet,
-│                    PhotoCompare, PhotoPair, MissedDaysPrompt, TrialVerdict,
+│                    PhotoCompare, PhotoPair, MissedDaysPrompt, TrialVerdict, SuspectChart,
 │                    Icons, Lightbox, TabBar, Toast
-├── screens/         Log, Timeline, Products, Settings
+├── screens/         Log, Timeline, Insights, Products, Settings
 └── test/            setup, render helper, fixtures
 ```
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ApiError } from "../api/http";
 import type { Tag } from "../api/types";
 import { useTags } from "../api/useTags";
@@ -15,9 +15,8 @@ function TagRow({
   onRename: (name: string) => Promise<void>;
   onToggleHidden: () => void;
 }) {
+  // The parent keys rows by id and name, so a rename from the server starts a fresh row.
   const [name, setName] = useState(tag.name);
-
-  useEffect(() => setName(tag.name), [tag.name]);
 
   async function commit() {
     const trimmed = name.trim();
@@ -93,7 +92,7 @@ export function TagSettings() {
       <ul className="tag-list">
         {tags.map((tag) => (
           <TagRow
-            key={tag.id}
+            key={`${tag.id}:${tag.name}`}
             tag={tag}
             onRename={async (name) => {
               await run(() => update(tag.id, { name }), "Tag renamed");

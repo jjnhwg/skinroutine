@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-export type Tab = "log" | "timeline" | "products" | "settings";
+export type Tab = "log" | "timeline" | "insights" | "products" | "settings";
 
-const TABS: Tab[] = ["log", "timeline", "products", "settings"];
+const TABS: Tab[] = ["log", "timeline", "insights", "products", "settings"];
 
 export interface Route {
   tab: Tab;

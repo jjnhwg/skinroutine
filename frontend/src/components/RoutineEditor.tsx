@@ -28,13 +28,12 @@ interface SectionProps {
 
 function RoutineSection({ timeOfDay, saved, products, onSaved }: SectionProps) {
   const toast = useToast();
+  // Starts from `saved`; the parent remounts this section (via key) when saved changes.
   const [items, setItems] = useState(saved);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const title = TITLES[timeOfDay];
   const label = title.toLowerCase();
-
-  useEffect(() => setItems(saved), [saved]);
 
   const listed = new Set(items.map((i) => i.product.id));
   const addable = products.filter((p) => !listed.has(p.id));
@@ -184,6 +183,10 @@ interface RoutineEditorProps {
 export function RoutineEditor({ products }: RoutineEditorProps) {
   const [am, setAm] = useState<RoutineItem[] | null>(null);
   const [pm, setPm] = useState<RoutineItem[] | null>(null);
+  // Bumped when a list comes from the server, so that section starts fresh
+  // (one counter each, so saving Morning keeps unsaved Night edits).
+  const [amVersion, setAmVersion] = useState(0);
+  const [pmVersion, setPmVersion] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -193,6 +196,8 @@ export function RoutineEditor({ products }: RoutineEditorProps) {
         if (!live) return;
         setAm(routine.am);
         setPm(routine.pm);
+        setAmVersion((v) => v + 1);
+        setPmVersion((v) => v + 1);
       })
       .catch(() => live && setError("Couldn't load your routine."));
     return () => {
@@ -205,8 +210,26 @@ export function RoutineEditor({ products }: RoutineEditorProps) {
 
   return (
     <>
-      <RoutineSection timeOfDay="am" saved={am} products={products} onSaved={setAm} />
-      <RoutineSection timeOfDay="pm" saved={pm} products={products} onSaved={setPm} />
+      <RoutineSection
+        key={`am-${amVersion}`}
+        timeOfDay="am"
+        saved={am}
+        products={products}
+        onSaved={(items) => {
+          setAm(items);
+          setAmVersion((v) => v + 1);
+        }}
+      />
+      <RoutineSection
+        key={`pm-${pmVersion}`}
+        timeOfDay="pm"
+        saved={pm}
+        products={products}
+        onSaved={(items) => {
+          setPm(items);
+          setPmVersion((v) => v + 1);
+        }}
+      />
     </>
   );
 }
