@@ -18,9 +18,6 @@ def checkin(**overrides) -> dict:
     return {
         "skin_score": 2,
         "zones": ZONES,
-        "dryness": 1,
-        "redness": 0,
-        "oiliness": 2,
         "notes": "Felt fine",
         "product_uses": [],
         **overrides,
@@ -66,7 +63,6 @@ def test_put_then_get_round_trips(client, routine):
     assert day["skin_score"] == 2
     assert day["zones"] == ZONES
     assert day["total_breakouts"] == 6
-    assert (day["dryness"], day["redness"], day["oiliness"]) == (1, 0, 2)
     assert day["notes"] == "Felt fine"
     assert day["product_uses"] == uses
     # The plan is still reported, so the screen can show what was skipped.
@@ -117,9 +113,6 @@ def test_future_date_is_422(client, frozen_now):
         {"skin_score": 0},
         {"skin_score": 6},
         {"skin_score": None},
-        {"dryness": 4},
-        {"redness": -1},
-        {"oiliness": None},
         {"zones": {**ZONES, "nose": -1}},
         {"zones": {**ZONES, "nose": 51}},
         {"zones": {k: v for k, v in ZONES.items() if k != "jawline"}},

@@ -13,7 +13,7 @@ ZONES = dict.fromkeys(["forehead", "nose", "left_cheek", "right_cheek", "chin", 
 def saved_day(client, frozen_now) -> str:
     client.put(
         f"/api/days/{MONDAY}",
-        json={"skin_score": 2, "zones": ZONES, "dryness": 0, "redness": 0, "oiliness": 0},
+        json={"skin_score": 2, "zones": ZONES},
     )
     return MONDAY
 
@@ -67,14 +67,14 @@ def test_saving_the_day_again_keeps_photos(client, saved_day):
 
     client.put(
         f"/api/days/{saved_day}",
-        json={"skin_score": 3, "zones": ZONES, "dryness": 1, "redness": 0, "oiliness": 0},
+        json={"skin_score": 3, "zones": ZONES},
     )
 
     assert client.get(f"/api/days/{saved_day}").json()["photos"]["front"] == url
 
 
 def test_range_reports_has_photos(client, saved_day):
-    client.put("/api/days/2026-10-06", json={"skin_score": 2, "zones": ZONES, "dryness": 0, "redness": 0, "oiliness": 0})
+    client.put("/api/days/2026-10-06", json={"skin_score": 2, "zones": ZONES})
     client.put(f"/api/days/{saved_day}/photos/right", files=upload())
 
     days = client.get("/api/days", params={"from": "2026-10-01", "to": "2026-10-09"}).json()
@@ -112,7 +112,7 @@ def test_other_users_day_photos_stay_hidden(client, db_session, other_user, phot
 
 def test_photo_days_lists_every_date_with_a_photo(client, frozen_now, db_session, other_user):
     for day in ["2026-10-01", "2026-09-15", "2026-10-03"]:
-        client.put(f"/api/days/{day}", json={"skin_score": 2, "zones": ZONES, "dryness": 0, "redness": 0, "oiliness": 0})
+        client.put(f"/api/days/{day}", json={"skin_score": 2, "zones": ZONES})
     client.put("/api/days/2026-10-01/photos/left", files=upload())
     client.put("/api/days/2026-09-15/photos/front", files=upload())
     theirs = DayLog(user_id=other_user.id, date=date(2026, 8, 1), status="logged")

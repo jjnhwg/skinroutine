@@ -97,11 +97,12 @@ class DayLog(Base):
     date: Mapped[date] = mapped_column(Date)
     status: Mapped[DayStatus] = mapped_column(_enum(DayStatus))
     skin_score: Mapped[int | None]
+    # Retired 0–3 ratings: kept so old values aren't lost, but no longer read or written.
     dryness: Mapped[int | None]
     redness: Mapped[int | None]
     oiliness: Mapped[int | None]
     notes: Mapped[str] = mapped_column(Text, default="")
-    # Moved over from the old browser app: it has a score but no zones or reactions,
+    # Moved over from the old browser app: it has a score but no zones,
     # so analysis uses it for exposures only. Saving the day clears it.
     imported: Mapped[bool] = mapped_column(default=False)
     updated_at: Mapped[datetime] = mapped_column(

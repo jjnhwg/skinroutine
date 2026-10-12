@@ -92,16 +92,12 @@ export interface Day {
   skin_score: number | null;
   zones: Zones;
   total_breakouts: number;
-  /** 0–3 each */
-  dryness: number | null;
-  redness: number | null;
-  oiliness: number | null;
   notes: string;
   /** Saved uses, or the routine's plan when status is "none". */
   product_uses: ProductUse[];
   tag_ids: number[];
   photos: Record<Angle, string | null>;
-  /** Moved over from the old app: no zones or reactions were recorded. */
+  /** Moved over from the old app: no zones were recorded. */
   imported: boolean;
   planned: Planned;
 }
@@ -109,9 +105,6 @@ export interface Day {
 export interface DayInput {
   skin_score: number;
   zones: Zones;
-  dryness: number;
-  redness: number;
-  oiliness: number;
   notes: string;
   product_uses: ProductUse[];
   tag_ids: number[];
@@ -159,9 +152,6 @@ export interface VerdictWindow {
   end: string;
   outcome_days: number;
   avg_breakouts: number | null;
-  avg_dryness: number | null;
-  avg_redness: number | null;
-  avg_oiliness: number | null;
 }
 
 export interface VerdictPhoto {
@@ -187,7 +177,7 @@ export interface Factor {
 
 export interface Suspect {
   factor: Factor;
-  kind: "breakouts" | "dryness" | "redness" | "oiliness";
+  kind: "breakouts";
   sentence: string;
   after: { avg: number; days: number };
   otherwise: { avg: number; days: number };

@@ -1,15 +1,14 @@
-"""Products and tags that tend to come before breakouts or reactions (spec §3.7).
+"""Products and tags that tend to come before breakouts (spec §3.7).
 
 With a look-ahead window [lo, hi], an outcome day d "follows" factor F when F was
 present on any day in [d − hi, d − lo]. Outcome days that follow F are compared with
 those that don't:
 - fewer than 3 days in either group -> not enough contrast to judge;
-- a suspect when the average after F is at least 0.5 higher (breakouts per day, or a
-  0–3 reaction rating), ranked by that difference.
+- a suspect when the average breakouts per day after F is at least 0.5 higher,
+  ranked by that difference.
 Wording always says "tends to come before" — never that anything causes anything.
 """
 
-from collections.abc import Callable
 from datetime import date, timedelta
 from statistics import mean
 
@@ -18,13 +17,6 @@ from skinlog.analysis.dataset import DayRecord, breakout_events, outcome_days
 MIN_GROUP_DAYS = 3
 THRESHOLD = 0.5
 RECENT_EVENTS = 5
-
-METRICS: dict[str, Callable[[DayRecord], int | None]] = {
-    "breakouts": lambda r: r.total_breakouts,
-    "dryness": lambda r: r.dryness,
-    "redness": lambda r: r.redness,
-    "oiliness": lambda r: r.oiliness,
-}
 
 
 def _window(lo: int, hi: int) -> str:
@@ -38,28 +30,22 @@ def _display(kind: str, name: str) -> str:
     return f"“{name}”" if kind == "tag" else name
 
 
-def _avg(days: list[DayRecord], metric: str) -> float | None:
-    values = [v for v in (METRICS[metric](r) for r in days) if v is not None]
-    return mean(values) if values else None
+def _avg(days: list[DayRecord]) -> float:
+    return mean(r.total_breakouts for r in days)
 
 
-def _sentence(factor: dict, metric: str, after: float, other: float, window: str, recent: dict) -> str:
+def _sentence(factor: dict, after: float, other: float, window: str, recent: dict) -> str:
     who = _display(factor["kind"], factor["name"])
-    if metric == "breakouts":
-        text = (
-            f"{who} tends to come before breakouts: {after:.1f} a day in the {window} after it, "
-            f"vs {other:.1f} on other days."
-        )
-        if recent["total"]:
-            text += (
-                f" {recent['hits']} of your last {recent['total']} breakouts "
-                f"came {window} after {who}."
-            )
-        return text
-    return (
-        f"{who} tends to come before {metric}: {after:.1f} in the {window} after it, "
-        f"vs {other:.1f} on other days (0–3 scale)."
+    text = (
+        f"{who} tends to come before breakouts: {after:.1f} a day in the {window} after it, "
+        f"vs {other:.1f} on other days."
     )
+    if recent["total"]:
+        text += (
+            f" {recent['hits']} of your last {recent['total']} breakouts "
+            f"came {window} after {who}."
+        )
+    return text
 
 
 def suspects(
@@ -100,24 +86,21 @@ def suspects(
         if len(after) < MIN_GROUP_DAYS:
             low_contrast.append({**factor, "reason": "too few days"})
             continue
+        after_avg, other_avg = _avg(after), _avg(other)
+        if after_avg - other_avg < THRESHOLD:
+            continue
         hits = sum(1 for e in recent_events if follows(e.date, dates))
         recent = {"hits": hits, "total": len(recent_events)}
-        for metric in METRICS:
-            after_avg, other_avg = _avg(after, metric), _avg(other, metric)
-            if after_avg is None or other_avg is None or after_avg - other_avg < THRESHOLD:
-                continue
-            found.append(
-                {
-                    "factor": factor,
-                    "kind": metric,
-                    "sentence": _sentence(
-                        factor, metric, after_avg, other_avg, _window(lookahead_min, lookahead_max), recent
-                    ),
-                    "after": {"avg": after_avg, "days": len(after)},
-                    "otherwise": {"avg": other_avg, "days": len(other)},
-                    "recent": recent,
-                }
-            )
+        found.append(
+            {
+                "factor": factor,
+                "kind": "breakouts",
+                "sentence": _sentence(factor, after_avg, other_avg, _window(lookahead_min, lookahead_max), recent),
+                "after": {"avg": after_avg, "days": len(after)},
+                "otherwise": {"avg": other_avg, "days": len(other)},
+                "recent": recent,
+            }
+        )
 
     found.sort(key=lambda s: s["after"]["avg"] - s["otherwise"]["avg"], reverse=True)
     return {"suspects": found, "low_contrast": low_contrast, "considered": len(factors)}

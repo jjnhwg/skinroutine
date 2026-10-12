@@ -224,7 +224,7 @@ function MoveToServer() {
       <p className="muted" style={{ marginTop: 0 }}>
         Your log now lives on the server. If the old version of this app kept entries in this
         browser, or you exported a backup from it, move them over here. Old entries come with their
-        score, notes, products and photos; they never recorded zones or reactions.
+        score, notes, products and photos; they never recorded zones.
       </p>
       <div className="row">
         {stored && (

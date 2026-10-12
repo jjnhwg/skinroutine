@@ -11,7 +11,7 @@ def log_days(client, days: list[int], serum_days: list[int], serum: int) -> None
         uses = [{"product_id": serum, "time_of_day": "pm"}] if n in serum_days else []
         response = client.put(
             f"/api/days/2026-09-{n:02d}",
-            json={"skin_score": 2, "zones": {**ZONES, "chin": chin}, "dryness": 0, "redness": 0, "oiliness": 0, "product_uses": uses},
+            json={"skin_score": 2, "zones": {**ZONES, "chin": chin}, "product_uses": uses},
         )
         assert response.status_code == 200
 
@@ -64,8 +64,7 @@ def test_respects_the_look_ahead_setting(client, frozen_now):
 
 def test_other_users_logs_are_ignored(client, db_session, other_user, frozen_now):
     for n in range(1, 21):
-        log = DayLog(user_id=other_user.id, date=date(2026, 9, n), status="logged", skin_score=2,
-                     dryness=0, redness=0, oiliness=0)
+        log = DayLog(user_id=other_user.id, date=date(2026, 9, n), status="logged", skin_score=2)
         log.zones = [ZoneBreakout(zone="chin", count=1)]
         db_session.add(log)
     db_session.commit()

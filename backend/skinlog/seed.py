@@ -134,9 +134,6 @@ def _seed(db: Session, user: User) -> None:
             date=day,
             status=DayStatus.LOGGED,
             skin_score=_score(p.total_breakouts),
-            dryness=0,
-            redness=p.redness,
-            oiliness=1,
         )
         log.zones = [ZoneBreakout(zone="chin", count=p.total_breakouts)]
         uses = {(ids[demo.CLEANSER], "am"), (ids[demo.CLEANSER], "pm")}

@@ -61,7 +61,6 @@ def test_days_are_mapped(client, report):
     assert first["imported"] is True
     assert first["skin_score"] == 2
     assert first["notes"] == "Old tags: Pimple\nok"
-    assert first["dryness"] is None and first["redness"] is None and first["oiliness"] is None
     # The cleanser's old slot was BOTH, so ticking it means morning and night.
     assert first["product_uses"] == [
         {"product_id": cleanser, "time_of_day": "am"},
@@ -97,7 +96,7 @@ def test_second_run_skips_everything(client, report):
 
 
 def test_existing_days_are_never_overwritten(client, frozen_now):
-    client.put("/api/days/2026-09-02", json={"skin_score": 5, "zones": ZONES, "dryness": 3, "redness": 0, "oiliness": 0})
+    client.put("/api/days/2026-09-02", json={"skin_score": 5, "zones": ZONES})
 
     result = client.post("/api/import/legacy", json=BACKUP).json()
 
@@ -108,7 +107,7 @@ def test_existing_days_are_never_overwritten(client, frozen_now):
 
 
 def test_saving_an_imported_day_clears_the_flag(client, report):
-    client.put("/api/days/2026-09-02", json={"skin_score": 2, "zones": ZONES, "dryness": 0, "redness": 0, "oiliness": 0})
+    client.put("/api/days/2026-09-02", json={"skin_score": 2, "zones": ZONES})
 
     assert client.get("/api/days/2026-09-02").json()["imported"] is False
 

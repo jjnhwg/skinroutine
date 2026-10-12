@@ -112,7 +112,6 @@ class Planned(BaseModel):
 
 
 Count = Annotated[int, Field(ge=0, le=50)]
-Reaction = Annotated[int, Field(ge=0, le=3)]
 
 
 class Zones(BaseModel):
@@ -136,9 +135,6 @@ class ProductUseIO(BaseModel):
 class DayIn(BaseModel):
     skin_score: int = Field(ge=1, le=5)
     zones: Zones
-    dryness: Reaction
-    redness: Reaction
-    oiliness: Reaction
     notes: str = Field("", max_length=5000)
     product_uses: list[ProductUseIO] = []
     tag_ids: list[int] = []
@@ -158,9 +154,6 @@ class DayOut(BaseModel):
     skin_score: int | None
     zones: Zones
     total_breakouts: int
-    dryness: int | None
-    redness: int | None
-    oiliness: int | None
     notes: str
     product_uses: list[ProductUseIO]
     tag_ids: list[int]
@@ -236,9 +229,6 @@ class Window(BaseModel):
     end: date
     outcome_days: int
     avg_breakouts: float | None
-    avg_dryness: float | None
-    avg_redness: float | None
-    avg_oiliness: float | None
 
 
 class VerdictPhoto(BaseModel):
@@ -285,7 +275,7 @@ class Recent(BaseModel):
 
 class Suspect(BaseModel):
     factor: Factor
-    kind: Literal["breakouts", "dryness", "redness", "oiliness"]
+    kind: Literal["breakouts"]
     sentence: str
     after: GroupAverage
     otherwise: GroupAverage

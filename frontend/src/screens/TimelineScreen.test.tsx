@@ -31,9 +31,6 @@ beforeEach(() => {
       skin_score: 4,
       zones: { ...NO_ZONES, chin: 3 },
       total_breakouts: 3,
-      dryness: 1,
-      redness: 2,
-      oiliness: 0,
       notes: "Spot on chin",
       product_uses: [
         { product_id: 1, time_of_day: "am" },

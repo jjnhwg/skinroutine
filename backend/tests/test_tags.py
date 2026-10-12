@@ -10,7 +10,7 @@ ZONES = dict.fromkeys(["forehead", "nose", "left_cheek", "right_cheek", "chin", 
 
 
 def checkin(tag_ids: list[int]) -> dict:
-    return {"skin_score": 2, "zones": ZONES, "dryness": 0, "redness": 0, "oiliness": 0, "tag_ids": tag_ids}
+    return {"skin_score": 2, "zones": ZONES, "tag_ids": tag_ids}
 
 
 def tag_id(client, name: str) -> int:

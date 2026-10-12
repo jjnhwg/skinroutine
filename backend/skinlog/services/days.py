@@ -70,9 +70,6 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         skin_score=log.skin_score if log else None,
         zones=Zones(**zones),
         total_breakouts=sum(zones.values()),
-        dryness=log.dryness if log else None,
-        redness=log.redness if log else None,
-        oiliness=log.oiliness if log else None,
         notes=log.notes if log else "",
         product_uses=uses,
         tag_ids=sorted(t.tag_id for t in log.tags) if log else [],
@@ -124,9 +121,6 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     log.status = DayStatus.LOGGED
     log.imported = False
     log.skin_score = body.skin_score
-    log.dryness = body.dryness
-    log.redness = body.redness
-    log.oiliness = body.oiliness
     log.notes = body.notes
     # Clear first so replaced rows are deleted before their successors are inserted.
     log.zones.clear()

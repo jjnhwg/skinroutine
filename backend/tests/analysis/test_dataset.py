@@ -47,7 +47,7 @@ def test_build_dataset_from_the_database(client, db_session, frozen_now):
     pid = client.post("/api/products", json={"name": "A", "type": "serum", "started_on": "2026-09-01"}).json()["id"]
     tag = client.get("/api/tags").json()[0]["id"]
     client.put("/api/days/2026-10-02", json={
-        "skin_score": 3, "zones": ZONES, "dryness": 1, "redness": 2, "oiliness": 0,
+        "skin_score": 3, "zones": ZONES,
         "product_uses": [{"product_id": pid, "time_of_day": "am"}], "tag_ids": [tag],
     })
     client.put("/api/days/2026-10-02/photos/front", files=upload())
@@ -60,9 +60,8 @@ def test_build_dataset_from_the_database(client, db_session, frozen_now):
     assert [r.date for r in records] == [D(1), D(2), D(3), D(4), D(5)]
     assert [r.status for r in records] == ["none", "logged", "routine_confirmed", "gap", "none"]
     logged = records[1]
-    assert (logged.total_breakouts, logged.dryness, logged.redness, logged.oiliness) == (3, 1, 2, 0)
+    assert logged.total_breakouts == 3
     assert logged.products_used == {pid}
     assert logged.tag_ids == {tag}
     assert logged.photos["front"].startswith("/api/files/")
     assert records[2].products_used == {pid}
-    assert records[2].dryness is None

@@ -18,29 +18,26 @@ O = lambda n: date(2026, 10, n)  # noqa: E731
 
 DAYS = {
     # --- before: outcome days are Sep 17, 18, 20, 22, 24, 26 (six) ---
-    S(17): record(S(17), total=2, dryness=1, redness=1, oiliness=2),
-    S(18): record(S(18), total=3, dryness=1, redness=2, oiliness=2),
+    S(17): record(S(17), total=2),
+    S(18): record(S(18), total=3),
     S(19): record(S(19), status="gap", total=9),  # gap: ignored
-    S(20): record(S(20), total=2, dryness=0, redness=1, oiliness=1),
-    S(22): record(S(22), total=4, dryness=2, redness=2, oiliness=2),
+    S(20): record(S(20), total=2),
+    S(22): record(S(22), total=4),
     S(23): record(S(23), status="routine_confirmed", total=9),  # not an outcome day
-    S(24): record(S(24), total=1, dryness=1, redness=0, oiliness=1),
+    S(24): record(S(24), total=1),
     S(25): record(S(25), total=9, imported=True),  # imported: exposure only
-    S(26): record(S(26), total=2, dryness=None, redness=1, oiliness=1),  # no dryness rating
+    S(26): record(S(26), total=2),
     # breakouts 2+3+2+4+1+2 = 14 over 6 days  -> 2.333
-    # dryness   1+1+0+2+1   =  5 over 5 rated -> 1.0
-    # redness   1+2+1+2+0+1 =  7 over 6       -> 1.167
-    # oiliness  2+2+1+2+1+1 =  9 over 6       -> 1.5
     # --- during: outcome days Oct 1, 3, 5, 8, 10, 14, 20 (seven) ---
-    O(1): record(O(1), total=1, dryness=1, redness=1),
+    O(1): record(O(1), total=1),
     O(2): record(O(2), status="gap", total=9),
-    O(3): record(O(3), total=0, redness=1, photos={"left": "/f/oct3-left.jpg"}),
-    O(5): record(O(5), total=1, redness=1, photos={"front": "/f/oct5-front.jpg"}),
-    O(8): record(O(8), total=0, redness=1),
-    O(10): record(O(10), total=1, redness=1),
-    O(14): record(O(14), total=0, redness=1, photos={"front": "/f/oct14-front.jpg", "left": "/f/oct14-left.jpg"}),
-    O(20): record(O(20), total=1, redness=1, photos={"left": "/f/oct20-left.jpg"}),
-    # breakouts 1+0+1+0+1+0+1 = 4 over 7 -> 0.571; dryness 1/7; redness 7/7 = 1.0; oiliness 0
+    O(3): record(O(3), total=0, photos={"left": "/f/oct3-left.jpg"}),
+    O(5): record(O(5), total=1, photos={"front": "/f/oct5-front.jpg"}),
+    O(8): record(O(8), total=0),
+    O(10): record(O(10), total=1),
+    O(14): record(O(14), total=0, photos={"front": "/f/oct14-front.jpg", "left": "/f/oct14-left.jpg"}),
+    O(20): record(O(20), total=1, photos={"left": "/f/oct20-left.jpg"}),
+    # breakouts 1+0+1+0+1+0+1 = 4 over 7 -> 0.571
     # --- after the planned end: never counted ---
     O(22): record(O(22), total=9, photos={"front": "/f/oct22-front.jpg"}),
     O(26): record(O(26), total=9),
@@ -60,14 +57,8 @@ def test_completed_trial_averages():
     assert (during["start"], during["end"]) == (O(1), O(21))
     assert before["outcome_days"] == 6
     assert before["avg_breakouts"] == pytest.approx(14 / 6)
-    assert before["avg_dryness"] == pytest.approx(1.0)
-    assert before["avg_redness"] == pytest.approx(7 / 6)
-    assert before["avg_oiliness"] == pytest.approx(1.5)
     assert during["outcome_days"] == 7
     assert during["avg_breakouts"] == pytest.approx(4 / 7)
-    assert during["avg_dryness"] == pytest.approx(1 / 7)
-    assert during["avg_redness"] == pytest.approx(1.0)
-    assert during["avg_oiliness"] == pytest.approx(0.0)
     # 0.571 - 2.333 = -1.76, past the -0.5 threshold
     assert v["enough_data"] is True
     assert v["label"] == "better"

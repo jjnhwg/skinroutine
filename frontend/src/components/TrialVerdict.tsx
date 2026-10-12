@@ -10,9 +10,6 @@ const MIN_DAYS = 5;
 
 const ROWS: { key: keyof VerdictWindow; label: string }[] = [
   { key: "avg_breakouts", label: "Breakouts a day" },
-  { key: "avg_dryness", label: "Dryness (0–3)" },
-  { key: "avg_redness", label: "Redness (0–3)" },
-  { key: "avg_oiliness", label: "Oiliness (0–3)" },
   { key: "outcome_days", label: "Days logged" },
 ];
 

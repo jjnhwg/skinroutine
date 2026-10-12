@@ -93,7 +93,7 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
                 <p className="muted">Usual routine confirmed; no skin check-in yet.</p>
               )}
               {day.imported && (
-                <p className="muted">Imported from the old app — zones and reactions weren't recorded.</p>
+                <p className="muted">Imported from the old app — zones weren't recorded.</p>
               )}
               {day.skin_score !== null && (
                 <div className="detail-row">
@@ -103,21 +103,16 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
                   </b>
                 </div>
               )}
-              {!day.imported && day.dryness !== null && (
-                <>
-                  <p className="detail-line">
-                    <b>{day.total_breakouts}</b> breakout{day.total_breakouts === 1 ? "" : "s"}
-                    {day.total_breakouts > 0 &&
-                      ": " +
-                        (Object.entries(day.zones) as [ZoneName, number][])
-                          .filter(([, n]) => n > 0)
-                          .map(([zone, n]) => `${ZONE_LABELS[zone]} ${n}`)
-                          .join(", ")}
-                  </p>
-                  <p className="detail-line">
-                    Dryness {day.dryness} · Redness {day.redness} · Oiliness {day.oiliness}
-                  </p>
-                </>
+              {!day.imported && day.status === "logged" && (
+                <p className="detail-line">
+                  <b>{day.total_breakouts}</b> breakout{day.total_breakouts === 1 ? "" : "s"}
+                  {day.total_breakouts > 0 &&
+                    ": " +
+                      (Object.entries(day.zones) as [ZoneName, number][])
+                        .filter(([, n]) => n > 0)
+                        .map(([zone, n]) => `${ZONE_LABELS[zone]} ${n}`)
+                        .join(", ")}
+                </p>
               )}
 
               {SLOTS.map(({ slot, title }) => {

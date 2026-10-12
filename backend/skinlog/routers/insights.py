@@ -1,4 +1,4 @@
-"""Suspects: what tends to come before breakouts and reactions."""
+"""Suspects: what tends to come before breakouts."""
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select

@@ -28,8 +28,9 @@ const READY: Suspects = {
     },
     {
       factor: { kind: "tag", id: 11, name: "Alcohol" },
-      kind: "redness",
-      sentence: "“Alcohol” tends to come before redness: 0.7 in the 1–5 days after it, vs 0.0 on other days (0–3 scale).",
+      kind: "breakouts",
+      sentence:
+        "“Alcohol” tends to come before breakouts: 0.7 a day in the 1–5 days after it, vs 0.0 on other days. 2 of your last 5 breakouts came 1–5 days after “Alcohol”.",
       after: { avg: 0.69, days: 13 },
       otherwise: { avg: 0, days: 15 },
       recent: { hits: 2, total: 5 },
@@ -56,7 +57,7 @@ describe("InsightsScreen", () => {
     renderWithApp(<InsightsScreen />);
 
     expect(await screen.findByText(/Mystery Serum tends to come before breakouts/)).toBeInTheDocument();
-    expect(screen.getByText(/“Alcohol” tends to come before redness/)).toBeInTheDocument();
+    expect(screen.getByText(/“Alcohol” tends to come before breakouts/)).toBeInTheDocument();
   });
 
   it("expands a suspect into a chart with both groups", async () => {

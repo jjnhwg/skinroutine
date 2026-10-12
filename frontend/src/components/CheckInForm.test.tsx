@@ -10,9 +10,6 @@ function Harness({ initial }: { initial: Partial<CheckIn> }) {
   const [value, setValue] = useState<CheckIn>({
     skin_score: null,
     zones: NO_ZONES,
-    dryness: 0,
-    redness: 0,
-    oiliness: 0,
     ...initial,
   });
   return (
@@ -46,16 +43,5 @@ describe("CheckInForm", () => {
     await user.click(screen.getByRole("button", { name: "More on chin" }));
     expect(current().zones.chin).toBe(50);
     expect(screen.getByRole("button", { name: "More on chin" })).toBeDisabled();
-  });
-
-  it("sets a reaction from 0 to 3", async () => {
-    const user = userEvent.setup();
-    render(<Harness initial={{}} />);
-
-    const redness = screen.getByRole("group", { name: "Redness / irritation" });
-    await user.click(screen.getByRole("button", { name: "Redness / irritation: 3 — Severe" }));
-
-    expect(current().redness).toBe(3);
-    expect(redness.querySelectorAll("[aria-pressed=true]")).toHaveLength(1);
   });
 });

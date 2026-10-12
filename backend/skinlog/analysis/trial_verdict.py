@@ -2,7 +2,7 @@
 
 before = the 14 days before start_date.
 during = start_date up to the earliest of the planned end, the ended date, and today.
-Averages come from outcome days only, ignoring a missing rating per metric.
+Averages come from outcome days only.
 """
 
 from datetime import date, timedelta
@@ -31,9 +31,6 @@ def window(records: list[DayRecord], start: date, end: date) -> dict:
         "end": end,
         "outcome_days": len(days),
         "avg_breakouts": _avg([r.total_breakouts for r in days]),
-        "avg_dryness": _avg([r.dryness for r in days]),
-        "avg_redness": _avg([r.redness for r in days]),
-        "avg_oiliness": _avg([r.oiliness for r in days]),
     }
 
 

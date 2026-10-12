@@ -5,7 +5,7 @@ same planted pattern as the demo seed (skinlog/demo.py):
 - Mystery Serum (product 2): Sep 3, 8, 12, 17, 21, 26. Two days after each use the
   breakout total jumps to 3, and the day after that it's 1.
 - "Bad sleep" (tag 10): Sep 2, 7, 11, 13, 24 — no effect.
-- "Alcohol" (tag 11): Sep 4, 13, 22. Redness is 3 the next day; breakouts don't change.
+- "Alcohol" (tag 11): Sep 4, 13, 22 — no effect.
 - Sep 16 is a gap (given a big total that must be ignored); Sep 25 was never logged.
 """
 
@@ -41,12 +41,11 @@ def golden_records():
     for p in planned:
         day = START + timedelta(days=p.offset)
         if p.status == "gap":
-            days[day] = record(day, status="gap", total=9, redness=3)
+            days[day] = record(day, status="gap", total=9)
             continue
         days[day] = record(
             day,
             total=p.total_breakouts,
-            redness=p.redness,
             products={PRODUCT_IDS[name] for name in p.products},
             tags={TAG_IDS[name] for name in p.tags},
         )

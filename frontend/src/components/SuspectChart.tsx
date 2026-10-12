@@ -1,11 +1,6 @@
 import type { Suspect } from "../api/types";
 
-const LABELS: Record<Suspect["kind"], string> = {
-  breakouts: "Breakouts a day",
-  dryness: "Dryness (0–3)",
-  redness: "Redness (0–3)",
-  oiliness: "Oiliness (0–3)",
-};
+const LABEL = "Breakouts a day";
 
 const W = 280;
 const H = 150;
@@ -18,14 +13,13 @@ const one = (n: number) => n.toFixed(1);
 /** Average after the factor vs on other days: two thin bars on one axis, values labelled. */
 export function SuspectChart({ suspect, window }: { suspect: Suspect; window: string }) {
   const { after, otherwise, factor } = suspect;
-  // Reactions share the fixed 0–3 scale; breakouts scale to the larger bar.
-  const max = suspect.kind === "breakouts" ? Math.max(after.avg, otherwise.avg, 1) : 3;
+  const max = Math.max(after.avg, otherwise.avg, 1);
   const height = (v: number) => Math.max(((BASE - TOP) * v) / max, v > 0 ? 2 : 0);
   const bars = [
     { key: "after", label: `After ${factor.name}`, value: after.avg, x: 60, fill: "var(--accent)" },
     { key: "other", label: "Other days", value: otherwise.avg, x: 164, fill: "var(--border-strong)" },
   ];
-  const label = `${LABELS[suspect.kind]}: ${one(after.avg)} after ${factor.name}, ${one(otherwise.avg)} on other days`;
+  const label = `${LABEL}: ${one(after.avg)} after ${factor.name}, ${one(otherwise.avg)} on other days`;
 
   return (
     <figure className="suspect-chart">
@@ -53,7 +47,7 @@ export function SuspectChart({ suspect, window }: { suspect: Suspect; window: st
         })}
       </svg>
       <figcaption className="muted">
-        {LABELS[suspect.kind]} · {after.days} days after · {otherwise.days} other days · within{" "}
+        {LABEL} · {after.days} days after · {otherwise.days} other days · within{" "}
         {window} after {factor.kind === "tag" ? `“${factor.name}”` : factor.name}
       </figcaption>
     </figure>

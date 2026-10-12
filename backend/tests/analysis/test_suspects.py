@@ -55,16 +55,10 @@ def test_bad_sleep_is_not_a_suspect():
     assert not [s for s in result["suspects"] if s["factor"]["id"] == BAD_SLEEP and s["factor"]["kind"] == "tag"]
 
 
-def test_alcohol_comes_before_redness_not_breakouts():
+def test_alcohol_is_not_a_suspect():
     result = run()
 
-    redness = find(result, "tag", ALCOHOL, "redness")
-    assert redness is not None
-    # 13 outcome days within 1–5 days of an alcohol day; three of them had redness 3.
-    assert redness["after"] == {"avg": pytest.approx(9 / 13), "days": 13}
-    assert redness["otherwise"] == {"avg": pytest.approx(0.0), "days": 15}
-    assert "“Alcohol” tends to come before redness" in redness["sentence"]
-    assert find(result, "tag", ALCOHOL, "breakouts") is None
+    assert find(result, "tag", ALCOHOL) is None
 
 
 def test_ranked_by_difference():

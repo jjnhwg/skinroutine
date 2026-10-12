@@ -25,10 +25,6 @@ function checkInFrom(day: Day): CheckIn {
   return {
     skin_score: day.skin_score,
     zones: day.zones,
-    // A fresh day starts at "none"; changing one is a single tap.
-    dryness: day.dryness ?? 0,
-    redness: day.redness ?? 0,
-    oiliness: day.oiliness ?? 0,
   };
 }
 
@@ -122,9 +118,6 @@ export function LogScreen({ date }: { date: string }) {
       const result = await saveDay(date, {
         skin_score: checkIn.skin_score,
         zones: checkIn.zones,
-        dryness: checkIn.dryness,
-        redness: checkIn.redness,
-        oiliness: checkIn.oiliness,
         notes: notes.trim(),
         product_uses: uses,
         tag_ids: tagIds,
@@ -202,7 +195,7 @@ export function LogScreen({ date }: { date: string }) {
           )}
           {day.imported && (
             <div className="warn">
-              Imported — zones and reactions weren't recorded in the old app. Fill them in and save
+              Imported — zones weren't recorded in the old app. Fill them in and save
               to make this a full entry.
             </div>
           )}

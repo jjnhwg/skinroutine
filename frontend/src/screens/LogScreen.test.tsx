@@ -26,9 +26,6 @@ const SAVED = day("2026-10-05", {
   skin_score: 4,
   zones: { ...NO_ZONES, chin: 3 },
   total_breakouts: 3,
-  dryness: 1,
-  redness: 2,
-  oiliness: 0,
   notes: "Spot on chin",
   product_uses: [{ product_id: 1, time_of_day: "am" }],
   tag_ids: [7],
@@ -54,10 +51,6 @@ describe("LogScreen", () => {
 
     expect(await screen.findByRole("button", { name: "4 — Rough" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Chin breakouts")).toHaveTextContent("3");
-    expect(screen.getByRole("button", { name: "Redness / irritation: 2 — Moderate" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
     expect(screen.getByLabelText("Notes")).toHaveValue("Spot on chin");
     expect(screen.getByRole("button", { name: /Retinol/ })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByText(/Editing your saved entry/)).toBeInTheDocument();
@@ -80,9 +73,6 @@ describe("LogScreen", () => {
     expect(saveDay).toHaveBeenCalledWith("2026-10-05", {
       skin_score: 4,
       zones: { ...NO_ZONES, chin: 3, nose: 1 },
-      dryness: 1,
-      redness: 2,
-      oiliness: 0,
       notes: "Spot on chin!",
       product_uses: [
         { product_id: 1, time_of_day: "am" },
@@ -123,10 +113,10 @@ describe("LogScreen", () => {
   });
 
   it("explains imported days", async () => {
-    vi.mocked(getDay).mockResolvedValue({ ...SAVED, imported: true, dryness: null });
+    vi.mocked(getDay).mockResolvedValue({ ...SAVED, imported: true });
     renderWithApp(<LogScreen date="2026-10-05" />);
 
-    expect(await screen.findByText(/Imported — zones and reactions weren't recorded/)).toBeInTheDocument();
+    expect(await screen.findByText(/Imported — zones weren't recorded/)).toBeInTheDocument();
   });
 });
 

@@ -5,12 +5,7 @@ export interface CheckIn {
   /** Required before saving; null until picked. */
   skin_score: number | null;
   zones: Zones;
-  dryness: number;
-  redness: number;
-  oiliness: number;
 }
-
-type Reaction = "dryness" | "redness" | "oiliness";
 
 const MAX_BREAKOUTS = 50;
 
@@ -24,20 +19,12 @@ const ZONES: { zone: ZoneName; label: string }[] = [
   { zone: "jawline", label: "Jawline" },
 ];
 
-const REACTIONS: { key: Reaction; label: string }[] = [
-  { key: "dryness", label: "Dryness / flaking" },
-  { key: "redness", label: "Redness / irritation" },
-  { key: "oiliness", label: "Oiliness" },
-];
-
-const LEVELS = ["None", "Mild", "Moderate", "Severe"];
-
 interface CheckInFormProps {
   value: CheckIn;
   onChange: (next: CheckIn) => void;
 }
 
-/** Skin score, breakouts per zone and reaction ratings. Controlled. */
+/** Skin score and breakouts per zone. Controlled. */
 export function CheckInForm({ value, onChange }: CheckInFormProps) {
   const setZone = (zone: ZoneName, count: number) =>
     onChange({ ...value, zones: { ...value.zones, [zone]: count } });
@@ -96,28 +83,6 @@ export function CheckInForm({ value, onChange }: CheckInFormProps) {
           );
         })}
       </div>
-
-      {REACTIONS.map(({ key, label }) => (
-        <div key={key} style={{ marginTop: 16 }}>
-          <h3 className="section-h" style={{ marginBottom: 6 }}>
-            {label}
-          </h3>
-          <div className="segmented" role="group" aria-label={label}>
-            {LEVELS.map((level, n) => (
-              <button
-                key={n}
-                type="button"
-                aria-pressed={value[key] === n}
-                aria-label={`${label}: ${n} — ${level}`}
-                onClick={() => onChange({ ...value, [key]: n })}
-              >
-                {n}
-                <small>{level}</small>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
     </>
   );
 }
