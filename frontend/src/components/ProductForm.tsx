@@ -11,7 +11,7 @@ import { CameraIcon, ChevronRightIcon } from "./Icons";
 import { useToast } from "./useToast";
 
 /** The four bottles shown stacked on the "choose from popular" button. */
-const TEASER_INDEXES = [9, 0, 20, 24];
+const TEASER_INDEXES = [10, 1, 21, 25];
 
 /** What to do with the photo once the product itself is saved. */
 export type PhotoChange = { kind: "keep" } | { kind: "set"; dataUrl: string } | { kind: "remove" };

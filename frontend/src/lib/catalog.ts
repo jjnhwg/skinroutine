@@ -6,6 +6,8 @@ type CatalogRow = [string, string, string, ProductShape, string, Slot, string];
 
 // [brand, name, category, shape, color, slot, label]
 const ROWS: CatalogRow[] = [
+  // For days you only rinse. No brand, so no photo is looked up online.
+  ["", "Water", "Cleanser", "drop", "#a9d4f2", "BOTH", "H2O"],
   ["CeraVe", "Hydrating Facial Cleanser", "Cleanser", "pump", "#bcd8ef", "BOTH", "CeraVe"],
   ["CeraVe", "Foaming Facial Cleanser", "Cleanser", "pump", "#a9cbe8", "BOTH", "CeraVe"],
   ["CeraVe", "Moisturizing Cream", "Moisturizer", "jar", "#c7dcf0", "BOTH", "CeraVe"],
@@ -125,6 +127,7 @@ export function productArt({
           .join(""),
       )
       .join("")}`,
+    drop: `<path d="M50 14C50 14 26 44 26 61a24 24 0 0 0 48 0C74 44 50 14 50 14z" fill="${body}"/><path d="M36 58c0-6 4-13 7-17" stroke="${shine}" stroke-width="4" stroke-linecap="round" fill="none"/>`,
   };
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="${bg}"/><ellipse cx="50" cy="89" rx="24" ry="3" fill="rgba(0,0,0,.07)"/>${

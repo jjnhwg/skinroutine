@@ -20,7 +20,7 @@ export interface CatalogItem {
   source?: string;
 }
 
-export type ProductShape = "tube" | "pump" | "dropper" | "jar" | "tall" | "small" | "patch";
+export type ProductShape = "tube" | "pump" | "dropper" | "jar" | "tall" | "small" | "patch" | "drop";
 
 /** One real product found by the API's online search. */
 export interface ProductSearchResult {

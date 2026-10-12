@@ -35,6 +35,7 @@ function closestMatch(item: CatalogItem, results: ProductSearchResult[]): Produc
  */
 export async function loadProductPhoto(item: CatalogItem): Promise<string | null> {
   let url = item.imageUrl;
+  if (!url && !item.brand) return null; // e.g. Water: nothing to look up
   if (!url) {
     const results = await searchProducts(`${item.brand} ${item.name}`);
     url = closestMatch(item, results)?.image;
