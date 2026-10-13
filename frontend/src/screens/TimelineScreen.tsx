@@ -79,7 +79,7 @@ export function TimelineScreen() {
   return (
     <>
       <h2 className="page-title">Timeline</h2>
-      <p className="page-sub">Tap a day to see what you logged.</p>
+      <p className="page-sub">Select a day to see what you logged.</p>
 
       <button type="button" className="btn" onClick={() => setComparing("")}>
         <CameraIcon size={18} /> Compare photos

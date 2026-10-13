@@ -2,7 +2,15 @@ import { useEffect, useState } from "react";
 
 export type Tab = "log" | "timeline" | "insights" | "products" | "settings";
 
-const TABS: Tab[] = ["log", "timeline", "insights", "products", "settings"];
+export const TAB_LABELS: Record<Tab, string> = {
+  log: "Log",
+  timeline: "Timeline",
+  insights: "Insights",
+  products: "Products",
+  settings: "Settings",
+};
+
+const TABS = Object.keys(TAB_LABELS) as Tab[];
 
 export interface Route {
   tab: Tab;

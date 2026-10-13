@@ -200,57 +200,63 @@ export function LogScreen({ date }: { date: string }) {
             </div>
           )}
 
-          <div className="card">
-            <h2>What did you use?</h2>
-            <RoutineChecklist
-              products={products}
-              planned={day.planned}
-              uses={uses}
-              onChange={setUses}
-            />
-            {products.length === 0 && (
-              <p className="muted">
-                <a href="#/products">Add your products</a> and set a routine to fill this in
-                automatically.
-              </p>
-            )}
-          </div>
-
-          <div className="card">
-            <CheckInForm value={checkIn} onChange={setCheckIn} />
-          </div>
-
-          <div className="card">
-            <h2>Photos</h2>
-            <p className="muted" style={{ margin: "-6px 0 0" }}>
-              Optional. Line your face up with the outline, in the same light each day.
-            </p>
-            <div className="captures">
-              {ANGLES.map((angle) => (
-                <PhotoCapture
-                  key={angle}
-                  angle={angle}
-                  url={pending[angle] ?? day.photos[angle]}
-                  onPick={(dataUrl) => pickPhoto(angle, dataUrl)}
-                  onRemove={() => void removePhoto(angle)}
-                  onOpen={() => setViewing(shownPhotos.findIndex((p) => p.angle === angle))}
+          {/* Two columns on wide screens; one on phones, in the same order. */}
+          <div className="split">
+            <div>
+              <div className="card">
+                <h2>What did you use?</h2>
+                <RoutineChecklist
+                  products={products}
+                  planned={day.planned}
+                  uses={uses}
+                  onChange={setUses}
                 />
-              ))}
-            </div>
-          </div>
+                {products.length === 0 && (
+                  <p className="muted">
+                    <a href="#/products">Add your products</a> and set a routine to fill this in
+                    automatically.
+                  </p>
+                )}
+              </div>
 
-          <div className="card">
-            <h2>End of day</h2>
-            <TagPicker tags={tags} selected={tagIds} onChange={setTagIds} />
-            <label className="field" htmlFor="note" style={{ marginTop: 18 }}>
-              Notes
-            </label>
-            <textarea
-              id="note"
-              placeholder="New spot on chin, skipped moisturizer, slept badly…"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
+            </div>
+            <div>
+              <div className="card">
+                <CheckInForm value={checkIn} onChange={setCheckIn} />
+              </div>
+              <div className="card">
+                <h2>Photos</h2>
+                <p className="muted" style={{ margin: "-6px 0 0" }}>
+                  Optional. Line your face up with the outline, in the same light each day.
+                </p>
+                <div className="captures">
+                  {ANGLES.map((angle) => (
+                    <PhotoCapture
+                      key={angle}
+                      angle={angle}
+                      url={pending[angle] ?? day.photos[angle]}
+                      onPick={(dataUrl) => pickPhoto(angle, dataUrl)}
+                      onRemove={() => void removePhoto(angle)}
+                      onOpen={() => setViewing(shownPhotos.findIndex((p) => p.angle === angle))}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="card">
+                <h2>End of day</h2>
+                <TagPicker tags={tags} selected={tagIds} onChange={setTagIds} />
+                <label className="field" htmlFor="note" style={{ marginTop: 18 }}>
+                  Notes
+                </label>
+                <textarea
+                  id="note"
+                  placeholder="New spot on chin, skipped moisturizer, slept badly…"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
           {error && (

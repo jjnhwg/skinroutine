@@ -87,7 +87,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setBrand(item.brand);
     setName(item.name);
     setType(CATEGORY_TYPES[item.category] ?? "other");
-    toast(`Pick when you started, then tap ${submitLabel}`);
+    toast(`Pick when you started, then select ${submitLabel}`);
     requestAnimationFrame(() => startRef.current?.focus());
 
     photoFor.current = item;
@@ -109,7 +109,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setBrand("");
     setName(typed);
     setType("other");
-    toast(`Add the brand and a photo if you like, then tap ${submitLabel}`);
+    toast(`Add the brand and a photo if you like, then select ${submitLabel}`);
     requestAnimationFrame(() => brandRef.current?.focus());
   }
 

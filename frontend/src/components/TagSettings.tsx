@@ -87,7 +87,7 @@ export function TagSettings() {
     <div className="card">
       <h2>Tags</h2>
       <p className="muted" style={{ marginTop: 0 }}>
-        One-tap habits for the end of each day. Hidden tags stay on past days but aren't offered.
+        Quick habits for the end of each day. Hidden tags stay on past days but aren't offered.
       </p>
       <ul className="tag-list">
         {tags.map((tag) => (
