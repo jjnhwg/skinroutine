@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from skinlog import clock
-from skinlog.models import Product, ProductType
+from skinlog.models import Condition, Product, ProductType
 from skinlog.services import trials
 
 
@@ -127,14 +127,28 @@ class Zones(BaseModel):
     jawline: Count
 
 
+class ZoneConditions(BaseModel):
+    """Conditions marked per zone; an empty list means the zone was fine."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    forehead: list[Condition] = []
+    nose: list[Condition] = []
+    left_cheek: list[Condition] = []
+    right_cheek: list[Condition] = []
+    chin: list[Condition] = []
+    jawline: list[Condition] = []
+
+
 class ProductUseIO(BaseModel):
     product_id: int
     time_of_day: TimeOfDay
 
 
 class DayIn(BaseModel):
-    skin_score: int = Field(ge=1, le=5)
+    skin_score: int | None = Field(None, ge=1, le=5)
     zones: Zones
+    conditions: ZoneConditions = ZoneConditions()
     notes: str = Field("", max_length=5000)
     product_uses: list[ProductUseIO] = []
     tag_ids: list[int] = []
@@ -153,6 +167,7 @@ class DayOut(BaseModel):
     status: str
     skin_score: int | None
     zones: Zones
+    conditions: ZoneConditions
     total_breakouts: int
     notes: str
     product_uses: list[ProductUseIO]

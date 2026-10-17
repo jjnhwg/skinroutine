@@ -1,19 +1,12 @@
 import { useEffect, useState } from "react";
 import { getDay } from "../api/days";
-import type { Angle, Day, Product, Tag, TimeOfDay, ZoneName } from "../api/types";
-import { RATING_LABELS } from "../lib/constants";
+import type { Angle, Condition, Day, Product, Tag, TimeOfDay, ZoneName } from "../api/types";
+import { CONDITION_LABELS, RATING_LABELS, ZONE_LABELS } from "../lib/constants";
 import type { Rating } from "../types";
 import { LONG_DATE, prettyDate } from "../lib/dates";
 import { Lightbox } from "./Lightbox";
+import { ProductThumb } from "./ProductThumb";
 
-const ZONE_LABELS: Record<ZoneName, string> = {
-  forehead: "Forehead",
-  nose: "Nose",
-  left_cheek: "Left cheek",
-  right_cheek: "Right cheek",
-  chin: "Chin",
-  jawline: "Jawline",
-};
 const ANGLE_ALT: Record<Angle, string> = { front: "Front photo", left: "Left photo", right: "Right photo" };
 const SLOTS: { slot: TimeOfDay; title: string }[] = [
   { slot: "am", title: "Morning" },
@@ -53,7 +46,6 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, viewing]);
 
-  const nameOf = (id: number) => products.find((p) => p.id === id)?.name ?? "Unknown product";
   const photos = day
     ? (Object.entries(day.photos) as [Angle, string | null][]).flatMap(([angle, url]) =>
         url ? [{ angle, url }] : [],
@@ -114,6 +106,14 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
                         .join(", ")}
                 </p>
               )}
+              {(Object.entries(day.conditions) as [ZoneName, Condition[]][])
+                .filter(([, conditions]) => conditions.length > 0)
+                .map(([zone, conditions]) => (
+                  <p className="detail-line" key={zone}>
+                    <b>{ZONE_LABELS[zone]}:</b>{" "}
+                    {conditions.map((c) => CONDITION_LABELS[c].toLowerCase()).join(", ")}
+                  </p>
+                ))}
 
               {SLOTS.map(({ slot, title }) => {
                 const used = day.product_uses.filter((u) => u.time_of_day === slot);
@@ -123,10 +123,19 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
                     <h3 className="section-h" style={{ marginBottom: 4 }}>
                       {title}
                     </h3>
-                    <ul className="detail-list">
-                      {used.map((u) => (
-                        <li key={u.product_id}>{nameOf(u.product_id)}</li>
-                      ))}
+                    <ul className="detail-products">
+                      {used.map((u) => {
+                        const product = products.find((p) => p.id === u.product_id);
+                        return (
+                          <li key={u.product_id}>
+                            {product && <ProductThumb product={product} size="xs" />}
+                            <span>
+                              {product?.brand && <span className="brand">{product.brand} </span>}
+                              {product?.name ?? "Unknown product"}
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 );

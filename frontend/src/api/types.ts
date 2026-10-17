@@ -75,6 +75,12 @@ export type ZoneName = "forehead" | "nose" | "left_cheek" | "right_cheek" | "chi
 /** Breakout count per zone, 0–50. */
 export type Zones = Record<ZoneName, number>;
 
+/** Something going on in a zone besides a breakout. "forming" is a pimple coming up. */
+export type Condition = "forming" | "dry" | "red" | "oily";
+
+/** Conditions marked per zone; an empty list means the zone was fine. */
+export type ZoneConditions = Record<ZoneName, Condition[]>;
+
 export interface ProductUse {
   product_id: number;
   time_of_day: TimeOfDay;
@@ -88,9 +94,10 @@ export type Angle = "front" | "left" | "right";
 export interface Day {
   date: string;
   status: DayStatus;
-  /** 1 (clear) … 5 (flare-up) */
+  /** 1 (clear) … 5 (flare-up); optional. */
   skin_score: number | null;
   zones: Zones;
+  conditions: ZoneConditions;
   total_breakouts: number;
   notes: string;
   /** Saved uses, or the routine's plan when status is "none". */
@@ -103,8 +110,9 @@ export interface Day {
 }
 
 export interface DayInput {
-  skin_score: number;
+  skin_score: number | null;
   zones: Zones;
+  conditions: ZoneConditions;
   notes: string;
   product_uses: ProductUse[];
   tag_ids: number[];

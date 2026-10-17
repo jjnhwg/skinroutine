@@ -19,6 +19,7 @@ from skinlog.models import (
     User,
     Zone,
     ZoneBreakout,
+    ZoneCondition,
 )
 from skinlog.photos import PhotoStore
 from skinlog.schemas import (
@@ -28,6 +29,7 @@ from skinlog.schemas import (
     DaySummary,
     Planned,
     ProductUseIO,
+    ZoneConditions,
     Zones,
     file_url,
 )
@@ -46,6 +48,13 @@ def zone_counts(log: DayLog | None) -> dict[str, int]:
     for row in log.zones if log else []:
         counts[row.zone] = row.count
     return counts
+
+
+def zone_conditions(log: DayLog | None) -> ZoneConditions:
+    marked: dict[str, list[str]] = {z.value: [] for z in Zone}
+    for row in log.conditions if log else []:
+        marked[row.zone].append(row.condition)
+    return ZoneConditions(**{zone: sorted(conds) for zone, conds in marked.items()})
 
 
 def day_out(db: Session, user: User, day: date) -> DayOut:
@@ -69,6 +78,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         status=log.status if log else "none",
         skin_score=log.skin_score if log else None,
         zones=Zones(**zones),
+        conditions=zone_conditions(log),
         total_breakouts=sum(zones.values()),
         notes=log.notes if log else "",
         product_uses=uses,
@@ -124,10 +134,16 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     log.notes = body.notes
     # Clear first so replaced rows are deleted before their successors are inserted.
     log.zones.clear()
+    log.conditions.clear()
     log.uses.clear()
     log.tags.clear()
     db.flush()
     log.zones.extend(ZoneBreakout(zone=zone, count=count) for zone, count in body.zones)
+    log.conditions.extend(
+        ZoneCondition(zone=zone, condition=condition)
+        for zone, conditions in body.conditions
+        for condition in set(conditions)
+    )
     unique_uses = {(u.product_id, u.time_of_day) for u in body.product_uses}
     log.uses.extend(ProductUse(product_id=pid, time_of_day=tod) for pid, tod in unique_uses)
     log.tags.extend(DayTag(tag_id=tag_id) for tag_id in set(body.tag_ids))

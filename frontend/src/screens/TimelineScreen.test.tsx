@@ -24,6 +24,7 @@ beforeEach(() => {
     { date: "2026-10-01", status: "logged", skin_score: 4, total_breakouts: 3, has_photos: true },
     { date: "2026-10-02", status: "routine_confirmed", skin_score: null, total_breakouts: 0, has_photos: false },
     { date: "2026-10-03", status: "gap", skin_score: null, total_breakouts: 0, has_photos: false },
+    { date: "2026-10-05", status: "logged", skin_score: null, total_breakouts: 2, has_photos: false },
   ]);
   vi.mocked(getDay).mockReset().mockResolvedValue(
     day("2026-10-01", {
@@ -65,6 +66,8 @@ describe("TimelineScreen", () => {
     expect(cell("2026-10-02")).toHaveClass("confirmed");
     expect(cell("2026-10-03")).toHaveClass("gap");
     expect(cell("2026-10-04")).toHaveClass("unlogged");
+    expect(cell("2026-10-05")).toHaveClass("logged");
+    expect(cell("2026-10-05")).toHaveAccessibleName(/logged, 2 breakouts/);
     expect(cell("2026-10-09")).toHaveClass("today");
     expect(cell("2026-10-10")).toHaveClass("future");
     expect(cell("2026-10-10")).toBeDisabled();

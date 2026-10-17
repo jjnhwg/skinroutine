@@ -39,6 +39,7 @@ function cellClass(date: string, today: string, summary: DaySummary | undefined)
   else if (summary.status === "gap") classes.push("gap");
   else if (summary.status === "routine_confirmed" && summary.skin_score === null) classes.push("confirmed");
   else if (summary.skin_score !== null) classes.push(`score-${summary.skin_score}`);
+  else classes.push("logged");
   if (date === today) classes.push("today");
   return classes.join(" ");
 }
@@ -46,7 +47,10 @@ function cellClass(date: string, today: string, summary: DaySummary | undefined)
 function describe(summary: DaySummary | undefined): string {
   if (!summary) return "not logged";
   if (summary.status === "gap") return "skipped";
-  if (summary.skin_score === null) return "routine confirmed";
+  if (summary.status === "routine_confirmed" && summary.skin_score === null) return "routine confirmed";
+  if (summary.skin_score === null) {
+    return `logged, ${summary.total_breakouts} breakout${summary.total_breakouts === 1 ? "" : "s"}`;
+  }
   return `${summary.skin_score} — ${RATING_LABELS[summary.skin_score as Rating]}`;
 }
 

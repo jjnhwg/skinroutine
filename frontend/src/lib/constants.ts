@@ -1,4 +1,4 @@
-import type { ProductType, Weekday } from "../api/types";
+import type { Condition, ProductType, Weekday, ZoneName } from "../api/types";
 import type { Rating } from "../types";
 
 export const RATING_LABELS: Record<Rating, string> = {
@@ -10,6 +10,24 @@ export const RATING_LABELS: Record<Rating, string> = {
 };
 
 export const RATINGS: Rating[] = [1, 2, 3, 4, 5];
+
+export const ZONE_LABELS: Record<ZoneName, string> = {
+  forehead: "Forehead",
+  nose: "Nose",
+  left_cheek: "Left cheek",
+  right_cheek: "Right cheek",
+  chin: "Chin",
+  jawline: "Jawline",
+};
+
+export const CONDITIONS: Condition[] = ["forming", "dry", "red", "oily"];
+
+export const CONDITION_LABELS: Record<Condition, string> = {
+  forming: "Pimple forming",
+  dry: "Dry",
+  red: "Red",
+  oily: "Oily",
+};
 
 export const AVATAR_COLORS = ["#e8927c", "#7fb3a3", "#9aa7d6", "#d9a45b", "#b58fc7", "#6fa8c9"];
 

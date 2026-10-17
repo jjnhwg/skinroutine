@@ -1,4 +1,4 @@
-import type { Day, Product, Trial, Verdict } from "../api/types";
+import type { Day, Product, Trial, Verdict, ZoneConditions } from "../api/types";
 
 export function product(id: number, name: string, fields: Partial<Product> = {}): Product {
   return {
@@ -17,12 +17,22 @@ export function product(id: number, name: string, fields: Partial<Product> = {})
 
 export const NO_ZONES = { forehead: 0, nose: 0, left_cheek: 0, right_cheek: 0, chin: 0, jawline: 0 };
 
+export const NO_CONDITIONS: ZoneConditions = {
+  forehead: [],
+  nose: [],
+  left_cheek: [],
+  right_cheek: [],
+  chin: [],
+  jawline: [],
+};
+
 export function day(date: string, fields: Partial<Day> = {}): Day {
   return {
     date,
     status: "none",
     skin_score: null,
     zones: NO_ZONES,
+    conditions: NO_CONDITIONS,
     total_breakouts: 0,
     notes: "",
     product_uses: [],

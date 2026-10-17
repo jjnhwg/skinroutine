@@ -88,6 +88,15 @@ class Zone(StrEnum):
     JAWLINE = "jawline"
 
 
+class Condition(StrEnum):
+    """Something going on in a zone besides a breakout."""
+
+    FORMING = "forming"  # a pimple coming up, not yet a breakout
+    DRY = "dry"
+    RED = "red"
+    OILY = "oily"
+
+
 class DayLog(Base):
     __tablename__ = "day_logs"
     __table_args__ = (UniqueConstraint("user_id", "date"),)
@@ -112,6 +121,7 @@ class DayLog(Base):
     )
 
     zones: Mapped[list["ZoneBreakout"]] = relationship(cascade="all, delete-orphan")
+    conditions: Mapped[list["ZoneCondition"]] = relationship(cascade="all, delete-orphan")
     uses: Mapped[list["ProductUse"]] = relationship(cascade="all, delete-orphan")
     tags: Mapped[list["DayTag"]] = relationship(cascade="all, delete-orphan")
     photos: Mapped[list["Photo"]] = relationship(cascade="all, delete-orphan")
@@ -125,6 +135,18 @@ class ZoneBreakout(Base):
     )
     zone: Mapped[Zone] = mapped_column(_enum(Zone), primary_key=True)
     count: Mapped[int]
+
+
+class ZoneCondition(Base):
+    """One condition marked on one zone; no row means the zone was fine."""
+
+    __tablename__ = "zone_conditions"
+
+    day_log_id: Mapped[int] = mapped_column(
+        ForeignKey("day_logs.id", ondelete="CASCADE"), primary_key=True
+    )
+    zone: Mapped[Zone] = mapped_column(_enum(Zone), primary_key=True)
+    condition: Mapped[Condition] = mapped_column(_enum(Condition), primary_key=True)
 
 
 class ProductUse(Base):

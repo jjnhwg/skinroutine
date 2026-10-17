@@ -25,6 +25,7 @@ function checkInFrom(day: Day): CheckIn {
   return {
     skin_score: day.skin_score,
     zones: day.zones,
+    conditions: day.conditions,
   };
 }
 
@@ -108,16 +109,13 @@ export function LogScreen({ date }: { date: string }) {
 
   async function save() {
     if (!day || !checkIn) return;
-    if (checkIn.skin_score === null) {
-      setError("Pick a skin score first.");
-      return;
-    }
     setSaving(true);
     setError("");
     try {
       const result = await saveDay(date, {
         skin_score: checkIn.skin_score,
         zones: checkIn.zones,
+        conditions: checkIn.conditions,
         notes: notes.trim(),
         product_uses: uses,
         tag_ids: tagIds,

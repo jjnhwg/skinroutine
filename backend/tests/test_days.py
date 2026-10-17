@@ -44,6 +44,7 @@ def test_unsaved_day_is_prefilled_from_the_routine(client, routine):
     assert monday["status"] == "none"
     assert monday["skin_score"] is None
     assert monday["zones"] == dict.fromkeys(ZONES, 0)
+    assert monday["conditions"] == dict.fromkeys(ZONES, [])
     assert monday["planned"] == {"am": [routine["cleanser"]], "pm": [routine["retinol"]]}
     assert monday["product_uses"] == [
         {"product_id": routine["cleanser"], "time_of_day": "am"},
@@ -90,6 +91,30 @@ def test_editing_replaces_zones_and_uses(client, routine):
     assert day["product_uses"] == [both[1]]
 
 
+def test_conditions_round_trip_and_replace(client, frozen_now):
+    client.put(
+        f"/api/days/{MONDAY}",
+        json=checkin(conditions={"chin": ["red", "forming", "red"], "forehead": ["oily"]}),
+    )
+    day = client.get(f"/api/days/{MONDAY}").json()
+    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "chin": ["forming", "red"], "forehead": ["oily"]}
+
+    client.put(f"/api/days/{MONDAY}", json=checkin(conditions={"nose": ["dry"]}))
+
+    day = client.get(f"/api/days/{MONDAY}").json()
+    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "nose": ["dry"]}
+
+
+def test_skin_score_is_optional(client, frozen_now):
+    body = checkin()
+    del body["skin_score"]
+
+    assert client.put(f"/api/days/{MONDAY}", json=body).status_code == 200
+    day = client.get(f"/api/days/{MONDAY}").json()
+    assert day["status"] == "logged"
+    assert day["skin_score"] is None
+
+
 def test_same_product_morning_and_night(client, routine):
     uses = [
         {"product_id": routine["cleanser"], "time_of_day": "am"},
@@ -112,11 +137,12 @@ def test_future_date_is_422(client, frozen_now):
     [
         {"skin_score": 0},
         {"skin_score": 6},
-        {"skin_score": None},
         {"zones": {**ZONES, "nose": -1}},
         {"zones": {**ZONES, "nose": 51}},
         {"zones": {k: v for k, v in ZONES.items() if k != "jawline"}},
         {"zones": {**ZONES, "ear": 1}},
+        {"conditions": {"chin": ["itchy"]}},
+        {"conditions": {"ear": ["dry"]}},
         {"product_uses": [{"product_id": 1, "time_of_day": "noon"}]},
     ],
 )

@@ -5,7 +5,7 @@ import { deleteDayPhoto, getDay, saveDay, uploadDayPhoto } from "../api/days";
 import { ApiError } from "../api/http";
 import { listProducts } from "../api/products";
 import { listTags } from "../api/tags";
-import { day, NO_ZONES, product } from "../test/fixtures";
+import { day, NO_CONDITIONS, NO_ZONES, product } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
 import { LogScreen } from "./LogScreen";
 
@@ -25,6 +25,7 @@ const SAVED = day("2026-10-05", {
   status: "logged",
   skin_score: 4,
   zones: { ...NO_ZONES, chin: 3 },
+  conditions: { ...NO_CONDITIONS, chin: ["red"] },
   total_breakouts: 3,
   notes: "Spot on chin",
   product_uses: [{ product_id: 1, time_of_day: "am" }],
@@ -50,7 +51,7 @@ describe("LogScreen", () => {
     renderWithApp(<LogScreen date="2026-10-05" />);
 
     expect(await screen.findByRole("button", { name: "4 — Rough" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByLabelText("Chin breakouts")).toHaveTextContent("3");
+    expect(screen.getByRole("button", { name: "Chin — 3 breakouts, red" })).toBeInTheDocument();
     expect(screen.getByLabelText("Notes")).toHaveValue("Spot on chin");
     expect(screen.getByRole("button", { name: /Retinol/ })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByText(/Editing your saved entry/)).toBeInTheDocument();
@@ -65,7 +66,9 @@ describe("LogScreen", () => {
     await screen.findByLabelText("Notes");
 
     await user.click(screen.getByRole("button", { name: /Retinol/ }));
+    await user.click(screen.getByRole("button", { name: "Nose" }));
     await user.click(screen.getByRole("button", { name: "More on nose" }));
+    await user.click(screen.getByRole("button", { name: "Oily" }));
     await user.type(screen.getByLabelText("Notes"), "!");
     await user.click(await screen.findByRole("button", { name: "Alcohol" }));
     await user.click(screen.getByRole("button", { name: "Update entry" }));
@@ -73,6 +76,7 @@ describe("LogScreen", () => {
     expect(saveDay).toHaveBeenCalledWith("2026-10-05", {
       skin_score: 4,
       zones: { ...NO_ZONES, chin: 3, nose: 1 },
+      conditions: { ...NO_CONDITIONS, chin: ["red"], nose: ["oily"] },
       notes: "Spot on chin!",
       product_uses: [
         { product_id: 1, time_of_day: "am" },
@@ -83,15 +87,17 @@ describe("LogScreen", () => {
     expect(await screen.findByText("Entry updated")).toBeInTheDocument();
   });
 
-  it("needs a skin score before saving", async () => {
-    vi.mocked(getDay).mockResolvedValue(day("2026-10-09", { planned: { am: [1], pm: [] } }));
+  it("saves without a skin score", async () => {
+    const fresh = day("2026-10-09", { planned: { am: [1], pm: [] } });
+    vi.mocked(getDay).mockResolvedValue(fresh);
+    vi.mocked(saveDay).mockResolvedValue({ ...fresh, status: "logged" });
     const user = userEvent.setup();
     renderWithApp(<LogScreen date="2026-10-09" />);
 
     await user.click(await screen.findByRole("button", { name: "Save entry" }));
 
-    expect(saveDay).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Pick a skin score first.");
+    expect(saveDay).toHaveBeenCalledWith("2026-10-09", expect.objectContaining({ skin_score: null }));
+    expect(await screen.findByText("Entry saved")).toBeInTheDocument();
   });
 
   it("shows the server's error", async () => {
