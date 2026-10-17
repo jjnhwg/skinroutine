@@ -63,6 +63,11 @@ main { max-width: 640px; margin: 0 auto; padding: 4px 16px 24px; }
 .card h2, .section-h { font-size: 15px; font-weight: 700; margin: 0 0 12px; letter-spacing: -.01em; }
 .section-h .count { color: var(--text-muted); font-weight: 500; }
 .muted { color: var(--text-muted); font-size: 14px; }
+.prose p, .prose li { line-height: 1.6; }
+.prose p:first-child { margin-top: 0; }
+.prose p:last-child { margin-bottom: 0; }
+.prose ul { padding-left: 20px; }
+.prose li + li { margin-top: 8px; }
 
 /* forms */
 label.field { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: var(--text); }

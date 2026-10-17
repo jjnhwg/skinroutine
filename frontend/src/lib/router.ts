@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 
-export type Tab = "log" | "timeline" | "insights" | "products" | "settings";
+export type Tab = "home" | "log" | "timeline" | "insights" | "products" | "settings";
 
 export const TAB_LABELS: Record<Tab, string> = {
+  home: "Home",
   log: "Log",
   timeline: "Timeline",
   insights: "Insights",
@@ -19,8 +20,8 @@ export interface Route {
 }
 
 function parse(hash: string): Route {
-  const parts = (hash.replace(/^#\/?/, "") || "log").split("/");
-  const tab = (TABS as string[]).includes(parts[0]) ? (parts[0] as Tab) : "log";
+  const parts = (hash.replace(/^#\/?/, "") || "home").split("/");
+  const tab = (TABS as string[]).includes(parts[0]) ? (parts[0] as Tab) : "home";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(parts[1] ?? "") ? parts[1] : null;
   return { tab, date };
 }

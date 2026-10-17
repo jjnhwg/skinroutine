@@ -6,6 +6,7 @@ import { MissedDaysPrompt } from "./components/MissedDaysPrompt";
 import { TabBar } from "./components/TabBar";
 import { ToastProvider } from "./components/Toast";
 import { TAB_LABELS, useRoute, type Route } from "./lib/router";
+import { HomeScreen } from "./screens/HomeScreen";
 import { InsightsScreen } from "./screens/InsightsScreen";
 import { LogScreen } from "./screens/LogScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
@@ -16,6 +17,7 @@ function Screens({ tab, date }: Route) {
   const { today } = useSettings();
   return (
     <main id="app" className={`tab-${tab}`} tabIndex={-1}>
+      {tab === "home" && <HomeScreen />}
       {tab === "timeline" && <TimelineScreen />}
       {tab === "insights" && <InsightsScreen />}
       {tab === "products" && <ProductsScreen />}
@@ -36,7 +38,7 @@ export default function App() {
     <ToastProvider>
       <header className="top">
         <div className="inner">
-          <a className="home" href="#/log">
+          <a className="home" href="#/">
             <div className="logo" aria-hidden="true">
               <DropletIcon />
             </div>
