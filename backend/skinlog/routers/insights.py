@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from skinlog import clock, weather
 from skinlog.analysis.dataset import breakout_events, build_dataset, outcome_days
 from skinlog.analysis import ingredients
+from skinlog.analysis.cycle import cycle
 from skinlog.analysis.recap import WEEK_DAYS, recap
 from skinlog.analysis.suspects import suspects
 from skinlog.db import get_db
@@ -43,15 +44,18 @@ def _suspects(db: Session, user: User, source: WeatherSource) -> tuple[SuspectsO
     breakouts = len(breakout_events(records))
     counts = dict(logged_days=logged, required=REQUIRED_DAYS, breakouts=breakouts, required_breakouts=REQUIRED_BREAKOUTS)
     products = {p.id: p for p in db.scalars(select(Product).where(Product.user_id == user.id))}
+    cycle_out = cycle(records) if user.cycle_tracking else None
     if logged < REQUIRED_DAYS:
-        return SuspectsOut(status="collecting", suspects=[], low_contrast=[], **counts), products
+        return SuspectsOut(status="collecting", suspects=[], low_contrast=[], cycle=cycle_out, **counts), products
 
     tags = {t.id: t.name for t in db.scalars(select(Tag).where(Tag.user_id == user.id))}
     names = {pid: p.name for pid, p in products.items()}
     result = suspects(
         records, names, tags, user.lookahead_min_days, user.lookahead_max_days, weather.WEATHER_NAMES
     )
-    out = SuspectsOut(status="ready", suspects=result["suspects"], low_contrast=result["low_contrast"], **counts)
+    out = SuspectsOut(
+        status="ready", suspects=result["suspects"], low_contrast=result["low_contrast"], cycle=cycle_out, **counts
+    )
     out.shared_ingredients = [
         SharedIngredient(**s) for s in ingredients.shared(_suspect_ingredients(out, products))
     ]

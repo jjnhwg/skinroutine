@@ -30,6 +30,7 @@ class DayRecord:
     imported: bool = False
     photos: dict[str, str] = field(default_factory=dict)  # angle -> URL
     weather: set[int] = field(default_factory=set)  # weather factor ids, see weather.py
+    period: bool = False
 
     @property
     def is_outcome(self) -> bool:
@@ -74,6 +75,7 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
                 imported=log.imported,
                 photos={p.angle: file_url(p.path) for p in log.photos},
                 weather=weather_by_date.get(day, set()),
+                period=log.period,
             )
         )
     return records

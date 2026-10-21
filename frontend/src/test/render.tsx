@@ -15,6 +15,7 @@ export const TEST_SETTINGS: Settings = {
   lookahead_max_days: 5,
   latitude: null,
   longitude: null,
+  cycle_tracking: false,
   today: "2026-10-09",
 };
 

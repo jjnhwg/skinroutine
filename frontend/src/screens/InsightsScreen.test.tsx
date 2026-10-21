@@ -46,6 +46,7 @@ const READY: Suspects = {
   ],
   low_contrast: [{ kind: "product", id: 1, name: "Cleanser", reason: "used on nearly every day" }],
   shared_ingredients: [],
+  cycle: null,
 };
 
 const RECAP = {
@@ -166,5 +167,22 @@ describe("InsightsScreen", () => {
 
     expect(backfill).toHaveBeenCalledWith([1]);
     expect(await screen.findByText("Filled in 2 days")).toBeInTheDocument();
+  });
+
+  it("shows the cycle insight for users who track it", async () => {
+    vi.mocked(getSuspects).mockResolvedValue({
+      ...READY,
+      cycle: {
+        status: "ready",
+        period_starts: 3,
+        before_period: { avg: 1.8, days: 18 },
+        otherwise: { avg: 0.4, days: 60 },
+        sentence: "Breakouts tend to come in the week before your period: 1.8 a day, vs 0.4 on other days. Keep this in mind before blaming a product.",
+        confidence: "strong",
+      },
+    });
+    renderWithApp(<InsightsScreen />);
+
+    expect(await screen.findByText(/Breakouts tend to come in the week before your period/)).toBeInTheDocument();
   });
 });

@@ -14,6 +14,7 @@ def record(
     imported: bool = False,
     photos: dict[str, str] | None = None,
     zones: dict[str, int] | None = None,
+    period: bool = False,
 ) -> DayRecord:
     return DayRecord(
         date=day,
@@ -22,6 +23,7 @@ def record(
         tag_ids=tags or set(),
         total_breakouts=total,
         zones=zones or {},
+        period=period,
         imported=imported,
         photos=photos or {},
     )

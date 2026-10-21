@@ -30,7 +30,7 @@ function checkInFrom(day: Day): CheckIn {
 }
 
 export function LogScreen({ date }: { date: string }) {
-  const { today } = useSettings();
+  const { today, settings } = useSettings();
   const { products } = useProducts();
   const { tags } = useTags();
   const toast = useToast();
@@ -41,6 +41,7 @@ export function LogScreen({ date }: { date: string }) {
   const [uses, setUses] = useState<ProductUse[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [notes, setNotes] = useState("");
+  const [period, setPeriod] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   // Photos picked before the day exists on the server; uploaded right after saving.
@@ -53,6 +54,7 @@ export function LogScreen({ date }: { date: string }) {
     setUses(next.product_uses);
     setTagIds(next.tag_ids);
     setNotes(next.notes);
+    setPeriod(next.period);
     setPending(NO_PENDING);
     setError("");
   }
@@ -119,6 +121,7 @@ export function LogScreen({ date }: { date: string }) {
         notes: notes.trim(),
         product_uses: uses,
         tag_ids: tagIds,
+        period,
       });
       const waiting = pending;
       load(result);
@@ -244,6 +247,12 @@ export function LogScreen({ date }: { date: string }) {
               <div className="card">
                 <h2>End of day</h2>
                 <TagPicker tags={tags} selected={tagIds} onChange={setTagIds} />
+                {(settings.cycle_tracking || period) && (
+                  <label className="check-row" style={{ marginTop: 12, alignSelf: "auto" }}>
+                    <input type="checkbox" checked={period} onChange={(e) => setPeriod(e.target.checked)} />
+                    On my period today
+                  </label>
+                )}
                 <label className="field" htmlFor="note" style={{ marginTop: 18 }}>
                   Notes
                 </label>

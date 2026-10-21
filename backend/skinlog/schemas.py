@@ -162,6 +162,7 @@ class DayIn(BaseModel):
     notes: str = Field("", max_length=5000)
     product_uses: list[ProductUseIO] = []
     tag_ids: list[int] = []
+    period: bool = False
 
 
 class DayPhotos(BaseModel):
@@ -180,6 +181,7 @@ class DayOut(BaseModel):
     conditions: ZoneConditions
     total_breakouts: int
     notes: str
+    period: bool
     product_uses: list[ProductUseIO]
     tag_ids: list[int]
     photos: DayPhotos
@@ -338,6 +340,15 @@ class IngredientCheckOut(BaseModel):
     matches: list[SharedIngredient]
 
 
+class CycleOut(BaseModel):
+    status: Literal["collecting", "ready"]
+    period_starts: int
+    before_period: GroupAverage | None
+    otherwise: GroupAverage | None
+    sentence: str | None
+    confidence: Literal["strong", "weak"] | None
+
+
 class SuspectsOut(BaseModel):
     status: Literal["collecting", "ready"]
     logged_days: int
@@ -349,6 +360,8 @@ class SuspectsOut(BaseModel):
     low_contrast: list[LowContrast]
     # Ingredients that two or more suspect products have in common.
     shared_ingredients: list[SharedIngredient] = []
+    # Only for users who track their cycle.
+    cycle: CycleOut | None = None
 
 
 class RecapWeek(BaseModel):

@@ -29,6 +29,8 @@ class User(Base):
     # Where to look up the weather; rounded, and None until the user shares it.
     latitude: Mapped[float | None]
     longitude: Mapped[float | None]
+    # Optional: shows "On my period" on the log and compares the week before each period.
+    cycle_tracking: Mapped[bool] = mapped_column(default=False, server_default=false())
 
 
 class ProductType(StrEnum):
@@ -119,6 +121,7 @@ class DayLog(Base):
     redness: Mapped[int | None]
     oiliness: Mapped[int | None]
     notes: Mapped[str] = mapped_column(Text, default="")
+    period: Mapped[bool] = mapped_column(default=False, server_default=false())
     # Moved over from the old browser app: it has a score but no zones,
     # so analysis uses it for exposures only. Saving the day clears it.
     imported: Mapped[bool] = mapped_column(default=False)

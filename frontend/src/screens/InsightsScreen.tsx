@@ -113,6 +113,27 @@ export function InsightsScreen() {
         </div>
       )}
 
+      {data?.cycle && (
+        <div className="card">
+          <h2>Your cycle</h2>
+          {data.cycle.status === "collecting" ? (
+            <p className="muted" style={{ margin: 0 }}>
+              Mark period days on the log. After 2 periods ({data.cycle.period_starts} so far), this compares
+              the week before each one with other days.
+            </p>
+          ) : (
+            <>
+              <p style={{ margin: 0 }}>{data.cycle.sentence}</p>
+              {data.cycle.confidence && (
+                <span className={`signal ${data.cycle.confidence}`}>
+                  {data.cycle.confidence === "strong" ? "Strong signal" : "Weak signal · too few breakouts to be sure"}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {data?.status === "ready" && (
         <div className="card">
           <h2>Tends to come before</h2>

@@ -83,8 +83,31 @@ describe("LogScreen", () => {
         { product_id: 2, time_of_day: "pm" },
       ],
       tag_ids: [7, 8],
+      period: false,
     });
     expect(await screen.findByText("Entry updated")).toBeInTheDocument();
+  });
+
+  it("hides 'On my period' unless cycle tracking is on", async () => {
+    const fresh = day("2026-10-09");
+    vi.mocked(getDay).mockResolvedValue(fresh);
+    renderWithApp(<LogScreen date="2026-10-09" />);
+    await screen.findByRole("button", { name: "Save entry" });
+
+    expect(screen.queryByRole("checkbox", { name: "On my period today" })).not.toBeInTheDocument();
+  });
+
+  it("saves a period day when cycle tracking is on", async () => {
+    const fresh = day("2026-10-09");
+    vi.mocked(getDay).mockResolvedValue(fresh);
+    vi.mocked(saveDay).mockResolvedValue({ ...fresh, status: "logged", period: true });
+    const user = userEvent.setup();
+    renderWithApp(<LogScreen date="2026-10-09" />, { cycle_tracking: true });
+
+    await user.click(await screen.findByRole("checkbox", { name: "On my period today" }));
+    await user.click(screen.getByRole("button", { name: "Save entry" }));
+
+    expect(saveDay).toHaveBeenCalledWith("2026-10-09", expect.objectContaining({ period: true }));
   });
 
   it("saves without a skin score", async () => {

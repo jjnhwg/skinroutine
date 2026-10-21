@@ -5,6 +5,7 @@ import { sendTestEmail } from "../api/settings";
 import type { LegacyData } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
+import { CycleSettings } from "../components/CycleSettings";
 import { TagSettings } from "../components/TagSettings";
 import { WeatherSettings } from "../components/WeatherSettings";
 import { useToast } from "../components/useToast";
@@ -46,7 +47,7 @@ function ReminderSettings() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    const form: Required<Omit<SettingsPatch, "latitude" | "longitude">> = {
+    const form: Required<Omit<SettingsPatch, "latitude" | "longitude" | "cycle_tracking">> = {
       email: email.trim() || null,
       timezone,
       reminder_time: reminderTime,
@@ -272,11 +273,12 @@ export function SettingsScreen() {
   return (
     <>
       <h2 className="page-title">Settings</h2>
-      <p className="page-sub">Reminders, insights, tags and weather.</p>
+      <p className="page-sub">Reminders, insights, tags, weather and cycle.</p>
 
       <ReminderSettings />
       <TagSettings />
       <WeatherSettings />
+      <CycleSettings />
       <MoveToServer />
     </>
   );

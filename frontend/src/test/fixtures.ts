@@ -38,6 +38,7 @@ export function day(date: string, fields: Partial<Day> = {}): Day {
     conditions: NO_CONDITIONS,
     total_breakouts: 0,
     notes: "",
+    period: false,
     product_uses: [],
     tag_ids: [],
     photos: { front: null, left: null, right: null },

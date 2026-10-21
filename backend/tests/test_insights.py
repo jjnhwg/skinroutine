@@ -36,6 +36,7 @@ def test_collecting_until_14_outcome_days(client, frozen_now):
         "suspects": [],
         "low_contrast": [],
         "shared_ingredients": [],
+        "cycle": None,
     }
 
     log_days(client, [14], [], serum)
@@ -140,3 +141,14 @@ def test_a_new_products_ingredients_are_checked_against_suspects(client, frozen_
 def test_ingredient_check_before_insights_are_ready_finds_nothing(client, frozen_now):
     check = client.post("/api/insights/ingredient-check", json={"ingredients": "Niacinamide"}).json()
     assert check == {"matches": []}
+
+
+def test_cycle_is_only_reported_when_tracking(client, frozen_now):
+    client.put("/api/days/2026-10-01", json={"zones": ZONES, "period": True})
+    assert client.get("/api/days/2026-10-01").json()["period"] is True
+    assert client.get("/api/insights/suspects").json()["cycle"] is None
+
+    assert client.patch("/api/settings", json={"cycle_tracking": True}).json()["cycle_tracking"] is True
+    cycle = client.get("/api/insights/suspects").json()["cycle"]
+    assert cycle["status"] == "collecting"
+    assert cycle["period_starts"] == 1

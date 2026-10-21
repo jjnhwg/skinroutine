@@ -32,6 +32,7 @@ class SettingsOut(BaseModel):
     # Where weather is looked up; both None until shared.
     latitude: float | None
     longitude: float | None
+    cycle_tracking: bool
     today: str
 
 
@@ -44,6 +45,7 @@ class SettingsPatch(BaseModel):
     lookahead_max_days: int | None = Field(None, ge=0, le=MAX_LOOKAHEAD_DAYS)
     latitude: float | None = Field(None, ge=-90, le=90)
     longitude: float | None = Field(None, ge=-180, le=180)
+    cycle_tracking: bool | None = None
 
     @field_validator("email")
     @classmethod
@@ -77,6 +79,7 @@ def _out(user: User) -> SettingsOut:
         lookahead_max_days=user.lookahead_max_days,
         latitude=user.latitude,
         longitude=user.longitude,
+        cycle_tracking=user.cycle_tracking,
         today=clock.today_for(user, clock.now_utc()).isoformat(),
     )
 

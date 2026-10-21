@@ -11,6 +11,8 @@ export interface Settings {
   /** Where weather is looked up, rounded to ~1 km; null until shared. */
   latitude: number | null;
   longitude: number | null;
+  /** Optional: shows "On my period" on the log. */
+  cycle_tracking: boolean;
   /** The user's local date, YYYY-MM-DD. The app's only source of "today". */
   today: string;
 }
@@ -109,6 +111,7 @@ export interface Day {
   conditions: ZoneConditions;
   total_breakouts: number;
   notes: string;
+  period: boolean;
   /** Saved uses, or the routine's plan when status is "none". */
   product_uses: ProductUse[];
   tag_ids: number[];
@@ -125,6 +128,7 @@ export interface DayInput {
   notes: string;
   product_uses: ProductUse[];
   tag_ids: number[];
+  period: boolean;
 }
 
 /** One calendar cell from GET /api/days?from=&to=. */
@@ -223,6 +227,17 @@ export interface Suspects {
   low_contrast: (Factor & { reason: string })[];
   /** Ingredients that two or more suspect products have in common. */
   shared_ingredients: SharedIngredient[];
+  /** Only for users who track their cycle. */
+  cycle: CycleInsight | null;
+}
+
+export interface CycleInsight {
+  status: "collecting" | "ready";
+  period_starts: number;
+  before_period: { avg: number; days: number } | null;
+  otherwise: { avg: number; days: number } | null;
+  sentence: string | null;
+  confidence: Confidence | null;
 }
 
 export interface SharedIngredient {

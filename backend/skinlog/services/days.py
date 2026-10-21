@@ -81,6 +81,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         conditions=zone_conditions(log),
         total_breakouts=sum(zones.values()),
         notes=log.notes if log else "",
+        period=log.period if log else False,
         product_uses=uses,
         tag_ids=sorted(t.tag_id for t in log.tags) if log else [],
         photos=DayPhotos(**{p.angle: file_url(p.path) for p in log.photos} if log else {}),
@@ -132,6 +133,7 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     log.imported = False
     log.skin_score = body.skin_score
     log.notes = body.notes
+    log.period = body.period
     # Clear first so replaced rows are deleted before their successors are inserted.
     log.zones.clear()
     log.conditions.clear()
