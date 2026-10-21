@@ -13,6 +13,7 @@ worse before the 6 weeks purging can take are over.
 from datetime import date, timedelta
 from statistics import mean
 
+from skinlog.analysis.confidence import confidence
 from skinlog.analysis.dataset import DayRecord
 from skinlog.models import Trial
 from skinlog.services.trials import PURGE_LENGTH_DAYS, planned_end
@@ -38,6 +39,7 @@ def window(records: list[DayRecord], start: date, end: date) -> dict:
         "start": start,
         "end": end,
         "outcome_days": len(days),
+        "total_breakouts": sum(r.total_breakouts for r in days),
         "avg_breakouts": _avg([r.total_breakouts for r in days]),
     }
 
@@ -109,9 +111,15 @@ def verdict(
 
     enough = before["outcome_days"] >= MIN_OUTCOME_DAYS and during["outcome_days"] >= MIN_OUTCOME_DAYS
     label = None
+    sure = None
     if enough:
         diff = during["avg_breakouts"] - before["avg_breakouts"]
         label = "better" if diff <= -THRESHOLD else "worse" if diff >= THRESHOLD else "no_clear_change"
+        if label != "no_clear_change":
+            sure = confidence(
+                during["total_breakouts"], during["outcome_days"],
+                before["total_breakouts"], before["outcome_days"],
+            )
     by_week = weeks(records, trial.start_date, end)
 
     return {
@@ -119,6 +127,8 @@ def verdict(
         "during": during,
         "enough_data": enough,
         "label": label,
+        # "strong", or "weak" when there are too few breakouts to be sure; None without a direction.
+        "confidence": sure,
         "flags": {
             "overlapping": overlapping,
             "ended_early": trial.ended_on is not None,

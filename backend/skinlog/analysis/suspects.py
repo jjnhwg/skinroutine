@@ -5,13 +5,14 @@ present on any day in [d − hi, d − lo]. Outcome days that follow F are compa
 those that don't:
 - fewer than 3 days in either group -> not enough contrast to judge;
 - a suspect when the average breakouts per day after F is at least 0.5 higher,
-  ranked by that difference.
+  ranked by that difference, and labelled "strong" or "weak" (see confidence.py).
 Wording always says "tends to come before" — never that anything causes anything.
 """
 
 from datetime import date, timedelta
 from statistics import mean
 
+from skinlog.analysis.confidence import confidence
 from skinlog.analysis.dataset import DayRecord, breakout_events, outcome_days
 
 MIN_GROUP_DAYS = 3
@@ -99,6 +100,10 @@ def suspects(
                 "after": {"avg": after_avg, "days": len(after)},
                 "otherwise": {"avg": other_avg, "days": len(other)},
                 "recent": recent,
+                "confidence": confidence(
+                    sum(r.total_breakouts for r in after), len(after),
+                    sum(r.total_breakouts for r in other), len(other),
+                ),
             }
         )
 

@@ -162,8 +162,12 @@ export interface VerdictWindow {
   start: string;
   end: string;
   outcome_days: number;
+  total_breakouts: number;
   avg_breakouts: number | null;
 }
+
+/** "weak": with this few breakouts, the difference could easily be chance. */
+export type Confidence = "strong" | "weak";
 
 export interface VerdictPhoto {
   date: string;
@@ -176,6 +180,8 @@ export interface Verdict {
   during: VerdictWindow;
   enough_data: boolean;
   label: "better" | "worse" | "no_clear_change" | null;
+  /** Null when there's no direction to be sure about. */
+  confidence: Confidence | null;
   flags: { overlapping: boolean; ended_early: boolean; in_progress: boolean };
   photos: { first: VerdictPhoto | null; last: VerdictPhoto | null };
   /** The trial week by week; the last week may be short. */
@@ -197,6 +203,7 @@ export interface Suspect {
   after: { avg: number; days: number };
   otherwise: { avg: number; days: number };
   recent: { hits: number; total: number };
+  confidence: Confidence;
 }
 
 export interface Suspects {

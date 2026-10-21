@@ -137,6 +137,9 @@ export function InsightsScreen() {
                     onClick={() => setOpen(open === i ? null : i)}
                   >
                     {s.sentence}
+                    <span className={`signal ${s.confidence}`}>
+                      {s.confidence === "strong" ? "Strong signal" : "Weak signal · too few breakouts to be sure"}
+                    </span>
                   </button>
                   {open === i && <SuspectChart suspect={s} window={window} />}
                 </li>

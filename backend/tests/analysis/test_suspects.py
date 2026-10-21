@@ -113,3 +113,22 @@ def test_single_day_window_wording():
     assert serum["otherwise"] == {"avg": pytest.approx(6 / 22), "days": 22}
     assert "in the 2 days after it" in serum["sentence"]
     assert "came 2 days after Mystery Serum" in serum["sentence"]
+
+
+def test_three_comparison_days_is_too_few_to_be_sure():
+    # 24 breakouts in 25 days after the serum vs 0 in 3 days otherwise (p ≈ 0.10).
+    assert run()["suspects"][0]["confidence"] == "weak"
+
+
+def test_a_long_clear_contrast_is_strong():
+    start = date(2026, 9, 1)
+    days = {}
+    for n in range(40):
+        d = date.fromordinal(start.toordinal() + n)
+        used = n % 10 == 0  # serum every 10th day; breakouts 2 days later
+        days[d] = record(d, total=3 if n % 10 == 2 else 0, products={SERUM} if used else set())
+    records = calendar(start, date.fromordinal(start.toordinal() + 39), days)
+
+    top = run(records=records)["suspects"][0]
+    assert top["factor"]["id"] == SERUM
+    assert top["confidence"] == "strong"

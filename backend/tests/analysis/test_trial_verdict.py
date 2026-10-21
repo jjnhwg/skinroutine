@@ -62,6 +62,9 @@ def test_completed_trial_averages():
     # 0.571 - 2.333 = -1.76, past the -0.5 threshold
     assert v["enough_data"] is True
     assert v["label"] == "better"
+    # 14 breakouts in 6 days down to 4 in 7: a clear enough drop to be sure.
+    assert (before["total_breakouts"], during["total_breakouts"]) == (14, 4)
+    assert v["confidence"] == "strong"
     assert v["flags"] == {"overlapping": False, "ended_early": False, "in_progress": False}
 
 
@@ -117,6 +120,8 @@ def test_label_thresholds(during_total, expected):
     v = verdict(calendar(S(17), O(26), days), trial(), today=O(26), overlapping=False)
 
     assert v["label"] == expected
+    # 10 vs 15 (or 5) breakouts over 5 days each could easily be chance.
+    assert v["confidence"] == (None if expected == "no_clear_change" else "weak")
 
 
 def test_no_photos():

@@ -250,6 +250,7 @@ class Window(BaseModel):
     start: date
     end: date
     outcome_days: int
+    total_breakouts: int
     avg_breakouts: float | None
 
 
@@ -279,6 +280,8 @@ class Verdict(BaseModel):
     during: Window
     enough_data: bool
     label: Literal["better", "worse", "no_clear_change"] | None
+    # "weak": the change could easily be chance, with this few breakouts.
+    confidence: Literal["strong", "weak"] | None
     flags: VerdictFlags
     photos: VerdictPhotos
     # The trial week by week, so a purge (worse, then better) can be seen.
@@ -309,6 +312,7 @@ class Suspect(BaseModel):
     after: GroupAverage
     otherwise: GroupAverage
     recent: Recent
+    confidence: Literal["strong", "weak"]
 
 
 class LowContrast(Factor):

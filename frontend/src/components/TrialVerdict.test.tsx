@@ -20,7 +20,7 @@ describe("TrialVerdict", () => {
   it("shows the before and during numbers in plain words", async () => {
     renderWithApp(<TrialVerdict trial={trial(4, RETINOL)} onClose={() => {}} onEnded={() => {}} />);
 
-    expect(await screen.findByText("Breakouts were lower during the trial: 2.1 → 0.8 a day")).toBeInTheDocument();
+    expect(await screen.findByText("Breakouts were lower during the trial (strong signal): 2.1 → 0.8 a day")).toBeInTheDocument();
     const table = screen.getAllByRole("table")[0];
     const breakouts = within(table).getByRole("row", { name: /Breakouts/ });
     expect(breakouts).toHaveTextContent("2.1");
@@ -86,15 +86,30 @@ describe("TrialVerdict", () => {
     expect(screen.queryByRole("button", { name: "End trial" })).not.toBeInTheDocument();
   });
 
+  it("says when there are too few breakouts to be sure", async () => {
+    vi.mocked(getVerdict).mockResolvedValue(
+      verdict({
+        label: "worse",
+        confidence: "weak",
+        before: { start: "2026-09-21", end: "2026-10-04", outcome_days: 14, total_breakouts: 2, avg_breakouts: 0.14 },
+        during: { start: "2026-10-05", end: "2026-10-18", outcome_days: 14, total_breakouts: 4, avg_breakouts: 0.29 },
+      }),
+    );
+    renderWithApp(<TrialVerdict trial={trial(4, RETINOL)} onClose={() => {}} onEnded={() => {}} />);
+
+    expect(await screen.findByText("Slightly worse, but too few breakouts to be sure: 0.1 → 0.3 a day")).toBeInTheDocument();
+    expect(screen.getByText(/2 breakouts before vs 4 during/)).toBeInTheDocument();
+  });
+
   it("shows a purge note and the trial week by week", async () => {
     vi.mocked(getVerdict).mockResolvedValue(
       verdict({
         label: "worse",
         purge_note: "Breakouts went up in weeks 1–2 but dropped in week 3. This can be purging; consider continuing a few more weeks.",
         weeks: [
-          { week: 1, start: "2026-10-05", end: "2026-10-11", outcome_days: 7, avg_breakouts: 3 },
-          { week: 2, start: "2026-10-12", end: "2026-10-18", outcome_days: 7, avg_breakouts: 2.9 },
-          { week: 3, start: "2026-10-19", end: "2026-10-25", outcome_days: 6, avg_breakouts: 1 },
+          { week: 1, start: "2026-10-05", end: "2026-10-11", outcome_days: 7, total_breakouts: 0, avg_breakouts: 3 },
+          { week: 2, start: "2026-10-12", end: "2026-10-18", outcome_days: 7, total_breakouts: 0, avg_breakouts: 2.9 },
+          { week: 3, start: "2026-10-19", end: "2026-10-25", outcome_days: 6, total_breakouts: 0, avg_breakouts: 1 },
         ],
       }),
     );

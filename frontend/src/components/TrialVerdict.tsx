@@ -19,9 +19,13 @@ const num = (value: number | string | null) =>
 function sentence(v: Verdict): string {
   const before = num(v.before.avg_breakouts);
   const during = num(v.during.avg_breakouts);
-  if (v.label === "better") return `Breakouts were lower during the trial: ${before} → ${during} a day`;
-  if (v.label === "worse") return `Breakouts were higher during the trial: ${before} → ${during} a day`;
-  return `No clear change in breakouts: ${before} → ${during} a day`;
+  const change = `${before} → ${during} a day`;
+  if (v.label === "no_clear_change" || v.label === null) return `No clear change in breakouts: ${change}`;
+  const direction = v.label === "better" ? "lower" : "higher";
+  if (v.confidence === "weak") {
+    return `Slightly ${v.label}, but too few breakouts to be sure: ${change}`;
+  }
+  return `Breakouts were ${direction} during the trial (strong signal): ${change}`;
 }
 
 interface TrialVerdictProps {
@@ -102,7 +106,17 @@ export function TrialVerdict({ trial, onClose, onEnded }: TrialVerdictProps) {
                 </div>
               )}
               {verdict.enough_data ? (
-                <p className={`verdict-line ${verdict.label ?? ""}`}>{sentence(verdict)}</p>
+                <>
+                  <p className={`verdict-line ${verdict.confidence === "weak" ? "" : (verdict.label ?? "")}`}>
+                    {sentence(verdict)}
+                  </p>
+                  {verdict.confidence === "weak" && (
+                    <p className="muted" style={{ fontSize: 13, marginTop: -4 }}>
+                      {verdict.before.total_breakouts} breakouts before vs {verdict.during.total_breakouts} during
+                      is a small enough difference to happen by chance. Keep logging to firm it up.
+                    </p>
+                  )}
+                </>
               ) : (
                 <p className="verdict-line">
                   Not enough data yet — a verdict needs {MIN_DAYS} logged days on each side (

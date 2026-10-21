@@ -31,6 +31,7 @@ const READY: Suspects = {
       after: { avg: 0.96, days: 25 },
       otherwise: { avg: 0, days: 3 },
       recent: { hits: 5, total: 5 },
+      confidence: "strong",
     },
     {
       factor: { kind: "tag", id: 11, name: "Alcohol" },
@@ -40,6 +41,7 @@ const READY: Suspects = {
       after: { avg: 0.69, days: 13 },
       otherwise: { avg: 0, days: 15 },
       recent: { hits: 2, total: 5 },
+      confidence: "weak",
     },
   ],
   low_contrast: [{ kind: "product", id: 1, name: "Cleanser", reason: "used on nearly every day" }],
@@ -84,6 +86,13 @@ describe("InsightsScreen", () => {
     expect(within(chart).getByText("1.0")).toBeInTheDocument();
     expect(within(chart).getByText("0.0")).toBeInTheDocument();
     expect(screen.getByText(/25 days after · 3 other days · within 1–5 days/)).toBeInTheDocument();
+  });
+
+  it("labels each suspect strong or too few to be sure", async () => {
+    renderWithApp(<InsightsScreen />);
+
+    expect(await screen.findByRole("button", { name: /Mystery Serum.*Strong signal/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alcohol.*Weak signal · too few breakouts to be sure/ })).toBeInTheDocument();
   });
 
   it("lists what couldn't be judged, with the reason", async () => {
