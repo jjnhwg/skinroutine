@@ -85,7 +85,10 @@ def get_verdict(
 
     Computed from the current logs on every request, so editing a past day changes it.
     """
-    trial = service.get_trial(db, user, trial_id)
+    return verdict_for(db, user, service.get_trial(db, user, trial_id))
+
+
+def verdict_for(db: Session, user: User, trial: Trial) -> Verdict:
     today = clock.today_for(user)
     start = trial.start_date - timedelta(days=BEFORE_DAYS)
     end = max(trial.start_date, min(service.end_date(trial), today))

@@ -11,6 +11,7 @@ import { InsightsScreen } from "./screens/InsightsScreen";
 import { LogScreen } from "./screens/LogScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
+import { SummaryScreen } from "./screens/SummaryScreen";
 import { TimelineScreen } from "./screens/TimelineScreen";
 
 function Screens({ tab, date }: Route) {
@@ -22,6 +23,7 @@ function Screens({ tab, date }: Route) {
       {tab === "insights" && <InsightsScreen />}
       {tab === "products" && <ProductsScreen />}
       {tab === "settings" && <SettingsScreen />}
+      {tab === "summary" && <SummaryScreen />}
       {tab === "log" && <LogScreen date={date ?? today} />}
     </main>
   );

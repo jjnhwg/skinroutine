@@ -48,7 +48,9 @@ export function InsightsScreen() {
   return (
     <>
       <h2 className="page-title">Insights</h2>
-      <p className="page-sub">What tends to come before changes in your skin.</p>
+      <p className="page-sub">
+        What tends to come before changes in your skin. <a href="#/summary">Printable summary</a>
+      </p>
 
       <RecapCard />
 
