@@ -1,7 +1,9 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getSuspects } from "../api/insights";
+import { backfill, getBackfillDates } from "../api/backfill";
+import { getRecap, getSuspects } from "../api/insights";
+import { getRoutine } from "../api/routine";
 import { listTrials } from "../api/trials";
 import type { Suspects } from "../api/types";
 import { product, trial } from "../test/fixtures";
@@ -11,11 +13,15 @@ import { InsightsScreen } from "./InsightsScreen";
 vi.mock("../api/settings");
 vi.mock("../api/insights");
 vi.mock("../api/trials");
+vi.mock("../api/backfill");
+vi.mock("../api/routine");
 
 const READY: Suspects = {
   status: "ready",
   logged_days: 28,
   required: 14,
+  breakouts: 6,
+  required_breakouts: 3,
   suspects: [
     {
       factor: { kind: "product", id: 2, name: "Mystery Serum" },
@@ -39,8 +45,16 @@ const READY: Suspects = {
   low_contrast: [{ kind: "product", id: 1, name: "Cleanser", reason: "used on nearly every day" }],
 };
 
+const RECAP = {
+  week: { start: "2026-10-03", end: "2026-10-09", logged_days: 6, clear_days: 4, breakout_days: 2, breakouts: 3, top_zone: "chin" as const },
+  previous: { start: "2026-09-26", end: "2026-10-02", logged_days: 5, clear_days: 1, breakout_days: 4, breakouts: 6, top_zone: "chin" as const },
+  sentence: "4 clear days, 2 with breakouts, mostly chin.",
+};
+
 beforeEach(() => {
   vi.mocked(getSuspects).mockReset().mockResolvedValue(READY);
+  vi.mocked(getRecap).mockReset().mockResolvedValue(RECAP);
+  vi.mocked(getBackfillDates).mockReset().mockResolvedValue([]);
   vi.mocked(listTrials).mockReset().mockResolvedValue([]);
 });
 
@@ -97,5 +111,38 @@ describe("InsightsScreen", () => {
     renderWithApp(<InsightsScreen />);
 
     expect(await screen.findByText(/Retinol · day 6 of 21/)).toBeInTheDocument();
+  });
+
+  it("shows this week's recap from day one", async () => {
+    renderWithApp(<InsightsScreen />);
+
+    expect(await screen.findByText("4 clear days, 2 with breakouts, mostly chin.")).toBeInTheDocument();
+    expect(screen.getByText("Fewer breakouts than last week: 1.2 → 0.5 a day.")).toBeInTheDocument();
+  });
+
+  it("counts breakouts while collecting", async () => {
+    vi.mocked(getSuspects).mockResolvedValue({ ...READY, status: "collecting", logged_days: 9, breakouts: 1, suspects: [], low_contrast: [] });
+    renderWithApp(<InsightsScreen />);
+
+    expect(await screen.findByText(/a few breakouts to compare against: 1 of 3 so far/)).toBeInTheDocument();
+  });
+
+  it("offers to fill in the last 2 weeks from the routine", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getSuspects).mockResolvedValue({ ...READY, status: "collecting", logged_days: 0, suspects: [], low_contrast: [] });
+    vi.mocked(getBackfillDates).mockResolvedValue(["2026-09-30", "2026-10-01"]);
+    vi.mocked(getRoutine).mockResolvedValue({
+      am: [{ product: product(1, "Cleanser"), schedule: { kind: "daily" } }],
+      pm: [{ product: product(2, "Retinol"), schedule: { kind: "daily" } }],
+    });
+    vi.mocked(backfill).mockResolvedValue(2);
+    renderWithApp(<InsightsScreen />);
+
+    await user.click(await screen.findByRole("button", { name: "Fill in the last 2 weeks" }));
+    await user.click(await screen.findByRole("checkbox", { name: "Retinol" }));
+    await user.click(screen.getByRole("button", { name: "Fill in 2 days" }));
+
+    expect(backfill).toHaveBeenCalledWith([1]);
+    expect(await screen.findByText("Filled in 2 days")).toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from skinlog.routers import (
+    backfill,
     catalog,
     days,
     files,
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(missed.router, prefix="/api")
     app.include_router(trials.router, prefix="/api")
     app.include_router(insights.router, prefix="/api")
+    app.include_router(backfill.router, prefix="/api")
     return app
 
 

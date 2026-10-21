@@ -27,7 +27,15 @@ def test_collecting_until_14_outcome_days(client, frozen_now):
     log_days(client, list(range(1, 14)), [3, 8], serum)
 
     collecting = client.get("/api/insights/suspects").json()
-    assert collecting == {"status": "collecting", "logged_days": 13, "required": 14, "suspects": [], "low_contrast": []}
+    assert collecting == {
+        "status": "collecting",
+        "logged_days": 13,
+        "required": 14,
+        "breakouts": 2,
+        "required_breakouts": 3,
+        "suspects": [],
+        "low_contrast": [],
+    }
 
     log_days(client, [14], [], serum)
     assert client.get("/api/insights/suspects").json()["status"] == "ready"
@@ -70,3 +78,18 @@ def test_other_users_logs_are_ignored(client, db_session, other_user, frozen_now
     db_session.commit()
 
     assert client.get("/api/insights/suspects").json()["logged_days"] == 0
+
+
+def test_recap_compares_this_week_with_last(client, frozen_now):
+    serum = make_serum(client)
+    log_days(client, [1], [], serum)  # outside both weeks
+    client.put("/api/days/2026-10-01", json={"zones": {**ZONES, "nose": 2}})
+    client.put("/api/days/2026-10-08", json={"zones": {**ZONES, "chin": 1}})
+    client.put("/api/days/2026-10-09", json={"zones": ZONES})
+
+    recap = client.get("/api/insights/recap").json()
+    assert recap["week"]["start"] == "2026-10-03"
+    assert recap["week"]["logged_days"] == 2
+    assert recap["week"]["top_zone"] == "chin"
+    assert recap["previous"]["breakouts"] == 2
+    assert recap["sentence"] == "1 clear day, 1 with breakouts, mostly chin."

@@ -196,6 +196,26 @@ export interface Suspects {
   status: "collecting" | "ready";
   logged_days: number;
   required: number;
+  /** Breakout events so far; below required_breakouts there's little to compare. */
+  breakouts: number;
+  required_breakouts: number;
   suspects: Suspect[];
   low_contrast: (Factor & { reason: string })[];
+}
+
+export interface RecapWeek {
+  start: string;
+  end: string;
+  logged_days: number;
+  clear_days: number;
+  breakout_days: number;
+  breakouts: number;
+  top_zone: ZoneName | null;
+}
+
+export interface Recap {
+  week: RecapWeek;
+  previous: RecapWeek;
+  /** e.g. "4 clear days, 2 with breakouts, mostly chin." */
+  sentence: string;
 }

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { getBackfillDates } from "../api/backfill";
 import { getSuspects } from "../api/insights";
 import { listTrials } from "../api/trials";
 import type { Suspects, Trial } from "../api/types";
 import { useSettings } from "../api/useSettings";
+import { BackfillSheet } from "../components/BackfillSheet";
+import { RecapCard } from "../components/RecapCard";
 import { SuspectChart } from "../components/SuspectChart";
 import { TrialVerdict } from "../components/TrialVerdict";
 
@@ -13,11 +16,22 @@ export function InsightsScreen() {
   const [trials, setTrials] = useState<Trial[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const [viewing, setViewing] = useState<Trial | null>(null);
+  const [openDays, setOpenDays] = useState(0);
+  const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
     let live = true;
     getSuspects()
-      .then((loaded) => live && setData(loaded))
+      .then((loaded) => {
+        if (!live) return;
+        setData(loaded);
+        // A baseline helps most before insights are ready.
+        if (loaded.status === "collecting") {
+          getBackfillDates()
+            .then((dates) => live && setOpenDays(dates.length))
+            .catch(() => {});
+        }
+      })
       .catch(() => live && setFailed(true));
     listTrials()
       .then((loaded) => live && setTrials(loaded.filter((t) => t.status === "active")))
@@ -35,6 +49,8 @@ export function InsightsScreen() {
     <>
       <h2 className="page-title">Insights</h2>
       <p className="page-sub">What tends to come before changes in your skin.</p>
+
+      <RecapCard />
 
       {trials.length > 0 && (
         <div className="card">
@@ -73,17 +89,39 @@ export function InsightsScreen() {
           <p>
             {data.logged_days} of {data.required} days logged — insights start at {data.required}.
           </p>
-          <p className="muted" style={{ marginBottom: 0 }}>
+          <p className="muted">
             Only full check-ins count: days you confirmed or skipped from the missed-day prompt
             don't.
           </p>
+          {data.breakouts < data.required_breakouts && (
+            <p className="muted">
+              Patterns also need a few breakouts to compare against: {data.breakouts} of{" "}
+              {data.required_breakouts} so far.
+            </p>
+          )}
+          {openDays > 0 && (
+            <>
+              <p className="muted" style={{ marginBottom: 6 }}>
+                Already using your routine before you started logging? Record it for the last 2 weeks so
+                your trials have a baseline.
+              </p>
+              <button type="button" className="btn small" onClick={() => setBackfilling(true)}>
+                Fill in the last 2 weeks
+              </button>
+            </>
+          )}
         </div>
       )}
 
       {data?.status === "ready" && (
         <div className="card">
           <h2>Tends to come before</h2>
-          {data.suspects.length === 0 ? (
+          {data.suspects.length === 0 && data.breakouts < data.required_breakouts ? (
+            <p className="muted">
+              Only {data.breakouts} breakout{data.breakouts === 1 ? "" : "s"} logged so far, so there's
+              little to compare yet. That's good news for your skin — this will update as you log.
+            </p>
+          ) : data.suspects.length === 0 ? (
             <p className="muted">
               Nothing stands out yet across {data.logged_days} logged days. That's good news — keep
               logging and this will update.
@@ -126,6 +164,17 @@ export function InsightsScreen() {
         compares days within {window} after a product or tag with other days; change that window
         in <a href="#/settings">Settings</a>.
       </p>
+
+      {backfilling && (
+        <BackfillSheet
+          openDays={openDays}
+          onClose={() => setBackfilling(false)}
+          onDone={() => {
+            setBackfilling(false);
+            setOpenDays(0);
+          }}
+        />
+      )}
 
       {viewing && (
         <TrialVerdict trial={viewing} onClose={() => setViewing(null)} onEnded={() => setViewing(null)} />

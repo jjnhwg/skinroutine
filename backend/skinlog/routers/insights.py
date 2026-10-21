@@ -1,21 +1,34 @@
-"""Suspects: what tends to come before breakouts."""
+"""Suspects: what tends to come before breakouts. Plus a weekly recap for the early days."""
+
+from datetime import timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from skinlog import clock
-from skinlog.analysis.dataset import build_dataset, outcome_days
+from skinlog.analysis.dataset import breakout_events, build_dataset, outcome_days
+from skinlog.analysis.recap import WEEK_DAYS, recap
 from skinlog.analysis.suspects import suspects
 from skinlog.db import get_db
 from skinlog.deps import current_user
 from skinlog.models import DayLog, Product, Tag, User
-from skinlog.schemas import SuspectsOut
+from skinlog.schemas import Recap, SuspectsOut
 
 router = APIRouter(prefix="/insights")
 
 # Fewer logged days than this and any pattern is mostly noise (spec §3.7).
 REQUIRED_DAYS = 14
+# Patterns need breakouts to compare against; fewer than this and there's little to find.
+REQUIRED_BREAKOUTS = 3
+
+
+@router.get("/recap")
+def get_recap(user: User = Depends(current_user), db: Session = Depends(get_db)) -> Recap:
+    """The last 7 days vs the 7 before. Works from day one, unlike suspects."""
+    today = clock.today_for(user)
+    records = build_dataset(db, user, today - timedelta(days=2 * WEEK_DAYS - 1), today)
+    return Recap(**recap(records, today))
 
 
 @router.get("/suspects")
@@ -24,11 +37,14 @@ def get_suspects(user: User = Depends(current_user), db: Session = Depends(get_d
     first = db.scalar(select(func.min(DayLog.date)).where(DayLog.user_id == user.id))
     records = build_dataset(db, user, first, clock.today_for(user)) if first else []
     logged = len(outcome_days(records))
+    breakouts = len(breakout_events(records))
     if logged < REQUIRED_DAYS:
         return SuspectsOut(
             status="collecting",
             logged_days=logged,
             required=REQUIRED_DAYS,
+            breakouts=breakouts,
+            required_breakouts=REQUIRED_BREAKOUTS,
             suspects=[],
             low_contrast=[],
         )
@@ -40,6 +56,8 @@ def get_suspects(user: User = Depends(current_user), db: Session = Depends(get_d
         status="ready",
         logged_days=logged,
         required=REQUIRED_DAYS,
+        breakouts=breakouts,
+        required_breakouts=REQUIRED_BREAKOUTS,
         suspects=result["suspects"],
         low_contrast=result["low_contrast"],
     )

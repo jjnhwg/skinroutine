@@ -24,6 +24,7 @@ class DayRecord:
     products_used: set[int] = field(default_factory=set)
     tag_ids: set[int] = field(default_factory=set)
     total_breakouts: int = 0
+    zones: dict[str, int] = field(default_factory=dict)  # zone -> count, zones with breakouts only
     imported: bool = False
     photos: dict[str, str] = field(default_factory=dict)  # angle -> URL
 
@@ -60,6 +61,7 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
                 products_used={u.product_id for u in log.uses} if exposed else set(),
                 tag_ids={t.tag_id for t in log.tags} if log.status == DayStatus.LOGGED else set(),
                 total_breakouts=sum(z.count for z in log.zones),
+                zones={z.zone: z.count for z in log.zones if z.count},
                 imported=log.imported,
                 photos={p.angle: file_url(p.path) for p in log.photos},
             )

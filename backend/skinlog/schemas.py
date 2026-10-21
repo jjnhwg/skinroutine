@@ -307,5 +307,24 @@ class SuspectsOut(BaseModel):
     status: Literal["collecting", "ready"]
     logged_days: int
     required: int
+    # Breakout events so far; below required_breakouts there's little to compare.
+    breakouts: int
+    required_breakouts: int
     suspects: list[Suspect]
     low_contrast: list[LowContrast]
+
+
+class RecapWeek(BaseModel):
+    start: date
+    end: date
+    logged_days: int
+    clear_days: int
+    breakout_days: int
+    breakouts: int
+    top_zone: str | None
+
+
+class Recap(BaseModel):
+    week: RecapWeek
+    previous: RecapWeek
+    sentence: str
