@@ -29,6 +29,7 @@ class ProductCreate(BaseModel):
     brand: str = Field("", max_length=200)
     type: ProductType
     started_on: date | None = None
+    may_purge: bool = False
 
 
 class ProductUpdate(BaseModel):
@@ -36,6 +37,7 @@ class ProductUpdate(BaseModel):
     brand: str | None = Field(None, max_length=200)
     type: ProductType | None = None
     started_on: date | None = None
+    may_purge: bool | None = None
 
 
 class RetireBody(BaseModel):
@@ -51,6 +53,7 @@ class ProductOut(BaseModel):
     started_on: date
     retired_on: date | None
     is_retired: bool
+    may_purge: bool
     active_trial_id: int | None
 
     @classmethod
@@ -65,6 +68,7 @@ class ProductOut(BaseModel):
             started_on=product.started_on,
             retired_on=product.retired_on,
             is_retired=product.retired_on is not None,
+            may_purge=product.may_purge,
             active_trial_id=active.id if active else None,
         )
 
@@ -215,7 +219,8 @@ class TagOut(BaseModel):
 class TrialCreate(BaseModel):
     product_id: int
     start_date: date | None = None
-    length_days: int = Field(21, ge=1, le=90)
+    # Left out: 21 days, or 42 for a product that may purge.
+    length_days: int | None = Field(None, ge=1, le=90)
 
 
 class TrialOut(BaseModel):
@@ -265,6 +270,10 @@ class VerdictPhotos(BaseModel):
     last: VerdictPhoto | None
 
 
+class WeekWindow(Window):
+    week: int
+
+
 class Verdict(BaseModel):
     before: Window
     during: Window
@@ -272,6 +281,9 @@ class Verdict(BaseModel):
     label: Literal["better", "worse", "no_clear_change"] | None
     flags: VerdictFlags
     photos: VerdictPhotos
+    # The trial week by week, so a purge (worse, then better) can be seen.
+    weeks: list[WeekWindow]
+    purge_note: str | None
 
 
 class Factor(BaseModel):

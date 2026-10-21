@@ -5,7 +5,7 @@ The trial starts Oct 1 and runs 21 days (planned end Oct 21), so:
   during = Oct 1 – Oct 21
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -46,7 +46,7 @@ RECORDS = calendar(S(17), O(26), DAYS)
 
 
 def trial(**fields) -> Trial:
-    return Trial(start_date=O(1), length_days=21, **fields)
+    return Trial(start_date=O(1), **{"length_days": 21, **fields})
 
 
 def test_completed_trial_averages():
@@ -125,3 +125,50 @@ def test_no_photos():
     assert v["photos"] == {"first": None, "last": None}
     assert v["before"]["avg_breakouts"] is None
     assert v["enough_data"] is False
+
+
+def test_weeks_cut_the_trial_from_its_start():
+    v = verdict(RECORDS, trial(), today=O(26), overlapping=False)
+
+    assert [(w["week"], w["start"], w["end"], w["outcome_days"]) for w in v["weeks"]] == [
+        (1, O(1), O(7), 3),
+        (2, O(8), O(14), 3),
+        (3, O(15), O(21), 1),
+    ]
+    # Not marked "may purge": no note, whatever happened.
+    assert v["purge_note"] is None
+
+
+def _purge_history(week3_total: int) -> list:
+    """5 days at 1 before; weeks 1–2 at 3 a day; week 3 at week3_total a day."""
+    days = {S(25 + n): record(S(25 + n), total=1) for n in range(5)}
+    days |= {O(1 + n): record(O(1 + n), total=3) for n in range(14)}
+    days |= {O(15 + n): record(O(15 + n), total=week3_total) for n in range(7)}
+    return calendar(S(17), O(26), days)
+
+
+def test_purging_then_dropping_gets_a_note():
+    v = verdict(_purge_history(week3_total=1), trial(), today=O(26), overlapping=False, may_purge=True)
+
+    assert v["label"] == "worse"
+    assert v["purge_note"] == (
+        "Breakouts went up in weeks 1–2 but dropped in week 3. "
+        "This can be purging; consider continuing a few more weeks."
+    )
+
+
+def test_worse_before_six_weeks_says_its_too_early():
+    v = verdict(_purge_history(week3_total=3), trial(), today=O(26), overlapping=False, may_purge=True)
+
+    assert v["label"] == "worse"
+    assert v["purge_note"].startswith("This product can cause purging")
+
+
+def test_worse_after_six_weeks_has_no_note():
+    days = {S(25 + n): record(S(25 + n), total=1) for n in range(5)}
+    days |= {O(1) + timedelta(days=n): record(O(1) + timedelta(days=n), total=3) for n in range(42)}
+    records = calendar(S(17), O(1) + timedelta(days=45), days)
+    v = verdict(records, trial(length_days=42), today=O(1) + timedelta(days=45), overlapping=False, may_purge=True)
+
+    assert v["label"] == "worse"
+    assert v["purge_note"] is None

@@ -3,7 +3,7 @@
 from datetime import date, datetime, timezone
 from enum import StrEnum
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from skinlog.db import Base
@@ -49,6 +49,8 @@ class Product(Base):
     photo_path: Mapped[str | None] = mapped_column(String(200))
     started_on: Mapped[date] = mapped_column(Date)
     retired_on: Mapped[date | None] = mapped_column(Date)
+    # Retinoids and exfoliating acids can make skin worse for a few weeks before it improves.
+    may_purge: Mapped[bool] = mapped_column(default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

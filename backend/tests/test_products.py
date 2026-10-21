@@ -22,8 +22,17 @@ def test_create_fills_defaults(client, frozen_now):
         "started_on": "2026-10-09",
         "retired_on": None,
         "is_retired": False,
+        "may_purge": False,
         "active_trial_id": None,
     }
+
+
+def test_may_purge_can_be_set_and_changed(client, frozen_now):
+    product = make(client, name="Retinol 0.5%", may_purge=True)
+    assert product["may_purge"] is True
+
+    changed = client.patch(f"/api/products/{product['id']}", json={"may_purge": False}).json()
+    assert changed["may_purge"] is False
 
 
 def test_create_trims_the_name(client, frozen_now):

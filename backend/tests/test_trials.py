@@ -62,6 +62,17 @@ def test_start_defaults_to_today_and_21_days(client, frozen_now):
     assert client.get(f"/api/products/{pid}").json()["active_trial_id"] == t["id"]
 
 
+def test_a_product_that_may_purge_defaults_to_42_days(client, frozen_now):
+    pid = client.post(
+        "/api/products", json={"name": "Retinol", "type": "treatment", "may_purge": True}
+    ).json()["id"]
+    t = client.post("/api/trials", json={"product_id": pid}).json()["trial"]
+    assert t["length_days"] == 42
+
+    other = client.post("/api/products", json={"name": "Toner", "type": "toner", "may_purge": True}).json()["id"]
+    assert client.post("/api/trials", json={"product_id": other, "length_days": 21}).json()["trial"]["length_days"] == 21
+
+
 def test_day_number_counts_from_the_start(client, frozen_now):
     pid = make_product(client)
 

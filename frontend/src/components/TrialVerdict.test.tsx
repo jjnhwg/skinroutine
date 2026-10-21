@@ -21,7 +21,7 @@ describe("TrialVerdict", () => {
     renderWithApp(<TrialVerdict trial={trial(4, RETINOL)} onClose={() => {}} onEnded={() => {}} />);
 
     expect(await screen.findByText("Breakouts were lower during the trial: 2.1 → 0.8 a day")).toBeInTheDocument();
-    const table = screen.getByRole("table");
+    const table = screen.getAllByRole("table")[0];
     const breakouts = within(table).getByRole("row", { name: /Breakouts/ });
     expect(breakouts).toHaveTextContent("2.1");
     expect(breakouts).toHaveTextContent("0.8");
@@ -84,5 +84,24 @@ describe("TrialVerdict", () => {
 
     await screen.findByRole("table");
     expect(screen.queryByRole("button", { name: "End trial" })).not.toBeInTheDocument();
+  });
+
+  it("shows a purge note and the trial week by week", async () => {
+    vi.mocked(getVerdict).mockResolvedValue(
+      verdict({
+        label: "worse",
+        purge_note: "Breakouts went up in weeks 1–2 but dropped in week 3. This can be purging; consider continuing a few more weeks.",
+        weeks: [
+          { week: 1, start: "2026-10-05", end: "2026-10-11", outcome_days: 7, avg_breakouts: 3 },
+          { week: 2, start: "2026-10-12", end: "2026-10-18", outcome_days: 7, avg_breakouts: 2.9 },
+          { week: 3, start: "2026-10-19", end: "2026-10-25", outcome_days: 6, avg_breakouts: 1 },
+        ],
+      }),
+    );
+    renderWithApp(<TrialVerdict trial={trial(4, RETINOL)} onClose={() => {}} onEnded={() => {}} />);
+
+    expect(await screen.findByText(/This can be purging/)).toBeInTheDocument();
+    const weeks = screen.getByRole("table", { name: "Week by week" });
+    expect(within(weeks).getByRole("row", { name: /Week 3/ })).toHaveTextContent("1");
   });
 });

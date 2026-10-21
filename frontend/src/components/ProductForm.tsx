@@ -13,6 +13,13 @@ import { useToast } from "./useToast";
 /** The four bottles shown stacked on the "choose from popular" button. */
 const TEASER_INDEXES = [10, 1, 21, 25];
 
+/** Names that suggest a retinoid or an exfoliating acid, which can purge. */
+const PURGERS = /retin|tretinoin|adapalene|differin|tazarot|\b(aha|bha|pha)\b|glycolic|salicylic|lactic|mandelic|exfoliat|peel/i;
+
+function looksLikePurger(name: string): boolean {
+  return PURGERS.test(name);
+}
+
 /** What to do with the photo once the product itself is saved. */
 export type PhotoChange = { kind: "keep" } | { kind: "set"; dataUrl: string } | { kind: "remove" };
 
@@ -34,6 +41,9 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
   const [name, setName] = useState(initial?.name ?? "");
   const [type, setType] = useState<ProductType>(initial?.type ?? "other");
   const [startedOn, setStartedOn] = useState(initial?.started_on ?? today);
+  const [mayPurge, setMayPurge] = useState(initial?.may_purge ?? false);
+  // Until the user ticks or unticks it, a new product's name decides the box.
+  const [purgeTouched, setPurgeTouched] = useState(Boolean(initial));
   const [image, setImage] = useState<string | null>(initial?.photo_url ?? null);
   const [imageChanged, setImageChanged] = useState(false);
   const [error, setError] = useState("");
@@ -43,6 +53,11 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
   // The catalog item whose photo is still downloading; cleared when the user
   // picks their own image, so a late download can't overwrite it.
   const photoFor = useRef<CatalogItem | null>(null);
+
+  function changeName(next: string) {
+    setName(next);
+    if (!purgeTouched) setMayPurge(looksLikePurger(next));
+  }
 
   function setPhoto(next: string | null) {
     setImage(next);
@@ -54,6 +69,8 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setName("");
     setType("other");
     setStartedOn(today);
+    setMayPurge(false);
+    setPurgeTouched(false);
     setImage(null);
     setImageChanged(false);
     photoFor.current = null;
@@ -70,7 +87,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setError("");
     try {
       await onSubmit(
-        { name: trimmed, brand: brand.trim(), type, started_on: startedOn || today },
+        { name: trimmed, brand: brand.trim(), type, started_on: startedOn || today, may_purge: mayPurge },
         photo,
       );
       if (!initial) reset();
@@ -85,7 +102,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setSheetOpen(false);
     setPhoto(productArt(item)); // shown until the real photo arrives
     setBrand(item.brand);
-    setName(item.name);
+    changeName(item.name);
     setType(CATEGORY_TYPES[item.category] ?? "other");
     toast(`Pick when you started, then select ${submitLabel}`);
     requestAnimationFrame(() => startRef.current?.focus());
@@ -107,7 +124,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     photoFor.current = null;
     setPhoto(null);
     setBrand("");
-    setName(typed);
+    changeName(typed);
     setType("other");
     toast(`Add the brand and a photo if you like, then select ${submitLabel}`);
     requestAnimationFrame(() => brandRef.current?.focus());
@@ -226,7 +243,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
         required
         placeholder="e.g. Azelaic Acid Suspension 10%"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => changeName(e.target.value)}
       />
 
       <div className="row">
@@ -261,6 +278,22 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
           />
         </div>
       </div>
+
+      <label className="check-row" style={{ marginTop: 10, alignSelf: "auto" }}>
+        <input
+          type="checkbox"
+          checked={mayPurge}
+          onChange={(e) => {
+            setMayPurge(e.target.checked);
+            setPurgeTouched(true);
+          }}
+        />
+        May cause purging
+      </label>
+      <p className="muted" style={{ fontSize: 13, margin: "0 0 4px" }}>
+        Retinoids and exfoliating acids (AHA, BHA) can make skin break out for a few weeks before it
+        improves. Trials of these default to 6 weeks, and the verdict watches for purging.
+      </p>
 
       {error && (
         <div className="warn" role="alert">

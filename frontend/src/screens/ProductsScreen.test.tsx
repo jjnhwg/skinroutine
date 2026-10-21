@@ -34,6 +34,7 @@ function product(fields: Partial<Product>): Product {
     started_on: "2026-09-01",
     retired_on: null,
     is_retired: false,
+    may_purge: false,
     active_trial_id: null,
     ...fields,
   };
@@ -97,8 +98,24 @@ describe("ProductsScreen", () => {
       brand: "CeraVe",
       type: "cleanser",
       started_on: "2026-10-09",
+      may_purge: false,
     });
     expect(uploadProductPhoto).not.toHaveBeenCalled();
+  });
+
+  it("ticks 'May cause purging' for a retinoid until the user decides", async () => {
+    const user = userEvent.setup();
+    renderWithApp(<ProductsScreen />);
+    await screen.findByText("Snail Mucin");
+
+    await user.click(screen.getByText("Add a product"));
+    const box = screen.getByRole("checkbox", { name: "May cause purging" });
+    await user.type(screen.getByLabelText("Name"), "Retinal 0.1%");
+    expect(box).toBeChecked();
+
+    await user.click(box);
+    await user.type(screen.getByLabelText("Name"), " Serum");
+    expect(box).not.toBeChecked();
   });
 
   it("shows the type icon when there is no photo", async () => {
@@ -190,6 +207,15 @@ describe("ProductsScreen trials", () => {
 
     expect(startTrial).toHaveBeenCalledWith({ product_id: 6, start_date: "2026-10-09", length_days: 14 });
     expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("suggests 6 weeks for a product that may purge", async () => {
+    vi.mocked(listProducts).mockResolvedValue([product({ id: 7, name: "Retinol", may_purge: true })]);
+    const user = userEvent.setup();
+    renderWithApp(<ProductsScreen />);
+
+    await user.click(await screen.findByRole("button", { name: "Start a trial of Retinol" }));
+    expect(screen.getByLabelText("Trial length (days)")).toHaveValue(42);
   });
 
   it("warns before starting a second trial, then shows the overlap", async () => {

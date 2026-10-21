@@ -65,7 +65,8 @@ export function ProductsScreen() {
 
   function openTrialForm(p: Product) {
     setStartingId(p.id);
-    setTrialLength("21");
+    // Purging can last 4–6 weeks, so a shorter trial could end mid-purge.
+    setTrialLength(p.may_purge ? "42" : "21");
     setTrialStart(today);
   }
 

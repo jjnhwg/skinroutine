@@ -10,6 +10,7 @@ export function product(id: number, name: string, fields: Partial<Product> = {})
     started_on: "2026-09-01",
     retired_on: null,
     is_retired: false,
+    may_purge: false,
     active_trial_id: null,
     ...fields,
   };
@@ -82,6 +83,8 @@ export function verdict(fields: Partial<Verdict> = {}): Verdict {
       first: { date: "2026-10-05", angle: "front", url: "/api/files/u1/first.jpg" },
       last: { date: "2026-10-09", angle: "front", url: "/api/files/u1/last.jpg" },
     },
+    weeks: [{ week: 1, start: "2026-10-05", end: "2026-10-09", outcome_days: 5, avg_breakouts: 0.8 }],
+    purge_note: null,
     ...fields,
   };
 }

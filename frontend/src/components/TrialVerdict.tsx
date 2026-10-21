@@ -110,6 +110,11 @@ export function TrialVerdict({ trial, onClose, onEnded }: TrialVerdictProps) {
                   {Math.min(verdict.during.outcome_days, MIN_DAYS)} of {MIN_DAYS} days logged during).
                 </p>
               )}
+              {verdict.purge_note && (
+                <div className="warn" style={{ marginTop: 0, marginBottom: 10 }}>
+                  {verdict.purge_note}
+                </div>
+              )}
               {verdict.flags.overlapping && (
                 <p className="muted" style={{ fontSize: 13 }}>
                   Another trial ran at the same time, so either product could explain the change.
@@ -134,6 +139,30 @@ export function TrialVerdict({ trial, onClose, onEnded }: TrialVerdictProps) {
                   ))}
                 </tbody>
               </table>
+
+              {verdict.weeks.length > 1 && (
+                <table className="verdict-table" style={{ marginTop: 12 }}>
+                  <caption className="muted" style={{ textAlign: "left", fontSize: 13 }}>
+                    Week by week
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" />
+                      <th scope="col">Breakouts a day</th>
+                      <th scope="col">Days logged</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {verdict.weeks.map((w) => (
+                      <tr key={w.week}>
+                        <th scope="row">Week {w.week}</th>
+                        <td>{num(w.avg_breakouts)}</td>
+                        <td>{w.outcome_days}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
               {(verdict.photos.first || verdict.photos.last) && (
                 <div style={{ marginTop: 16 }}>

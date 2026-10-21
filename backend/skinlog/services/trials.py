@@ -9,6 +9,10 @@ from sqlalchemy.orm import Session
 from skinlog import clock
 from skinlog.models import EndReason, Product, Trial, User
 
+DEFAULT_LENGTH_DAYS = 21
+# Purging can last 4–6 weeks, so a shorter trial could end mid-purge.
+PURGE_LENGTH_DAYS = 42
+
 
 def planned_end(trial: Trial) -> date:
     return trial.start_date + timedelta(days=trial.length_days - 1)
@@ -58,7 +62,7 @@ def get_trial(db: Session, user: User, trial_id: int) -> Trial:
 
 
 def start_trial(
-    db: Session, user: User, product_id: int, start_date: date | None, length_days: int
+    db: Session, user: User, product_id: int, start_date: date | None, length_days: int | None
 ) -> Trial:
     """Start a trial. Overlapping another one is allowed (spec §3.6); the caller warns."""
     today = clock.today_for(user)
@@ -70,6 +74,8 @@ def start_trial(
     if active_trial(product, today) is not None:
         raise HTTPException(409, f"{product.name} already has a trial running")
     start_date = start_date or today
+    if length_days is None:
+        length_days = PURGE_LENGTH_DAYS if product.may_purge else DEFAULT_LENGTH_DAYS
     if start_date > today:
         raise HTTPException(422, "A trial can't start in the future")
     trial = Trial(user_id=user.id, product_id=product.id, start_date=start_date, length_days=length_days)

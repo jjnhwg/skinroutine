@@ -91,4 +91,4 @@ def get_verdict(
     end = max(trial.start_date, min(service.end_date(trial), today))
     records = build_dataset(db, user, start, end)
     overlapping = bool(service.overlapping_ids(trial, service.list_trials(db, user)))
-    return Verdict(**verdict(records, trial, today, overlapping))
+    return Verdict(**verdict(records, trial, today, overlapping, trial.product.may_purge))

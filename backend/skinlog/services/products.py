@@ -34,6 +34,7 @@ def create_product(db: Session, user: User, body: ProductCreate) -> Product:
         brand=body.brand.strip(),
         type=body.type,
         started_on=body.started_on or clock.today_for(user),
+        may_purge=body.may_purge,
     )
     db.add(product)
     db.commit()

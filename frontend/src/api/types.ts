@@ -35,6 +35,8 @@ export interface Product {
   /** YYYY-MM-DD, or null while in use. */
   retired_on: string | null;
   is_retired: boolean;
+  /** Retinoids and exfoliating acids can make skin worse before it gets better. */
+  may_purge: boolean;
   active_trial_id: number | null;
 }
 
@@ -43,6 +45,7 @@ export interface ProductInput {
   brand: string;
   type: ProductType;
   started_on: string;
+  may_purge: boolean;
 }
 
 export type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -175,6 +178,10 @@ export interface Verdict {
   label: "better" | "worse" | "no_clear_change" | null;
   flags: { overlapping: boolean; ended_early: boolean; in_progress: boolean };
   photos: { first: VerdictPhoto | null; last: VerdictPhoto | null };
+  /** The trial week by week; the last week may be short. */
+  weeks: (VerdictWindow & { week: number })[];
+  /** Only for products that may purge. */
+  purge_note: string | null;
 }
 
 export interface Factor {
