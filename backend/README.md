@@ -49,6 +49,20 @@ set your reminder time to a minute that has passed and run
 `EMAIL_BACKEND=console python -m skinlog.reminders`. Settings → *Send test email*
 sends one immediately.
 
+## Push reminders
+
+The same reminder can go out as a browser notification (Settings → *Notifications on
+this device*). It needs a VAPID key pair, made once:
+
+```bash
+.venv/bin/python -m skinlog.push --generate-keys   # prints two lines for backend/.env
+```
+
+Add them to `backend/.env` with `VAPID_SUBJECT=mailto:<your email>` and restart the
+server. Without keys, the button explains push isn't set up and the cron job prints
+pushes instead of sending them. Push needs HTTPS (or localhost); on iPhone the site
+must be added to the Home Screen first.
+
 ## Run
 
 Tests cover every endpoint, the analysis (a hand-checked trial verdict and a golden

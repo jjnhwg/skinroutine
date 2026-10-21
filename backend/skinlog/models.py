@@ -242,3 +242,15 @@ class WeatherDay(Base):
     date: Mapped[date] = mapped_column(Date, primary_key=True)
     temp_max_c: Mapped[float | None]
     humidity_pct: Mapped[float | None]
+
+
+class PushSubscription(Base):
+    """One browser that agreed to get push reminders. Removed when the push service says it's gone."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))

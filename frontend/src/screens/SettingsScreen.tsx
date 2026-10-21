@@ -6,6 +6,7 @@ import type { LegacyData } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
 import { CycleSettings } from "../components/CycleSettings";
+import { PushSettings } from "../components/PushSettings";
 import { TagSettings } from "../components/TagSettings";
 import { WeatherSettings } from "../components/WeatherSettings";
 import { useToast } from "../components/useToast";
@@ -276,6 +277,7 @@ export function SettingsScreen() {
       <p className="page-sub">Reminders, insights, tags, weather and cycle.</p>
 
       <ReminderSettings />
+      <PushSettings />
       <TagSettings />
       <WeatherSettings />
       <CycleSettings />
