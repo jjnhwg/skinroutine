@@ -48,7 +48,7 @@ export function SuspectChart({ suspect, window }: { suspect: Suspect; window: st
       </svg>
       <figcaption className="muted">
         {LABEL} · {after.days} days after · {otherwise.days} other days · within{" "}
-        {window} after {factor.kind === "tag" ? `“${factor.name}”` : factor.name}
+        {window} after {factor.kind === "product" ? factor.name : `“${factor.name}”`}
       </figcaption>
     </figure>
   );
