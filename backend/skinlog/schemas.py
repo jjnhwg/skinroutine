@@ -115,11 +115,12 @@ Count = Annotated[int, Field(ge=0, le=50)]
 
 
 class Zones(BaseModel):
-    """Breakout count per zone. All six are always sent and returned."""
+    """Breakout count per zone. All seven are always sent and returned."""
 
     model_config = ConfigDict(extra="forbid")
 
     forehead: Count
+    temples: Count
     nose: Count
     left_cheek: Count
     right_cheek: Count
@@ -133,6 +134,7 @@ class ZoneConditions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     forehead: list[Condition] = []
+    temples: list[Condition] = []
     nose: list[Condition] = []
     left_cheek: list[Condition] = []
     right_cheek: list[Condition] = []

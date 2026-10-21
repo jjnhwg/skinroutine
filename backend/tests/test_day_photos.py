@@ -6,7 +6,7 @@ from skinlog.models import DayLog, Photo
 from tests.images import JPEG, PNG, upload
 
 MONDAY = "2026-10-05"
-ZONES = dict.fromkeys(["forehead", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
+ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
 
 
 @pytest.fixture

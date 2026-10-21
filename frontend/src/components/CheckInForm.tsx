@@ -16,6 +16,11 @@ const FACE_OUTLINE =
   "M100 18 C150 18 178 55 178 110 C178 170 150 228 100 242 C50 228 22 170 22 110 C22 55 50 18 100 18 Z";
 const ZONE_SHAPES: { zone: ZoneName; d: string; badge: [number, number] }[] = [
   { zone: "forehead", d: "M44 80 C44 46 70 30 100 30 C130 30 156 46 156 80 Q100 70 44 80 Z", badge: [100, 56] },
+  {
+    zone: "temples",
+    d: "M26 92 a10 18 0 1 0 20 0 a10 18 0 1 0 -20 0 Z M154 92 a10 18 0 1 0 20 0 a10 18 0 1 0 -20 0 Z",
+    badge: [36, 92],
+  },
   { zone: "nose", d: "M94 96 L106 96 L112 140 Q100 150 88 140 Z", badge: [100, 128] },
   { zone: "left_cheek", d: "M38 138 a24 24 0 1 0 48 0 a24 24 0 1 0 -48 0 Z", badge: [62, 138] },
   { zone: "right_cheek", d: "M114 138 a24 24 0 1 0 48 0 a24 24 0 1 0 -48 0 Z", badge: [138, 138] },

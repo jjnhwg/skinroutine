@@ -6,7 +6,7 @@ from skinlog.models import DayLog, Product
 
 MONDAY = "2026-10-05"
 TUESDAY = "2026-10-06"
-ZONES = {"forehead": 1, "nose": 0, "left_cheek": 2, "right_cheek": 0, "chin": 3, "jawline": 0}
+ZONES = {"forehead": 1, "temples": 0, "nose": 0, "left_cheek": 2, "right_cheek": 0, "chin": 3, "jawline": 0}
 
 
 def make_product(client, name: str, **fields) -> int:

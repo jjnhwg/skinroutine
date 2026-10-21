@@ -2,7 +2,7 @@ from datetime import date
 
 from skinlog.models import DayLog, ProductUse, ZoneBreakout
 
-ZONES = dict.fromkeys(["forehead", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
+ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
 
 
 def log_days(client, days: list[int], serum_days: list[int], serum: int) -> None:

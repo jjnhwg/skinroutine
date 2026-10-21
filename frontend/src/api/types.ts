@@ -70,7 +70,7 @@ export interface ImportReport {
   warnings: string[];
 }
 
-export type ZoneName = "forehead" | "nose" | "left_cheek" | "right_cheek" | "chin" | "jawline";
+export type ZoneName = "forehead" | "temples" | "nose" | "left_cheek" | "right_cheek" | "chin" | "jawline";
 
 /** Breakout count per zone, 0–50. */
 export type Zones = Record<ZoneName, number>;

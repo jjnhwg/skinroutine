@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 BACKUP = json.loads((Path(__file__).parent / "fixtures" / "legacy_backup.json").read_text())
-ZONES = dict.fromkeys(["forehead", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
+ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
 
 
 @pytest.fixture

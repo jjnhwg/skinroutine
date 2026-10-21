@@ -1,4 +1,4 @@
-ZONES = dict.fromkeys(["forehead", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
+ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
 
 
 def log(client, day: str, chin: int) -> None:

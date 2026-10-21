@@ -15,10 +15,11 @@ export function product(id: number, name: string, fields: Partial<Product> = {})
   };
 }
 
-export const NO_ZONES = { forehead: 0, nose: 0, left_cheek: 0, right_cheek: 0, chin: 0, jawline: 0 };
+export const NO_ZONES = { forehead: 0, temples: 0, nose: 0, left_cheek: 0, right_cheek: 0, chin: 0, jawline: 0 };
 
 export const NO_CONDITIONS: ZoneConditions = {
   forehead: [],
+  temples: [],
   nose: [],
   left_cheek: [],
   right_cheek: [],

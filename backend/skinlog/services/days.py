@@ -43,7 +43,7 @@ def get_log(db: Session, user: User, day: date) -> DayLog | None:
 
 
 def zone_counts(log: DayLog | None) -> dict[str, int]:
-    """All six zones; a zone with no row (or no log) counts 0."""
+    """All seven zones; a zone with no row (or no log) counts 0."""
     counts = dict.fromkeys((z.value for z in Zone), 0)
     for row in log.zones if log else []:
         counts[row.zone] = row.count

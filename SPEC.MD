@@ -32,7 +32,7 @@ A website for tracking a daily skincare routine, skin condition, and lifestyle f
 ### 3.3 Daily skin check-in
 
 - Overall skin score: 1–5.
-- Breakout count per zone: forehead, nose, left cheek, right cheek, chin, jawline.
+- Breakout count per zone: forehead, temples, nose, left cheek, right cheek, chin, jawline.
 - Reaction ratings, each 0–3: dryness/flaking, redness/irritation, oiliness.
 - Photos (optional each day): front, left side, right side. The camera/upload view shows a guide overlay so photos line up day to day.
 

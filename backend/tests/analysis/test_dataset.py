@@ -37,7 +37,7 @@ def test_first_day_with_a_spot_counts_as_an_event():
     assert [r.date for r in breakout_events(records)] == [D(1)]
 
 
-ZONES = {"forehead": 1, "nose": 0, "left_cheek": 2, "right_cheek": 0, "chin": 0, "jawline": 0}
+ZONES = {"forehead": 1, "temples": 0, "nose": 0, "left_cheek": 2, "right_cheek": 0, "chin": 0, "jawline": 0}
 
 
 def test_build_dataset_from_the_database(client, db_session, frozen_now):

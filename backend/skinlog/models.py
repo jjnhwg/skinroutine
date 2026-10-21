@@ -81,6 +81,7 @@ class DayStatus(StrEnum):
 
 class Zone(StrEnum):
     FOREHEAD = "forehead"
+    TEMPLES = "temples"
     NOSE = "nose"
     LEFT_CHEEK = "left_cheek"
     RIGHT_CHEEK = "right_cheek"

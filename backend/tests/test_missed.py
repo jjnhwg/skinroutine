@@ -1,6 +1,6 @@
 import pytest
 
-ZONES = dict.fromkeys(["forehead", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
+ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
 CHECKIN = {"skin_score": 2, "zones": ZONES}
 
 

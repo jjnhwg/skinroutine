@@ -13,6 +13,7 @@ export const RATINGS: Rating[] = [1, 2, 3, 4, 5];
 
 export const ZONE_LABELS: Record<ZoneName, string> = {
   forehead: "Forehead",
+  temples: "Temples",
   nose: "Nose",
   left_cheek: "Left cheek",
   right_cheek: "Right cheek",
