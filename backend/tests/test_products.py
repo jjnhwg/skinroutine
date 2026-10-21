@@ -23,6 +23,7 @@ def test_create_fills_defaults(client, frozen_now):
         "retired_on": None,
         "is_retired": False,
         "may_purge": False,
+        "ingredients": "",
         "active_trial_id": None,
     }
 

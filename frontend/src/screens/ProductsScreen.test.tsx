@@ -7,6 +7,7 @@ import {
   retireProduct,
   uploadProductPhoto,
 } from "../api/products";
+import { checkIngredients } from "../api/insights";
 import { getRoutine } from "../api/routine";
 import { listTrials, startTrial } from "../api/trials";
 import type { Product } from "../api/types";
@@ -19,6 +20,7 @@ vi.mock("../api/settings");
 vi.mock("../api/products");
 vi.mock("../api/routine");
 vi.mock("../api/trials");
+vi.mock("../api/insights");
 vi.mock("../lib/image", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/image")>()),
   resizeImage: vi.fn(),
@@ -35,6 +37,7 @@ function product(fields: Partial<Product>): Product {
     retired_on: null,
     is_retired: false,
     may_purge: false,
+    ingredients: "",
     active_trial_id: null,
     ...fields,
   };
@@ -60,6 +63,7 @@ beforeEach(() => {
   vi.mocked(getRoutine).mockReset().mockResolvedValue({ am: [], pm: [] });
   vi.mocked(listTrials).mockReset().mockResolvedValue([]);
   vi.mocked(startTrial).mockReset();
+  vi.mocked(checkIngredients).mockReset().mockResolvedValue([]);
 });
 
 describe("ProductsScreen", () => {
@@ -99,6 +103,7 @@ describe("ProductsScreen", () => {
       type: "cleanser",
       started_on: "2026-10-09",
       may_purge: false,
+      ingredients: "",
     });
     expect(uploadProductPhoto).not.toHaveBeenCalled();
   });
@@ -207,6 +212,19 @@ describe("ProductsScreen trials", () => {
 
     expect(startTrial).toHaveBeenCalledWith({ product_id: 6, start_date: "2026-10-09", length_days: 14 });
     expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("warns when a new product shares an ingredient with a suspect", async () => {
+    vi.mocked(checkIngredients).mockResolvedValue([{ ingredient: "coconut oil", products: ["Mystery Serum"] }]);
+    const user = userEvent.setup();
+    renderWithApp(<ProductsScreen />);
+    await screen.findByText("Snail Mucin");
+
+    await user.click(screen.getByText("Add a product"));
+    await user.type(screen.getByLabelText(/Ingredients/), "Water, Coconut Oil");
+
+    expect(await screen.findByText(/which was also in Mystery Serum/)).toBeInTheDocument();
+    expect(checkIngredients).toHaveBeenLastCalledWith("Water, Coconut Oil", undefined);
   });
 
   it("suggests 6 weeks for a product that may purge", async () => {

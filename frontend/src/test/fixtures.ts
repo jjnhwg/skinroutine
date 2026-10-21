@@ -11,6 +11,7 @@ export function product(id: number, name: string, fields: Partial<Product> = {})
     retired_on: null,
     is_retired: false,
     may_purge: false,
+    ingredients: "",
     active_trial_id: null,
     ...fields,
   };

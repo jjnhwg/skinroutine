@@ -8,12 +8,13 @@ from sqlalchemy.orm import Session
 
 from skinlog import clock
 from skinlog.analysis.dataset import breakout_events, build_dataset, outcome_days
+from skinlog.analysis import ingredients
 from skinlog.analysis.recap import WEEK_DAYS, recap
 from skinlog.analysis.suspects import suspects
 from skinlog.db import get_db
 from skinlog.deps import current_user
 from skinlog.models import DayLog, Product, Tag, User
-from skinlog.schemas import Recap, SuspectsOut
+from skinlog.schemas import IngredientCheckIn, IngredientCheckOut, Recap, SharedIngredient, SuspectsOut
 
 router = APIRouter(prefix="/insights")
 
@@ -31,33 +32,49 @@ def get_recap(user: User = Depends(current_user), db: Session = Depends(get_db))
     return Recap(**recap(records, today))
 
 
-@router.get("/suspects")
-def get_suspects(user: User = Depends(current_user), db: Session = Depends(get_db)) -> SuspectsOut:
-    """Recalculated from all history on every request, so edits to past days show up."""
+def _suspects(db: Session, user: User) -> tuple[SuspectsOut, dict[int, Product]]:
+    """Recalculated from all history on every call, so edits to past days show up."""
     first = db.scalar(select(func.min(DayLog.date)).where(DayLog.user_id == user.id))
     records = build_dataset(db, user, first, clock.today_for(user)) if first else []
     logged = len(outcome_days(records))
     breakouts = len(breakout_events(records))
+    counts = dict(logged_days=logged, required=REQUIRED_DAYS, breakouts=breakouts, required_breakouts=REQUIRED_BREAKOUTS)
+    products = {p.id: p for p in db.scalars(select(Product).where(Product.user_id == user.id))}
     if logged < REQUIRED_DAYS:
-        return SuspectsOut(
-            status="collecting",
-            logged_days=logged,
-            required=REQUIRED_DAYS,
-            breakouts=breakouts,
-            required_breakouts=REQUIRED_BREAKOUTS,
-            suspects=[],
-            low_contrast=[],
-        )
+        return SuspectsOut(status="collecting", suspects=[], low_contrast=[], **counts), products
 
-    products = {p.id: p.name for p in db.scalars(select(Product).where(Product.user_id == user.id))}
     tags = {t.id: t.name for t in db.scalars(select(Tag).where(Tag.user_id == user.id))}
-    result = suspects(records, products, tags, user.lookahead_min_days, user.lookahead_max_days)
-    return SuspectsOut(
-        status="ready",
-        logged_days=logged,
-        required=REQUIRED_DAYS,
-        breakouts=breakouts,
-        required_breakouts=REQUIRED_BREAKOUTS,
-        suspects=result["suspects"],
-        low_contrast=result["low_contrast"],
-    )
+    names = {pid: p.name for pid, p in products.items()}
+    result = suspects(records, names, tags, user.lookahead_min_days, user.lookahead_max_days)
+    out = SuspectsOut(status="ready", suspects=result["suspects"], low_contrast=result["low_contrast"], **counts)
+    out.shared_ingredients = [
+        SharedIngredient(**s) for s in ingredients.shared(_suspect_ingredients(out, products))
+    ]
+    return out, products
+
+
+def _suspect_ingredients(out: SuspectsOut, products: dict[int, Product], exclude: int | None = None) -> dict[str, str]:
+    """Name -> ingredient text for each suspect product with a known ingredient list."""
+    return {
+        products[s.factor.id].name: products[s.factor.id].ingredients
+        for s in out.suspects
+        if s.factor.kind == "product"
+        and s.factor.id in products
+        and s.factor.id != exclude
+        and products[s.factor.id].ingredients
+    }
+
+
+@router.get("/suspects")
+def get_suspects(user: User = Depends(current_user), db: Session = Depends(get_db)) -> SuspectsOut:
+    return _suspects(db, user)[0]
+
+
+@router.post("/ingredient-check")
+def check_ingredients(
+    body: IngredientCheckIn, user: User = Depends(current_user), db: Session = Depends(get_db)
+) -> IngredientCheckOut:
+    """Which of these ingredients were also in a product that tends to come before breakouts."""
+    out, products = _suspects(db, user)
+    suspects_by_name = _suspect_ingredients(out, products, exclude=body.exclude_product_id)
+    return IngredientCheckOut(matches=ingredients.matches(body.ingredients, suspects_by_name))

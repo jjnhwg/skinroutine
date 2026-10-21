@@ -51,6 +51,8 @@ class Product(Base):
     retired_on: Mapped[date | None] = mapped_column(Date)
     # Retinoids and exfoliating acids can make skin worse for a few weeks before it improves.
     may_purge: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # As printed on the label (INCI list), comma separated; "" when unknown.
+    ingredients: Mapped[str] = mapped_column(Text, default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

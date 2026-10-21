@@ -35,6 +35,7 @@ def create_product(db: Session, user: User, body: ProductCreate) -> Product:
         type=body.type,
         started_on=body.started_on or clock.today_for(user),
         may_purge=body.may_purge,
+        ingredients=body.ingredients.strip(),
     )
     db.add(product)
     db.commit()
@@ -48,7 +49,7 @@ def update_product(db: Session, user: User, product_id: int, body: ProductUpdate
     if product.retired_on and started_on > product.retired_on:
         raise HTTPException(422, "The start date can't be after the product was retired")
     for key, value in changes.items():
-        setattr(product, key, value.strip() if key == "brand" else value)
+        setattr(product, key, value.strip() if key in ("brand", "ingredients") else value)
     db.commit()
     return product
 

@@ -13,6 +13,7 @@ interface OpenBeautyProduct {
   product_name?: string;
   brands?: string;
   image_front_url?: string;
+  ingredients_text?: string;
 }
 
 /**
@@ -22,7 +23,7 @@ interface OpenBeautyProduct {
 async function searchOpenBeautyFacts(term: string): Promise<ProductSearchResult[]> {
   const url = `${OPEN_BEAUTY_FACTS}${encodeURIComponent(
     term,
-  )}&search_simple=1&action=process&json=1&page_size=24&fields=product_name,brands,image_front_url`;
+  )}&search_simple=1&action=process&json=1&page_size=24&fields=product_name,brands,image_front_url,ingredients_text`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(String(res.status));
   const data = (await res.json()) as { products?: OpenBeautyProduct[] };
@@ -33,6 +34,7 @@ async function searchOpenBeautyFacts(term: string): Promise<ProductSearchResult[
       name: (p.product_name as string).trim(),
       image: p.image_front_url ?? "",
       source: "openbeautyfacts.org",
+      ingredients: (p.ingredients_text ?? "").trim(),
     }));
 }
 
@@ -59,6 +61,7 @@ function toCatalogItems(rows: ProductSearchResult[]): CatalogItem[] {
         label: (p.brand || p.name).split(/\s+/)[0].slice(0, 8).toUpperCase(),
         imageUrl: p.image || undefined,
         source: p.source,
+        ingredients: p.ingredients || undefined,
       };
     });
 }

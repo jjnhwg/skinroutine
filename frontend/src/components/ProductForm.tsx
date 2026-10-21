@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../api/http";
-import type { Product, ProductInput, ProductType } from "../api/types";
+import { checkIngredients } from "../api/insights";
+import type { Product, ProductInput, ProductType, SharedIngredient } from "../api/types";
 import { CATALOG, productArt } from "../lib/catalog";
 import { CATEGORY_TYPES, PRODUCT_TYPE_LABELS, PRODUCT_TYPES } from "../lib/constants";
 import { PRODUCT_IMAGE_MAX, resizeImage } from "../lib/image";
@@ -44,6 +45,8 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
   const [mayPurge, setMayPurge] = useState(initial?.may_purge ?? false);
   // Until the user ticks or unticks it, a new product's name decides the box.
   const [purgeTouched, setPurgeTouched] = useState(Boolean(initial));
+  const [ingredients, setIngredients] = useState(initial?.ingredients ?? "");
+  const [suspectMatches, setSuspectMatches] = useState<SharedIngredient[]>([]);
   const [image, setImage] = useState<string | null>(initial?.photo_url ?? null);
   const [imageChanged, setImageChanged] = useState(false);
   const [error, setError] = useState("");
@@ -71,6 +74,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setStartedOn(today);
     setMayPurge(false);
     setPurgeTouched(false);
+    setIngredients("");
     setImage(null);
     setImageChanged(false);
     photoFor.current = null;
@@ -87,7 +91,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setError("");
     try {
       await onSubmit(
-        { name: trimmed, brand: brand.trim(), type, started_on: startedOn || today, may_purge: mayPurge },
+        { name: trimmed, brand: brand.trim(), type, started_on: startedOn || today, may_purge: mayPurge, ingredients: ingredients.trim() },
         photo,
       );
       if (!initial) reset();
@@ -103,6 +107,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setPhoto(productArt(item)); // shown until the real photo arrives
     setBrand(item.brand);
     changeName(item.name);
+    if (item.ingredients) setIngredients(item.ingredients);
     setType(CATEGORY_TYPES[item.category] ?? "other");
     toast(`Pick when you started, then select ${submitLabel}`);
     requestAnimationFrame(() => startRef.current?.focus());
@@ -145,6 +150,24 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
       toast("Couldn't read that image.");
     }
   }
+
+  // Warn while typing if an ingredient was in a product that tends to come before breakouts.
+  useEffect(() => {
+    if (!ingredients.trim()) {
+      setSuspectMatches([]);
+      return;
+    }
+    let live = true;
+    const timer = setTimeout(() => {
+      checkIngredients(ingredients, initial?.id)
+        .then((found) => live && setSuspectMatches(found))
+        .catch(() => {});
+    }, 400);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [ingredients, initial?.id]);
 
   useEffect(() => {
     if (sheetOpen) return;
@@ -278,6 +301,26 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
           />
         </div>
       </div>
+
+      <label className="field" htmlFor={`${idPrefix}-ingredients`}>
+        Ingredients <span className="muted" style={{ fontWeight: 400 }}>(optional)</span>
+      </label>
+      <textarea
+        id={`${idPrefix}-ingredients`}
+        placeholder="Paste the list from the label or the shop's page: Water, Niacinamide, Zinc PCA…"
+        value={ingredients}
+        onChange={(e) => setIngredients(e.target.value)}
+      />
+      {suspectMatches.length > 0 && (
+        <div className="warn" role="status">
+          {suspectMatches.map((m) => (
+            <div key={m.ingredient}>
+              Contains <b>{m.ingredient}</b>, which was also in {m.products.join(" and ")}, a product that
+              tends to come before your breakouts.
+            </div>
+          ))}
+        </div>
+      )}
 
       <label className="check-row" style={{ marginTop: 10, alignSelf: "auto" }}>
         <input

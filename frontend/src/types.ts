@@ -18,6 +18,8 @@ export interface CatalogItem {
   imageUrl?: string;
   /** Where an online result was found, e.g. "nudieglow.com". */
   source?: string;
+  /** The label's ingredient list, when the source knows it. */
+  ingredients?: string;
 }
 
 export type ProductShape = "tube" | "pump" | "dropper" | "jar" | "tall" | "small" | "patch" | "drop";
@@ -29,6 +31,8 @@ export interface ProductSearchResult {
   /** Remote photo URL; load it through fetchProductImage to keep it. */
   image: string;
   source: string;
+  /** "" when the source doesn't list ingredients. */
+  ingredients?: string;
 }
 
 export interface ProductSearchResponse {

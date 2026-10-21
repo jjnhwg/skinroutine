@@ -37,6 +37,8 @@ export interface Product {
   is_retired: boolean;
   /** Retinoids and exfoliating acids can make skin worse before it gets better. */
   may_purge: boolean;
+  /** The label's ingredient list, comma separated; "" when unknown. */
+  ingredients: string;
   active_trial_id: number | null;
 }
 
@@ -46,6 +48,7 @@ export interface ProductInput {
   type: ProductType;
   started_on: string;
   may_purge: boolean;
+  ingredients: string;
 }
 
 export type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -215,6 +218,13 @@ export interface Suspects {
   required_breakouts: number;
   suspects: Suspect[];
   low_contrast: (Factor & { reason: string })[];
+  /** Ingredients that two or more suspect products have in common. */
+  shared_ingredients: SharedIngredient[];
+}
+
+export interface SharedIngredient {
+  ingredient: string;
+  products: string[];
 }
 
 export interface RecapWeek {

@@ -35,6 +35,7 @@ def test_collecting_until_14_outcome_days(client, frozen_now):
         "required_breakouts": 3,
         "suspects": [],
         "low_contrast": [],
+        "shared_ingredients": [],
     }
 
     log_days(client, [14], [], serum)
@@ -93,3 +94,49 @@ def test_recap_compares_this_week_with_last(client, frozen_now):
     assert recap["week"]["top_zone"] == "chin"
     assert recap["previous"]["breakouts"] == 2
     assert recap["sentence"] == "1 clear day, 1 with breakouts, mostly chin."
+
+
+def _ingredient_products(client) -> tuple[int, int]:
+    """Two products that share niacinamide, used so both come before breakouts."""
+    a = client.post("/api/products", json={
+        "name": "Serum A", "type": "serum", "started_on": "2026-08-01",
+        "ingredients": "Water, Niacinamide 10%, Zinc PCA, Glycerin",
+    }).json()["id"]
+    b = client.post("/api/products", json={
+        "name": "Serum B", "type": "serum", "started_on": "2026-08-01",
+        "ingredients": "Aqua (Water), Glycerin, Niacinamide, Panthenol",
+    }).json()["id"]
+    for n in range(1, 29):
+        uses = [{"product_id": a, "time_of_day": "am"}, {"product_id": b, "time_of_day": "pm"}] if n % 7 == 1 else []
+        chin = 3 if n % 7 == 3 else 0
+        client.put(f"/api/days/2026-09-{n:02d}", json={"zones": {**ZONES, "chin": chin}, "product_uses": uses})
+    return a, b
+
+
+def test_suspects_that_share_an_ingredient_say_so(client, frozen_now):
+    _ingredient_products(client)
+    result = client.get("/api/insights/suspects").json()
+
+    assert {s["factor"]["name"] for s in result["suspects"]} == {"Serum A", "Serum B"}
+    # Water and glycerin are in almost everything, so they don't count.
+    assert result["shared_ingredients"] == [{"ingredient": "niacinamide", "products": ["Serum A", "Serum B"]}]
+
+
+def test_a_new_products_ingredients_are_checked_against_suspects(client, frozen_now):
+    a, _ = _ingredient_products(client)
+
+    check = client.post("/api/insights/ingredient-check", json={"ingredients": "Water, Zinc PCA, Niacinamide"}).json()
+    assert check["matches"] == [
+        {"ingredient": "niacinamide", "products": ["Serum A", "Serum B"]},
+        {"ingredient": "zinc pca", "products": ["Serum A"]},
+    ]
+
+    editing_a = client.post(
+        "/api/insights/ingredient-check", json={"ingredients": "Zinc PCA", "exclude_product_id": a}
+    ).json()
+    assert editing_a["matches"] == []
+
+
+def test_ingredient_check_before_insights_are_ready_finds_nothing(client, frozen_now):
+    check = client.post("/api/insights/ingredient-check", json={"ingredients": "Niacinamide"}).json()
+    assert check == {"matches": []}

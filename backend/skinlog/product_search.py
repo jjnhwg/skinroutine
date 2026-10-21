@@ -97,6 +97,7 @@ def _search_shopify(store: str, query: str) -> list[dict]:
             "name": _clean_name(brand, p.get("title") or ""),
             "image": f"{image}{sep}width=400",
             "source": store.removeprefix("www."),
+            "ingredients": "",
         })
     return results
 
@@ -110,7 +111,7 @@ def _search_open_beauty_facts(query: str) -> list[dict]:
             "action": "process",
             "json": 1,
             "page_size": 24,
-            "fields": "product_name,brands,image_front_url,image_url",
+            "fields": "product_name,brands,image_front_url,image_url,ingredients_text",
         },
         headers=HEADERS,
         timeout=TIMEOUT,
@@ -129,6 +130,7 @@ def _search_open_beauty_facts(query: str) -> list[dict]:
             "name": _clean_name(brand, name),
             "image": image,
             "source": "openbeautyfacts.org",
+            "ingredients": (p.get("ingredients_text") or "").strip(),
         })
     return results
 

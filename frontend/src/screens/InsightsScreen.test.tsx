@@ -45,6 +45,7 @@ const READY: Suspects = {
     },
   ],
   low_contrast: [{ kind: "product", id: 1, name: "Cleanser", reason: "used on nearly every day" }],
+  shared_ingredients: [],
 };
 
 const RECAP = {
@@ -93,6 +94,18 @@ describe("InsightsScreen", () => {
 
     expect(await screen.findByRole("button", { name: /Mystery Serum.*Strong signal/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Alcohol.*Weak signal · too few breakouts to be sure/ })).toBeInTheDocument();
+  });
+
+  it("points out an ingredient shared by suspects", async () => {
+    vi.mocked(getSuspects).mockResolvedValue({
+      ...READY,
+      shared_ingredients: [{ ingredient: "coconut oil", products: ["Mystery Serum", "Night Cream"] }],
+    });
+    renderWithApp(<InsightsScreen />);
+
+    expect(await screen.findByText(/Both suspects contain/)).toHaveTextContent(
+      "Both suspects contain coconut oil (Mystery Serum, Night Cream).",
+    );
   });
 
   it("lists what couldn't be judged, with the reason", async () => {

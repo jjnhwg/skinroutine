@@ -147,6 +147,17 @@ export function InsightsScreen() {
             </ul>
           )}
 
+          {data.shared_ingredients.length > 0 && (
+            <div className="warn">
+              {data.shared_ingredients.map((s) => (
+                <div key={s.ingredient}>
+                  {s.products.length === 2 ? "Both" : `All ${s.products.length}`} suspects contain{" "}
+                  <b>{s.ingredient}</b> ({s.products.join(", ")}). Watch for it in new products.
+                </div>
+              ))}
+            </div>
+          )}
+
           {data.low_contrast.length > 0 && (
             <details style={{ marginTop: 14 }}>
               <summary className="muted">Not enough contrast to judge ({data.low_contrast.length})</summary>

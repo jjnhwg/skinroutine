@@ -30,6 +30,7 @@ class ProductCreate(BaseModel):
     type: ProductType
     started_on: date | None = None
     may_purge: bool = False
+    ingredients: str = Field("", max_length=10000)
 
 
 class ProductUpdate(BaseModel):
@@ -38,6 +39,7 @@ class ProductUpdate(BaseModel):
     type: ProductType | None = None
     started_on: date | None = None
     may_purge: bool | None = None
+    ingredients: str | None = Field(None, max_length=10000)
 
 
 class RetireBody(BaseModel):
@@ -54,6 +56,7 @@ class ProductOut(BaseModel):
     retired_on: date | None
     is_retired: bool
     may_purge: bool
+    ingredients: str
     active_trial_id: int | None
 
     @classmethod
@@ -69,6 +72,7 @@ class ProductOut(BaseModel):
             retired_on=product.retired_on,
             is_retired=product.retired_on is not None,
             may_purge=product.may_purge,
+            ingredients=product.ingredients,
             active_trial_id=active.id if active else None,
         )
 
@@ -319,6 +323,21 @@ class LowContrast(Factor):
     reason: str
 
 
+class SharedIngredient(BaseModel):
+    ingredient: str
+    products: list[str]
+
+
+class IngredientCheckIn(BaseModel):
+    ingredients: str = Field(max_length=10000)
+    # When editing a product, leave it out so it doesn't match itself.
+    exclude_product_id: int | None = None
+
+
+class IngredientCheckOut(BaseModel):
+    matches: list[SharedIngredient]
+
+
 class SuspectsOut(BaseModel):
     status: Literal["collecting", "ready"]
     logged_days: int
@@ -328,6 +347,8 @@ class SuspectsOut(BaseModel):
     required_breakouts: int
     suspects: list[Suspect]
     low_contrast: list[LowContrast]
+    # Ingredients that two or more suspect products have in common.
+    shared_ingredients: list[SharedIngredient] = []
 
 
 class RecapWeek(BaseModel):
