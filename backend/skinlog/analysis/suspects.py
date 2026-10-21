@@ -27,8 +27,8 @@ def _window(lo: int, hi: int) -> str:
 
 
 def _display(kind: str, name: str) -> str:
-    # Tags read as phrases ("No shower after gym"), so they're quoted.
-    return f"“{name}”" if kind == "tag" else name
+    # Tags and weather read as phrases ("No shower after gym"), so they're quoted.
+    return f"“{name}”" if kind in ("tag", "weather") else name
 
 
 def _avg(days: list[DayRecord]) -> float:
@@ -55,6 +55,7 @@ def suspects(
     tags_by_id: dict[int, str],
     lookahead_min: int,
     lookahead_max: int,
+    weather_by_id: dict[int, str] | None = None,
 ) -> dict:
     """`records` must be consecutive calendar days, oldest first."""
     outcomes = outcome_days(records)
@@ -64,6 +65,7 @@ def suspects(
     for kind, names, present in (
         ("product", products_by_id, lambda r: r.products_used),
         ("tag", tags_by_id, lambda r: r.tag_ids),
+        ("weather", weather_by_id or {}, lambda r: r.weather if weather_by_id else set()),
     ):
         seen: dict[int, set[date]] = {}
         for r in records:

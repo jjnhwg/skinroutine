@@ -8,6 +8,9 @@ export interface Settings {
   reminder_enabled: boolean;
   lookahead_min_days: number;
   lookahead_max_days: number;
+  /** Where weather is looked up, rounded to ~1 km; null until shared. */
+  latitude: number | null;
+  longitude: number | null;
   /** The user's local date, YYYY-MM-DD. The app's only source of "today". */
   today: string;
 }
@@ -194,7 +197,7 @@ export interface Verdict {
 }
 
 export interface Factor {
-  kind: "product" | "tag";
+  kind: "product" | "tag" | "weather";
   id: number;
   name: string;
 }

@@ -13,6 +13,8 @@ export const TEST_SETTINGS: Settings = {
   reminder_enabled: true,
   lookahead_min_days: 1,
   lookahead_max_days: 5,
+  latitude: null,
+  longitude: null,
   today: "2026-10-09",
 };
 

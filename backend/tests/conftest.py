@@ -11,6 +11,7 @@ from skinlog.main import create_app
 from skinlog.models import User
 from skinlog.photos import LocalDiskPhotoStore, get_photo_store
 from skinlog.services.tags import ensure_default_tags
+from skinlog.weather import get_weather_source
 
 
 @pytest.fixture
@@ -48,9 +49,32 @@ def email_sender() -> FakeEmailSender:
     return FakeEmailSender()
 
 
+class FakeWeather:
+    """Answers from a dict instead of the network, and counts the calls."""
+
+    def __init__(self):
+        self.readings: dict = {}
+        self.calls: list[tuple] = []
+        self.fail = False
+
+    def daily(self, latitude, longitude, start, end):
+        self.calls.append((latitude, longitude, start, end))
+        if self.fail:
+            import requests
+
+            raise requests.ConnectionError("offline")
+        return {d: r for d, r in self.readings.items() if start <= d <= end}
+
+
 @pytest.fixture
-def client(db_session, photo_store, email_sender) -> TestClient:
+def weather_source() -> FakeWeather:
+    return FakeWeather()
+
+
+@pytest.fixture
+def client(db_session, photo_store, email_sender, weather_source) -> TestClient:
     app = create_app()
+    app.dependency_overrides[get_weather_source] = lambda: weather_source
     app.dependency_overrides[get_db] = lambda: db_session
     app.dependency_overrides[get_photo_store] = lambda: photo_store
     app.dependency_overrides[get_email_sender] = lambda: email_sender

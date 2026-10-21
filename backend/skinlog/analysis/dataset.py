@@ -2,7 +2,8 @@
 
 Definitions (prompt_plan.md, "Analysis definitions"):
 - Outcome day: status "logged" and not imported — the only days with full skin data.
-- Exposure: a product used on a logged or routine-confirmed day; a tag on a logged day.
+- Exposure: a product used on a logged or routine-confirmed day; a tag on a logged day;
+  weather on any day it was recorded (it happened whether or not the day was logged).
 - Breakout event: an outcome day whose total is higher than the previous calendar
   day's; if the previous day isn't an outcome day, any total of 1 or more counts.
 """
@@ -13,7 +14,8 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from skinlog.models import DayLog, DayStatus, User
+from skinlog import weather
+from skinlog.models import DayLog, DayStatus, User, WeatherDay
 from skinlog.schemas import file_url
 
 
@@ -27,6 +29,7 @@ class DayRecord:
     zones: dict[str, int] = field(default_factory=dict)  # zone -> count, zones with breakouts only
     imported: bool = False
     photos: dict[str, str] = field(default_factory=dict)  # angle -> URL
+    weather: set[int] = field(default_factory=set)  # weather factor ids, see weather.py
 
     @property
     def is_outcome(self) -> bool:
@@ -46,12 +49,18 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
         )
     )
     by_date = {log.date: log for log in logs}
+    weather_by_date = {
+        w.date: weather.factors(w.temp_max_c, w.humidity_pct)
+        for w in db.scalars(
+            select(WeatherDay).where(WeatherDay.user_id == user.id, WeatherDay.date >= start, WeatherDay.date <= end)
+        )
+    }
     records = []
     for n in range((end - start).days + 1):
         day = start + timedelta(days=n)
         log = by_date.get(day)
         if log is None:
-            records.append(DayRecord(date=day, status="none"))
+            records.append(DayRecord(date=day, status="none", weather=weather_by_date.get(day, set())))
             continue
         exposed = log.status in (DayStatus.LOGGED, DayStatus.ROUTINE_CONFIRMED)
         records.append(
@@ -64,6 +73,7 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
                 zones={z.zone: z.count for z in log.zones if z.count},
                 imported=log.imported,
                 photos={p.angle: file_url(p.path) for p in log.photos},
+                weather=weather_by_date.get(day, set()),
             )
         )
     return records

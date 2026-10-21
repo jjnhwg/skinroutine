@@ -6,6 +6,7 @@ import type { LegacyData } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
 import { TagSettings } from "../components/TagSettings";
+import { WeatherSettings } from "../components/WeatherSettings";
 import { useToast } from "../components/useToast";
 
 /** A backup file exported by the old browser-only app. */
@@ -45,7 +46,7 @@ function ReminderSettings() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    const form: Required<SettingsPatch> = {
+    const form: Required<Omit<SettingsPatch, "latitude" | "longitude">> = {
       email: email.trim() || null,
       timezone,
       reminder_time: reminderTime,
@@ -271,10 +272,11 @@ export function SettingsScreen() {
   return (
     <>
       <h2 className="page-title">Settings</h2>
-      <p className="page-sub">Reminders, insights and tags.</p>
+      <p className="page-sub">Reminders, insights, tags and weather.</p>
 
       <ReminderSettings />
       <TagSettings />
+      <WeatherSettings />
       <MoveToServer />
     </>
   );

@@ -25,6 +25,8 @@ const SAVED: Settings = {
   reminder_enabled: true,
   lookahead_min_days: 1,
   lookahead_max_days: 5,
+  latitude: null,
+  longitude: null,
   today: "2026-10-09",
 };
 
@@ -253,5 +255,35 @@ describe("Send test email", () => {
     await user.click(await screen.findByRole("button", { name: "Send test email" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Add an email address first");
+  });
+});
+
+describe("SettingsScreen weather", () => {
+  it("saves the browser's location", async () => {
+    const getCurrentPosition = vi.fn((ok: PositionCallback) =>
+      ok({ coords: { latitude: 40.7128, longitude: -74.006 } } as GeolocationPosition),
+    );
+    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition } });
+    vi.mocked(updateSettings).mockResolvedValue({ ...SAVED, latitude: 40.71, longitude: -74.01 });
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole("button", { name: "Use my location" }));
+
+    expect(updateSettings).toHaveBeenCalledWith({ latitude: 40.7128, longitude: -74.006 });
+    expect(await screen.findByText("Using weather near 40.71, -74.01")).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it("removes a saved location", async () => {
+    vi.mocked(getSettings).mockResolvedValue({ ...SAVED, latitude: 40.71, longitude: -74.01 });
+    vi.mocked(updateSettings).mockResolvedValue(SAVED);
+    const user = userEvent.setup();
+    renderScreen();
+
+    await user.click(await screen.findByRole("button", { name: "Remove" }));
+
+    expect(updateSettings).toHaveBeenCalledWith({ latitude: null, longitude: null });
+    expect(await screen.findByRole("button", { name: "Use my location" })).toBeInTheDocument();
   });
 });

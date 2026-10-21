@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from skinlog import clock
+from skinlog import clock, weather
 from skinlog.analysis.dataset import breakout_events, build_dataset, outcome_days
 from skinlog.analysis import ingredients
 from skinlog.analysis.recap import WEEK_DAYS, recap
@@ -14,6 +14,7 @@ from skinlog.analysis.suspects import suspects
 from skinlog.db import get_db
 from skinlog.deps import current_user
 from skinlog.models import DayLog, Product, Tag, User
+from skinlog.weather import WeatherSource, get_weather_source
 from skinlog.schemas import IngredientCheckIn, IngredientCheckOut, Recap, SharedIngredient, SuspectsOut
 
 router = APIRouter(prefix="/insights")
@@ -32,9 +33,11 @@ def get_recap(user: User = Depends(current_user), db: Session = Depends(get_db))
     return Recap(**recap(records, today))
 
 
-def _suspects(db: Session, user: User) -> tuple[SuspectsOut, dict[int, Product]]:
+def _suspects(db: Session, user: User, source: WeatherSource) -> tuple[SuspectsOut, dict[int, Product]]:
     """Recalculated from all history on every call, so edits to past days show up."""
     first = db.scalar(select(func.min(DayLog.date)).where(DayLog.user_id == user.id))
+    if first:
+        weather.sync(db, user, source, first)
     records = build_dataset(db, user, first, clock.today_for(user)) if first else []
     logged = len(outcome_days(records))
     breakouts = len(breakout_events(records))
@@ -45,7 +48,9 @@ def _suspects(db: Session, user: User) -> tuple[SuspectsOut, dict[int, Product]]
 
     tags = {t.id: t.name for t in db.scalars(select(Tag).where(Tag.user_id == user.id))}
     names = {pid: p.name for pid, p in products.items()}
-    result = suspects(records, names, tags, user.lookahead_min_days, user.lookahead_max_days)
+    result = suspects(
+        records, names, tags, user.lookahead_min_days, user.lookahead_max_days, weather.WEATHER_NAMES
+    )
     out = SuspectsOut(status="ready", suspects=result["suspects"], low_contrast=result["low_contrast"], **counts)
     out.shared_ingredients = [
         SharedIngredient(**s) for s in ingredients.shared(_suspect_ingredients(out, products))
@@ -66,15 +71,22 @@ def _suspect_ingredients(out: SuspectsOut, products: dict[int, Product], exclude
 
 
 @router.get("/suspects")
-def get_suspects(user: User = Depends(current_user), db: Session = Depends(get_db)) -> SuspectsOut:
-    return _suspects(db, user)[0]
+def get_suspects(
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    source: WeatherSource = Depends(get_weather_source),
+) -> SuspectsOut:
+    return _suspects(db, user, source)[0]
 
 
 @router.post("/ingredient-check")
 def check_ingredients(
-    body: IngredientCheckIn, user: User = Depends(current_user), db: Session = Depends(get_db)
+    body: IngredientCheckIn,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+    source: WeatherSource = Depends(get_weather_source),
 ) -> IngredientCheckOut:
     """Which of these ingredients were also in a product that tends to come before breakouts."""
-    out, products = _suspects(db, user)
+    out, products = _suspects(db, user, source)
     suspects_by_name = _suspect_ingredients(out, products, exclude=body.exclude_product_id)
     return IngredientCheckOut(matches=ingredients.matches(body.ingredients, suspects_by_name))

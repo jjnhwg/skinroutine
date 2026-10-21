@@ -294,7 +294,7 @@ class Verdict(BaseModel):
 
 
 class Factor(BaseModel):
-    kind: Literal["product", "tag"]
+    kind: Literal["product", "tag", "weather"]
     id: int
     name: str
 

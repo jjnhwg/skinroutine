@@ -26,6 +26,9 @@ class User(Base):
     lookahead_max_days: Mapped[int] = mapped_column(default=5)
     # The user's local date of the last reminder, so each day gets at most one.
     last_reminder_sent_on: Mapped[date | None] = mapped_column(Date)
+    # Where to look up the weather; rounded, and None until the user shares it.
+    latitude: Mapped[float | None]
+    longitude: Mapped[float | None]
 
 
 class ProductType(StrEnum):
@@ -225,3 +228,14 @@ class Trial(Base):
     end_reason: Mapped[EndReason | None] = mapped_column(_enum(EndReason))
 
     product: Mapped[Product] = relationship(back_populates="trials")
+
+
+class WeatherDay(Base):
+    """One day's weather at the user's location. A missing value means the source had none."""
+
+    __tablename__ = "weather_days"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    date: Mapped[date] = mapped_column(Date, primary_key=True)
+    temp_max_c: Mapped[float | None]
+    humidity_pct: Mapped[float | None]

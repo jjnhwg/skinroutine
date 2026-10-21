@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
-from skinlog import clock
+from skinlog import clock, weather
 from skinlog.db import get_db
 from skinlog.email import EmailSender, get_email_sender
 from skinlog.deps import current_user
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/settings")
 
 MAX_LOOKAHEAD_DAYS = 14
 TIME_PATTERN = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+CLEARABLE = {"email", "latitude", "longitude"}
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -28,6 +29,9 @@ class SettingsOut(BaseModel):
     reminder_enabled: bool
     lookahead_min_days: int
     lookahead_max_days: int
+    # Where weather is looked up; both None until shared.
+    latitude: float | None
+    longitude: float | None
     today: str
 
 
@@ -38,6 +42,8 @@ class SettingsPatch(BaseModel):
     reminder_enabled: bool | None = None
     lookahead_min_days: int | None = Field(None, ge=0, le=MAX_LOOKAHEAD_DAYS)
     lookahead_max_days: int | None = Field(None, ge=0, le=MAX_LOOKAHEAD_DAYS)
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
 
     @field_validator("email")
     @classmethod
@@ -69,6 +75,8 @@ def _out(user: User) -> SettingsOut:
         reminder_enabled=user.reminder_enabled,
         lookahead_min_days=user.lookahead_min_days,
         lookahead_max_days=user.lookahead_max_days,
+        latitude=user.latitude,
+        longitude=user.longitude,
         today=clock.today_for(user, clock.now_utc()).isoformat(),
     )
 
@@ -85,9 +93,21 @@ def update_settings(
     db: Session = Depends(get_db),
 ) -> SettingsOut:
     changes = patch.model_dump(exclude_unset=True)
-    # Only email may be cleared; null for anything else is a mistake.
-    if any(value is None for key, value in changes.items() if key != "email"):
-        raise HTTPException(422, "Only email can be cleared")
+    # Only email and the location may be cleared; null for anything else is a mistake.
+    if any(value is None for key, value in changes.items() if key not in CLEARABLE):
+        raise HTTPException(422, "Only email and location can be cleared")
+
+    if "latitude" in changes or "longitude" in changes:
+        if ("latitude" in changes) != ("longitude" in changes):
+            raise HTTPException(422, "Send latitude and longitude together")
+        if (changes["latitude"] is None) != (changes["longitude"] is None):
+            raise HTTPException(422, "Send latitude and longitude together")
+        # About 1 km is plenty for weather, and keeps the exact address out of the database.
+        for key in ("latitude", "longitude"):
+            if changes[key] is not None:
+                changes[key] = round(changes[key], 2)
+        if (changes["latitude"], changes["longitude"]) != (user.latitude, user.longitude):
+            weather.forget(db, user)
 
     low = changes.get("lookahead_min_days", user.lookahead_min_days)
     high = changes.get("lookahead_max_days", user.lookahead_max_days)
