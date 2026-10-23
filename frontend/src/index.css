@@ -125,6 +125,12 @@ button { font: inherit; cursor: pointer; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .avatar.lg { width: 64px; height: 64px; border-radius: 16px; font-size: 20px; }
 .avatar.xs { width: 26px; height: 26px; border-radius: 8px; font-size: 11px; }
+/* product photos: bigger, and show the whole bottle instead of cropping it */
+.avatar.photo { width: 60px; height: 60px; background: #fff; border: 1px solid var(--border); }
+.avatar.photo img { object-fit: contain; padding: 3px; }
+.avatar.photo.lg { width: 104px; height: 104px; border-radius: 18px; }
+.avatar.photo.xs { width: 40px; height: 40px; border-radius: 10px; }
+.avatar.photo.xs img { padding: 2px; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
 .tile { position: relative; text-align: left; border: 1.5px solid var(--border); background: #fff; border-radius: 16px; padding: 8px; display: flex; flex-direction: column; gap: 8px; color: var(--text); transition: border-color .15s, box-shadow .15s, opacity .15s; }
 .tile .img { aspect-ratio: 1; width: 100%; border-radius: 12px; overflow: hidden; background: var(--surface-2); display: grid; place-items: center; font-size: 28px; font-weight: 700; color: #fff; }

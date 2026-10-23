@@ -32,7 +32,7 @@ export function ProductThumb({ product, size = "" }: ProductThumbProps) {
   const className = size ? `avatar ${size}` : "avatar";
   if (product.photo_url) {
     return (
-      <span className={className}>
+      <span className={`${className} photo`}>
         <img src={product.photo_url} alt="" />
       </span>
     );
