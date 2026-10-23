@@ -42,6 +42,7 @@ export function LogScreen({ date }: { date: string }) {
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [notes, setNotes] = useState("");
   const [period, setPeriod] = useState(false);
+  const [trialNotes, setTrialNotes] = useState<Record<number, string>>({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   // Photos picked before the day exists on the server; uploaded right after saving.
@@ -55,6 +56,7 @@ export function LogScreen({ date }: { date: string }) {
     setTagIds(next.tag_ids);
     setNotes(next.notes);
     setPeriod(next.period);
+    setTrialNotes(Object.fromEntries(next.trials.map((t) => [t.trial_id, t.note])));
     setPending(NO_PENDING);
     setError("");
   }
@@ -122,6 +124,7 @@ export function LogScreen({ date }: { date: string }) {
         product_uses: uses,
         tag_ids: tagIds,
         period,
+        trial_notes: Object.entries(trialNotes).map(([id, note]) => ({ trial_id: Number(id), note })),
       });
       const waiting = pending;
       load(result);
@@ -219,6 +222,32 @@ export function LogScreen({ date }: { date: string }) {
                   </p>
                 )}
               </div>
+
+              {day.trials.length > 0 && (
+                <div className="card">
+                  <h2>On trial</h2>
+                  {day.trials.map((t) => (
+                    <div key={t.trial_id} className="trial-note">
+                      <div className="trial-note-head">
+                        <span className="chip trial-chip">Trialing</span>
+                        <b>{t.product_name}</b>
+                        <span className="muted">
+                          day {t.day_number} of {t.length_days}
+                        </span>
+                      </div>
+                      <label className="field" htmlFor={`trial-note-${t.trial_id}`}>
+                        How does your skin feel on it?
+                      </label>
+                      <textarea
+                        id={`trial-note-${t.trial_id}`}
+                        placeholder="Softer, a little tight after, slight sting around the nose…"
+                        value={trialNotes[t.trial_id] ?? ""}
+                        onChange={(e) => setTrialNotes((n) => ({ ...n, [t.trial_id]: e.target.value }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
             </div>
             <div>

@@ -102,6 +102,17 @@ export type DayStatus = "none" | "logged" | "routine_confirmed" | "gap";
 
 export type Angle = "front" | "left" | "right";
 
+/** A trial running on a given day, with that day's note on how the skin feels. */
+export interface DayTrial {
+  trial_id: number;
+  product_id: number;
+  product_name: string;
+  /** The "3" in "day 3 of 21", counted for that day. */
+  day_number: number;
+  length_days: number;
+  note: string;
+}
+
 export interface Day {
   date: string;
   status: DayStatus;
@@ -119,6 +130,7 @@ export interface Day {
   /** Moved over from the old app: no zones were recorded. */
   imported: boolean;
   planned: Planned;
+  trials: DayTrial[];
 }
 
 export interface DayInput {
@@ -129,6 +141,8 @@ export interface DayInput {
   product_uses: ProductUse[];
   tag_ids: number[];
   period: boolean;
+  /** An empty note clears it; trials left out keep theirs. */
+  trial_notes: { trial_id: number; note: string }[];
 }
 
 /** One calendar cell from GET /api/days?from=&to=. */
@@ -198,6 +212,8 @@ export interface Verdict {
   weeks: (VerdictWindow & { week: number })[];
   /** Only for products that may purge. */
   purge_note: string | null;
+  /** Notes written on the trial's days, oldest first. */
+  notes: { date: string; note: string }[];
 }
 
 export interface Factor {

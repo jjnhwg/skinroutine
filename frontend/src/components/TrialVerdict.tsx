@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ApiError } from "../api/http";
 import { endTrial, getVerdict } from "../api/trials";
 import type { Trial, Verdict, VerdictWindow } from "../api/types";
-import { LONG_DATE, prettyDate } from "../lib/dates";
+import { daysBetween, LONG_DATE, prettyDate } from "../lib/dates";
 import { PhotoPair } from "./PhotoPair";
 import { useToast } from "./useToast";
 
@@ -176,6 +176,24 @@ export function TrialVerdict({ trial, onClose, onEnded }: TrialVerdictProps) {
                     ))}
                   </tbody>
                 </table>
+              )}
+
+              {verdict.notes.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <h3 className="section-h" style={{ marginBottom: 4 }}>
+                    Your notes
+                  </h3>
+                  <ul className="trial-notes">
+                    {verdict.notes.map((n) => (
+                      <li key={n.date}>
+                        <span className="muted">
+                          Day {daysBetween(trial.start_date, n.date) + 1} · {prettyDate(n.date)}
+                        </span>
+                        <p>{n.note}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
               {(verdict.photos.first || verdict.photos.last) && (

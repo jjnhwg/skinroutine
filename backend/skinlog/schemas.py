@@ -155,6 +155,12 @@ class ProductUseIO(BaseModel):
     time_of_day: TimeOfDay
 
 
+class TrialNoteIn(BaseModel):
+    trial_id: int
+    # Empty clears the note.
+    note: str = Field("", max_length=2000)
+
+
 class DayIn(BaseModel):
     skin_score: int | None = Field(None, ge=1, le=5)
     zones: Zones
@@ -163,6 +169,7 @@ class DayIn(BaseModel):
     product_uses: list[ProductUseIO] = []
     tag_ids: list[int] = []
     period: bool = False
+    trial_notes: list[TrialNoteIn] = []
 
 
 class DayPhotos(BaseModel):
@@ -171,6 +178,17 @@ class DayPhotos(BaseModel):
     front: str | None = None
     left: str | None = None
     right: str | None = None
+
+
+class DayTrial(BaseModel):
+    """A trial that covers this day, with where the day falls in it and the day's note."""
+
+    trial_id: int
+    product_id: int
+    product_name: str
+    day_number: int
+    length_days: int
+    note: str
 
 
 class DayOut(BaseModel):
@@ -187,6 +205,7 @@ class DayOut(BaseModel):
     photos: DayPhotos
     imported: bool
     planned: Planned
+    trials: list[DayTrial]
 
 
 class PhotoDays(BaseModel):
@@ -281,6 +300,11 @@ class WeekWindow(Window):
     week: int
 
 
+class TrialNoteOut(BaseModel):
+    date: date
+    note: str
+
+
 class Verdict(BaseModel):
     before: Window
     during: Window
@@ -293,6 +317,8 @@ class Verdict(BaseModel):
     # The trial week by week, so a purge (worse, then better) can be seen.
     weeks: list[WeekWindow]
     purge_note: str | None
+    # The user's own notes from the trial's days, oldest first.
+    notes: list[TrialNoteOut] = []
 
 
 class Factor(BaseModel):

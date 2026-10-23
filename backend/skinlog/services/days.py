@@ -27,13 +27,14 @@ from skinlog.schemas import (
     DayOut,
     DayPhotos,
     DaySummary,
+    DayTrial,
     Planned,
     ProductUseIO,
     ZoneConditions,
     Zones,
     file_url,
 )
-from skinlog.services import routine
+from skinlog.services import routine, trials
 
 MAX_RANGE_DAYS = 92
 
@@ -55,6 +56,23 @@ def zone_conditions(log: DayLog | None) -> ZoneConditions:
     for row in log.conditions if log else []:
         marked[row.zone].append(row.condition)
     return ZoneConditions(**{zone: sorted(conds) for zone, conds in marked.items()})
+
+
+def day_trials(db: Session, user: User, day: date) -> list[DayTrial]:
+    out = []
+    for trial in trials.covering(db, user, day):
+        note = next((n.note for n in trial.notes if n.date == day), "")
+        out.append(
+            DayTrial(
+                trial_id=trial.id,
+                product_id=trial.product_id,
+                product_name=trial.product.name,
+                day_number=(day - trial.start_date).days + 1,
+                length_days=trial.length_days,
+                note=note,
+            )
+        )
+    return out
 
 
 def day_out(db: Session, user: User, day: date) -> DayOut:
@@ -87,6 +105,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         photos=DayPhotos(**{p.angle: file_url(p.path) for p in log.photos} if log else {}),
         imported=log.imported if log else False,
         planned=Planned(**planned),
+        trials=day_trials(db, user, day),
     )
 
 
@@ -149,6 +168,7 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     unique_uses = {(u.product_id, u.time_of_day) for u in body.product_uses}
     log.uses.extend(ProductUse(product_id=pid, time_of_day=tod) for pid, tod in unique_uses)
     log.tags.extend(DayTag(tag_id=tag_id) for tag_id in set(body.tag_ids))
+    trials.set_notes(db, user, day, {n.trial_id: n.note for n in body.trial_notes})
     db.commit()
     return day_out(db, user, day)
 

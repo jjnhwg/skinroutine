@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from skinlog import clock
-from skinlog.models import EndReason, Product, Trial, User
+from skinlog.models import EndReason, Product, Trial, TrialNote, User
 
 DEFAULT_LENGTH_DAYS = 21
 # Purging can last 4–6 weeks, so a shorter trial could end mid-purge.
@@ -34,6 +34,10 @@ def day_number(trial: Trial, today: date) -> int:
     return (min(today, end_date(trial)) - trial.start_date).days + 1
 
 
+def covers(trial: Trial, day: date) -> bool:
+    return trial.start_date <= day <= end_date(trial)
+
+
 def overlapping_ids(trial: Trial, all_trials: list[Trial]) -> list[int]:
     """Other trials whose [start, end] ranges share at least one day with this one."""
     return [
@@ -52,6 +56,15 @@ def active_trial(product: Product, today: date) -> Trial | None:
 def list_trials(db: Session, user: User) -> list[Trial]:
     query = select(Trial).where(Trial.user_id == user.id).order_by(Trial.start_date, Trial.id)
     return list(db.scalars(query))
+
+
+def covering(db: Session, user: User, day: date) -> list[Trial]:
+    """Trials running on `day`, whether or not they're still running today."""
+    return [t for t in list_trials(db, user) if covers(t, day)]
+
+
+def notes_for(trial: Trial) -> list[TrialNote]:
+    return sorted(trial.notes, key=lambda n: n.date)
 
 
 def get_trial(db: Session, user: User, trial_id: int) -> Trial:
@@ -101,3 +114,21 @@ def end_for_retired_product(product: Product, retired_on: date) -> None:
         if trial.ended_on is None and planned_end(trial) >= retired_on:
             trial.ended_on = max(retired_on, trial.start_date)
             trial.end_reason = EndReason.PRODUCT_RETIRED
+
+
+def set_notes(db: Session, user: User, day: date, notes: dict[int, str]) -> None:
+    """Replace the day's note on each given trial; an empty note removes it. The caller commits."""
+    running = {t.id: t for t in covering(db, user, day)}
+    for trial_id, text in notes.items():
+        trial = running.get(trial_id)
+        if trial is None:
+            raise HTTPException(422, "That trial wasn't running on this day")
+        existing = next((n for n in trial.notes if n.date == day), None)
+        text = text.strip()
+        if not text:
+            if existing:
+                trial.notes.remove(existing)
+        elif existing:
+            existing.note = text
+        else:
+            trial.notes.append(TrialNote(date=day, note=text))

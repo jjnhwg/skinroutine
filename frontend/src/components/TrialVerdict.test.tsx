@@ -29,6 +29,16 @@ describe("TrialVerdict", () => {
     expect(getVerdict).toHaveBeenCalledWith(4);
   });
 
+  it("lists the notes from the trial's days", async () => {
+    vi.mocked(getVerdict).mockResolvedValue(
+      verdict({ notes: [{ date: "2026-10-07", note: "Less redness on cheeks" }] }),
+    );
+    renderWithApp(<TrialVerdict trial={trial(4, RETINOL)} onClose={() => {}} onEnded={() => {}} />);
+
+    expect(await screen.findByText("Less redness on cheeks")).toBeInTheDocument();
+    expect(screen.getByText(/^Day 3 ·/)).toBeInTheDocument();
+  });
+
   it("shows flags as chips", async () => {
     vi.mocked(getVerdict).mockResolvedValue(
       verdict({ flags: { overlapping: true, ended_early: true, in_progress: false } }),

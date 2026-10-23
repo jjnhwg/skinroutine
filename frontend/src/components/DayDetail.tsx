@@ -151,6 +151,23 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
                 </div>
               )}
 
+              {day.trials.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  {day.trials.map((t) => (
+                    <div key={t.trial_id} className="trial-note">
+                      <div className="trial-note-head">
+                        <span className="chip trial-chip">Trialing</span>
+                        <b>{t.product_name}</b>
+                        <span className="muted">
+                          day {t.day_number} of {t.length_days}
+                        </span>
+                      </div>
+                      {t.note && <p style={{ whiteSpace: "pre-line", margin: "6px 0 0" }}>{t.note}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {day.notes && <p style={{ whiteSpace: "pre-line" }}>{day.notes}</p>}
 
               {photos.length > 0 && (

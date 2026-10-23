@@ -17,6 +17,7 @@ from skinlog.schemas import (
     ProductOut,
     TrialCreate,
     TrialOut,
+    TrialNoteOut,
     TrialStarted,
     Verdict,
 )
@@ -94,4 +95,7 @@ def verdict_for(db: Session, user: User, trial: Trial) -> Verdict:
     end = max(trial.start_date, min(service.end_date(trial), today))
     records = build_dataset(db, user, start, end)
     overlapping = bool(service.overlapping_ids(trial, service.list_trials(db, user)))
-    return Verdict(**verdict(records, trial, today, overlapping, trial.product.may_purge))
+    notes = [TrialNoteOut(date=n.date, note=n.note) for n in service.notes_for(trial)]
+    return Verdict(
+        **verdict(records, trial, today, overlapping, trial.product.may_purge), notes=notes
+    )

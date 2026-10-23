@@ -231,6 +231,19 @@ class Trial(Base):
     end_reason: Mapped[EndReason | None] = mapped_column(_enum(EndReason))
 
     product: Mapped[Product] = relationship(back_populates="trials")
+    notes: Mapped[list["TrialNote"]] = relationship(cascade="all, delete-orphan")
+
+
+class TrialNote(Base):
+    """How the skin felt on one day of a trial, in the user's words. No row means no note."""
+
+    __tablename__ = "trial_notes"
+
+    trial_id: Mapped[int] = mapped_column(
+        ForeignKey("trials.id", ondelete="CASCADE"), primary_key=True
+    )
+    date: Mapped[date] = mapped_column(Date, primary_key=True)
+    note: Mapped[str] = mapped_column(Text)
 
 
 class WeatherDay(Base):

@@ -44,6 +44,7 @@ export function day(date: string, fields: Partial<Day> = {}): Day {
     photos: { front: null, left: null, right: null },
     imported: false,
     planned: { am: [], pm: [] },
+    trials: [],
     ...fields,
   };
 }
@@ -90,6 +91,7 @@ export function verdict(fields: Partial<Verdict> = {}): Verdict {
     },
     weeks: [{ week: 1, start: "2026-10-05", end: "2026-10-09", outcome_days: 5, total_breakouts: 4, avg_breakouts: 0.8 }],
     purge_note: null,
+    notes: [],
     ...fields,
   };
 }

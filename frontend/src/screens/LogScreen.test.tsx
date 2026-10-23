@@ -84,8 +84,33 @@ describe("LogScreen", () => {
       ],
       tag_ids: [7, 8],
       period: false,
+      trial_notes: [],
     });
     expect(await screen.findByText("Entry updated")).toBeInTheDocument();
+  });
+
+  it("shows each running trial and saves how the skin feels on it", async () => {
+    const onTrial = day("2026-10-09", {
+      trials: [
+        { trial_id: 4, product_id: 2, product_name: "Retinol", day_number: 3, length_days: 21, note: "Bit dry" },
+      ],
+    });
+    vi.mocked(getDay).mockResolvedValue(onTrial);
+    vi.mocked(saveDay).mockResolvedValue({ ...onTrial, status: "logged" });
+    const user = userEvent.setup();
+    renderWithApp(<LogScreen date="2026-10-09" />);
+
+    expect(await screen.findByText("Trialing")).toBeInTheDocument();
+    expect(screen.getByText("day 3 of 21")).toBeInTheDocument();
+    const note = screen.getByLabelText("How does your skin feel on it?");
+    expect(note).toHaveValue("Bit dry");
+    await user.type(note, ", less oily");
+    await user.click(screen.getByRole("button", { name: "Save entry" }));
+
+    expect(saveDay).toHaveBeenCalledWith(
+      "2026-10-09",
+      expect.objectContaining({ trial_notes: [{ trial_id: 4, note: "Bit dry, less oily" }] }),
+    );
   });
 
   it("hides 'On my period' unless cycle tracking is on", async () => {

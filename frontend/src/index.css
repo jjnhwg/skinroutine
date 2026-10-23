@@ -245,6 +245,15 @@ button { font: inherit; cursor: pointer; }
 .progress span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .suspects { list-style: none; margin: 0; padding: 0; }
 .suspects li { border-top: 1px solid var(--border); }
+.trial-note + .trial-note { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.trial-note .field { margin-top: 10px; }
+.trial-note-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+.trial-chip { background: var(--accent-soft); color: var(--accent); }
+.trial-notes { list-style: none; padding: 0; margin: 0; }
+.trial-notes li { padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.trial-notes li:first-child { border-top: none; }
+.trial-notes .muted { font-size: 12px; }
+.trial-notes p { margin: 2px 0 0; white-space: pre-line; }
 .suspects li:first-child { border-top: none; }
 .suspect { all: unset; display: block; width: 100%; box-sizing: border-box; padding: 12px 0; font-size: 15px; line-height: 1.45; cursor: pointer; }
 .suspect::after { content: " ▸"; color: var(--text-muted); }
