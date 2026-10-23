@@ -7,6 +7,10 @@ import { LONG_DATE, prettyDate } from "../lib/dates";
 /** At most this many days play in the slider, spread evenly from first to latest. */
 const MAX_FRAMES = 12;
 
+/** How see-through the photos beside the current one are, then the ones past those. */
+const SIDE_FADE = 0.4;
+const FAR_FADE = 0.15;
+
 /** Fill in your own: "Dry", "Normal", "Combination", "Oily" or "Sensitive". */
 const MY_SKIN_TYPE: string | null = null;
 const SKIN_TYPES = ["Dry", "Normal", "Combination", "Oily", "Sensitive"];
@@ -91,37 +95,61 @@ function TubeArt({ colors: [body, band, cap] }: { colors: string[] }) {
   );
 }
 
-/** Drag or play through the daily photos, first to latest. */
+/** Opacity of a photo `d` places away from the current one: solid, then see-through, then faint. */
+function fade(d: number): number {
+  if (d < 1) return 1 - d * (1 - SIDE_FADE);
+  if (d < 2) return SIDE_FADE - (d - 1) * (SIDE_FADE - FAR_FADE);
+  return FAR_FADE;
+}
+
+/** Drag or play through the daily photos, first to latest, with the days either side showing through. */
 function PhotoSlider({ frames }: { frames: Frame[] | null }) {
-  const [index, setIndex] = useState(0);
+  // A fraction while dragging, so the strip glides; whole again when let go.
+  const [pos, setPos] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const [playing, setPlaying] = useState(false);
   const count = frames?.length ?? 0;
   const last = count - 1;
-  const current = Math.min(index, Math.max(last, 0));
+  const clamped = Math.min(Math.max(pos, 0), Math.max(last, 0));
+  const current = Math.round(clamped);
 
   useEffect(() => {
     if (!playing) return;
     const timer = setInterval(() => {
-      setIndex((i) => {
-        if (i >= last) {
+      setPos((p) => {
+        const next = Math.round(p) + 1;
+        if (next > last) {
           setPlaying(false);
-          return i;
+          return p;
         }
-        return i + 1;
+        return next;
       });
-    }, 700);
+    }, 1100);
     return () => clearInterval(timer);
   }, [playing, last]);
 
   function togglePlay() {
     if (playing) return setPlaying(false);
-    if (current >= last) setIndex(0);
+    if (current >= last) setPos(0);
+    setDragging(false);
     setPlaying(true);
   }
 
   function pick(i: number) {
     setPlaying(false);
-    setIndex(i);
+    setDragging(false);
+    setPos(i);
+  }
+
+  function drag(p: number) {
+    setPlaying(false);
+    setDragging(true);
+    setPos(p);
+  }
+
+  function snap() {
+    setDragging(false);
+    setPos((p) => Math.round(p));
   }
 
   if (!frames) return <div className="hero-photo" aria-busy="true" />;
@@ -135,17 +163,35 @@ function PhotoSlider({ frames }: { frames: Frame[] | null }) {
     );
   }
 
-  const frame = frames[current];
-  const stage = current === last && count > 1 ? "Now" : current === 0 ? "Then" : "Along the way";
-
   return (
     <div className="slider">
-      <div className="hero-photo">
-        <img src={frame.url} alt={`Skin on ${prettyDate(frame.date, LONG_DATE)}`} />
-        <span className={`hero-pill${stage === "Now" ? " now" : ""}`}>{stage}</span>
-        <span className="hero-pill counter">
-          {current + 1} of {count}
-        </span>
+      <div className={`peek-strip${dragging ? " dragging" : ""}`}>
+        {frames.map((f, i) => {
+          const d = Math.abs(i - clamped);
+          const stage = i === last && count > 1 ? "Now" : i === 0 ? "Then" : "Along the way";
+          return (
+            <button
+              key={f.date}
+              type="button"
+              className="peek-card"
+              aria-current={i === current ? "true" : undefined}
+              aria-label={`Photo ${i + 1} of ${count}, ${prettyDate(f.date, LONG_DATE)}`}
+              onClick={() => pick(i)}
+              style={{
+                left: `${17 + (i - clamped) * 70}%`,
+                opacity: fade(d),
+                transform: `scale(${1 - Math.min(1, d) * 0.1})`,
+                zIndex: 20 - Math.round(d * 2),
+              }}
+            >
+              <img src={f.url} alt="" />
+              <span className={`hero-pill${stage === "Now" ? " now" : ""}`}>{stage}</span>
+              <span className="hero-pill counter">
+                {i + 1} of {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
       {count > 1 && (
         <>
@@ -158,9 +204,12 @@ function PhotoSlider({ frames }: { frames: Frame[] | null }) {
                 type="range"
                 min={0}
                 max={last}
-                step={1}
-                value={current}
-                onChange={(e) => pick(Number(e.target.value))}
+                step={0.01}
+                value={clamped}
+                onChange={(e) => drag(Number(e.target.value))}
+                onPointerUp={snap}
+                onKeyUp={snap}
+                onBlur={snap}
                 aria-label="Drag through progress photos"
               />
               <span className="slider-ends">
