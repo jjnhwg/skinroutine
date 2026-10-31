@@ -6,6 +6,7 @@ import { MissedDaysPrompt } from "./components/MissedDaysPrompt";
 import { TabBar } from "./components/TabBar";
 import { ToastProvider } from "./components/Toast";
 import { TAB_LABELS, useRoute, type Route } from "./lib/router";
+import { GuideScreen } from "./screens/GuideScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { InsightsScreen } from "./screens/InsightsScreen";
 import { LogScreen } from "./screens/LogScreen";
@@ -24,6 +25,7 @@ function Screens({ tab, date }: Route) {
       {tab === "products" && <ProductsScreen />}
       {tab === "settings" && <SettingsScreen />}
       {tab === "summary" && <SummaryScreen />}
+      {tab === "guide" && <GuideScreen />}
       {tab === "log" && <LogScreen date={date ?? today} />}
     </main>
   );

@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { CalendarIcon, InsightsIcon, LogIcon, ProductsIcon, SettingsIcon } from "./Icons";
+import { CalendarIcon, GuideIcon, InsightsIcon, LogIcon, ProductsIcon, SettingsIcon } from "./Icons";
 import { TAB_LABELS, type Tab } from "../lib/router";
 
 const TABS: { id: Tab; Icon: ComponentType }[] = [
@@ -7,6 +7,7 @@ const TABS: { id: Tab; Icon: ComponentType }[] = [
   { id: "timeline", Icon: CalendarIcon },
   { id: "insights", Icon: InsightsIcon },
   { id: "products", Icon: ProductsIcon },
+  { id: "guide", Icon: GuideIcon },
   { id: "settings", Icon: SettingsIcon },
 ];
 

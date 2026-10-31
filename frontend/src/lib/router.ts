@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type Tab = "home" | "log" | "timeline" | "insights" | "products" | "settings" | "summary";
+export type Tab = "home" | "log" | "timeline" | "insights" | "products" | "settings" | "summary" | "guide";
 
 export const TAB_LABELS: Record<Tab, string> = {
   home: "Home",
@@ -10,6 +10,7 @@ export const TAB_LABELS: Record<Tab, string> = {
   products: "Products",
   settings: "Settings",
   summary: "Summary",
+  guide: "Guide",
 };
 
 const TABS = Object.keys(TAB_LABELS) as Tab[];
