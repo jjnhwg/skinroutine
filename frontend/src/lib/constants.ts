@@ -21,10 +21,9 @@ export const ZONE_LABELS: Record<ZoneName, string> = {
   jawline: "Jawline",
 };
 
-export const CONDITIONS: Condition[] = ["forming", "dry", "red", "oily"];
+export const CONDITIONS: Condition[] = ["dry", "red", "oily"];
 
 export const CONDITION_LABELS: Record<Condition, string> = {
-  forming: "Pimple forming",
   dry: "Dry",
   red: "Red",
   oily: "Oily",

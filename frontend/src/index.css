@@ -185,6 +185,14 @@ button { font: inherit; cursor: pointer; }
 .stepper-row b { font-size: 20px; min-width: 2ch; text-align: center; }
 .stepper-row button { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border); background: #fff; font-size: 20px; line-height: 1; color: var(--text); }
 .stepper-row button:disabled { opacity: .35; }
+.stage-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.stage-row:first-child { border-top: 0; padding-top: 0; }
+.stage-row .stepper-row { margin-top: 0; }
+.stage-name { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; }
+.stage-name small { display: block; font-weight: 400; font-size: 12px; color: var(--text-muted); }
+.stage-moves { flex-basis: 100%; display: flex; justify-content: flex-end; gap: 6px; }
+.stage-move { border-radius: 999px; border: 1.5px dashed var(--border-strong); background: none; color: var(--text); padding: 4px 12px; min-height: 32px; font-size: 13px; font-weight: 500; }
+.stage-move:disabled { opacity: .35; }
 .tile .img .avatar { width: 100%; height: 100%; border-radius: 0; font-size: 28px; }
 
 /* calendar */

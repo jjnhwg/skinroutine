@@ -1,15 +1,17 @@
 import { useState } from "react";
-import type { Condition, ZoneConditions, ZoneName, Zones } from "../api/types";
+import type { Condition, Stage, ZoneConditions, ZoneName, ZoneStages } from "../api/types";
 import { CONDITION_LABELS, CONDITIONS, RATING_LABELS, RATINGS, ZONE_LABELS } from "../lib/constants";
+import { prettyDate } from "../lib/dates";
+import { NEXT_STAGES, NO_SPOTS, spotSummary, STAGE_LABELS, STAGES, totalSpots } from "../lib/stages";
 
 export interface CheckIn {
   /** Optional overall score; null when not picked. */
   skin_score: number | null;
-  zones: Zones;
+  stages: ZoneStages;
   conditions: ZoneConditions;
 }
 
-const MAX_BREAKOUTS = 50;
+const MAX_SPOTS = 50;
 
 // Drawn as a mirror: your left cheek is on the left. viewBox is 200 × 260.
 const FACE_OUTLINE =
@@ -37,15 +39,29 @@ const ZONE_SHAPES: { zone: ZoneName; d: string; badge: [number, number] }[] = [
 interface CheckInFormProps {
   value: CheckIn;
   onChange: (next: CheckIn) => void;
+  /** The earlier day the spots were copied from, if they were. */
+  carriedFrom?: string | null;
 }
 
-/** Tap a zone on the face to mark breakouts and conditions there; overall score is optional. Controlled. */
-export function CheckInForm({ value, onChange }: CheckInFormProps) {
+/**
+ * Tap a zone on the face to count its spots by stage and mark conditions there;
+ * overall score is optional. Controlled.
+ */
+export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) {
   const [open, setOpen] = useState<ZoneName | null>(null);
 
-  const marked = (zone: ZoneName) => value.zones[zone] > 0 || value.conditions[zone].length > 0;
-  const setCount = (zone: ZoneName, count: number) =>
-    onChange({ ...value, zones: { ...value.zones, [zone]: count } });
+  const marked = (zone: ZoneName) =>
+    totalSpots(value.stages[zone]) > 0 || value.conditions[zone].length > 0;
+  const setCount = (zone: ZoneName, stage: Stage, count: number) =>
+    onChange({ ...value, stages: { ...value.stages, [zone]: { ...value.stages[zone], [stage]: count } } });
+  /** One spot moves on, e.g. an active pimple starts healing. */
+  const move = (zone: ZoneName, from: Stage, to: Stage) => {
+    const counts = value.stages[zone];
+    onChange({
+      ...value,
+      stages: { ...value.stages, [zone]: { ...counts, [from]: counts[from] - 1, [to]: counts[to] + 1 } },
+    });
+  };
   const toggleCondition = (zone: ZoneName, condition: Condition) => {
     const current = value.conditions[zone];
     const next = current.includes(condition)
@@ -56,7 +72,7 @@ export function CheckInForm({ value, onChange }: CheckInFormProps) {
   const clearZone = (zone: ZoneName) =>
     onChange({
       ...value,
-      zones: { ...value.zones, [zone]: 0 },
+      stages: { ...value.stages, [zone]: NO_SPOTS },
       conditions: { ...value.conditions, [zone]: [] },
     });
 
@@ -64,7 +80,9 @@ export function CheckInForm({ value, onChange }: CheckInFormProps) {
     <>
       <h2>How's your skin today?</h2>
       <p className="muted" style={{ margin: "-6px 0 0" }}>
-        Tap any area that isn't fine. Leave the rest alone.
+        {carriedFrom
+          ? `Started from your spots on ${prettyDate(carriedFrom)}. Move on any that changed and step down any that are gone.`
+          : "Tap any area that isn't fine. Leave the rest alone."}
       </p>
 
       <div className="face-map">
@@ -73,12 +91,11 @@ export function CheckInForm({ value, onChange }: CheckInFormProps) {
           <path className="face-feature" d="M54 100 Q64 94 74 100 M126 100 Q136 94 146 100" />
           <path className="face-feature" d="M84 180 Q100 190 116 180" />
           {ZONE_SHAPES.map(({ zone, d, badge }) => {
-            const count = value.zones[zone];
-            const conditions = value.conditions[zone];
+            const count = totalSpots(value.stages[zone]);
             const summary = [
-              count > 0 ? `${count} breakout${count === 1 ? "" : "s"}` : "",
-              ...conditions.map((c) => CONDITION_LABELS[c].toLowerCase()),
-            ].filter(Boolean);
+              ...spotSummary(value.stages[zone]),
+              ...value.conditions[zone].map((c) => CONDITION_LABELS[c].toLowerCase()),
+            ];
             return (
               <g key={zone}>
                 <path
@@ -120,7 +137,59 @@ export function CheckInForm({ value, onChange }: CheckInFormProps) {
               </button>
             )}
           </div>
-          <div className="chips" style={{ gap: 8 }} role="group" aria-label={`${ZONE_LABELS[open]} conditions`}>
+          <div className="stage-list">
+            {STAGES.map((stage) => {
+              const count = value.stages[open][stage];
+              const { name, hint } = STAGE_LABELS[stage];
+              const where = ZONE_LABELS[open].toLowerCase();
+              return (
+                <div className="stage-row" key={stage}>
+                  <span className="stage-name">
+                    {name}
+                    <small>{hint}</small>
+                  </span>
+                  <div className="stepper-row">
+                    <button
+                      type="button"
+                      aria-label={`Fewer ${name.toLowerCase()} on ${where}`}
+                      disabled={count <= 0}
+                      onClick={() => setCount(open, stage, count - 1)}
+                    >
+                      −
+                    </button>
+                    <b aria-label={`${ZONE_LABELS[open]} ${name.toLowerCase()}`} aria-live="polite">
+                      {count}
+                    </b>
+                    <button
+                      type="button"
+                      aria-label={`More ${name.toLowerCase()} on ${where}`}
+                      disabled={count >= MAX_SPOTS}
+                      onClick={() => setCount(open, stage, count + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                  {count > 0 && NEXT_STAGES[stage].length > 0 && (
+                    <div className="stage-moves">
+                      {NEXT_STAGES[stage].map((to) => (
+                        <button
+                          key={to}
+                          type="button"
+                          className="stage-move"
+                          aria-label={`Move one to ${STAGE_LABELS[to].one}`}
+                          disabled={value.stages[open][to] >= MAX_SPOTS}
+                          onClick={() => move(open, stage, to)}
+                        >
+                          1 → {STAGE_LABELS[to].one}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="chips" style={{ gap: 8, marginTop: 12 }} role="group" aria-label={`${ZONE_LABELS[open]} conditions`}>
             {CONDITIONS.map((condition) => (
               <button
                 key={condition}
@@ -132,30 +201,6 @@ export function CheckInForm({ value, onChange }: CheckInFormProps) {
                 {CONDITION_LABELS[condition]}
               </button>
             ))}
-          </div>
-          <div className="stepper" style={{ marginTop: 12 }}>
-            <span className="stepper-label">Breakouts</span>
-            <div className="stepper-row">
-              <button
-                type="button"
-                aria-label={`Fewer on ${ZONE_LABELS[open].toLowerCase()}`}
-                disabled={value.zones[open] <= 0}
-                onClick={() => setCount(open, value.zones[open] - 1)}
-              >
-                −
-              </button>
-              <b aria-label={`${ZONE_LABELS[open]} breakouts`} aria-live="polite">
-                {value.zones[open]}
-              </b>
-              <button
-                type="button"
-                aria-label={`More on ${ZONE_LABELS[open].toLowerCase()}`}
-                disabled={value.zones[open] >= MAX_BREAKOUTS}
-                onClick={() => setCount(open, value.zones[open] + 1)}
-              >
-                +
-              </button>
-            </div>
           </div>
         </div>
       )}

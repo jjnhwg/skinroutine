@@ -1,7 +1,6 @@
 import pytest
 
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
-CHECKIN = {"skin_score": 2, "zones": ZONES}
+CHECKIN = {"skin_score": 2}
 
 
 @pytest.fixture
@@ -68,7 +67,7 @@ def test_confirm_writes_that_weekdays_plan(client, routine):
     assert tuesday.json()["product_uses"] == [{"product_id": routine["cleanser"], "time_of_day": "am"}]
     day = client.get("/api/days/2026-10-05").json()
     assert day["skin_score"] is None
-    assert day["zones"] == ZONES
+    assert day["total_breakouts"] == 0
     assert "2026-10-05" not in missed(client)
 
 

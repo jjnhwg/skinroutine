@@ -3,7 +3,6 @@ from datetime import date, timedelta
 from skinlog.models import WeatherDay
 from skinlog.weather import COLD, DRY, HOT, HUMID, factors
 
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
 TODAY = date(2026, 10, 9)  # frozen_now
 
 
@@ -33,7 +32,7 @@ def test_location_needs_both_halves(client, frozen_now):
 
 
 def test_no_location_means_no_fetching(client, frozen_now, weather_source):
-    client.put("/api/days/2026-10-01", json={"zones": ZONES})
+    client.put("/api/days/2026-10-01", json={})
     client.get("/api/insights/suspects")
     assert weather_source.calls == []
 
@@ -41,7 +40,7 @@ def test_no_location_means_no_fetching(client, frozen_now, weather_source):
 def test_past_days_are_fetched_once(client, db_session, frozen_now, weather_source):
     set_location(client)
     weather_source.readings = {date(2026, 10, n): (20.0, 60.0) for n in range(1, 10)}
-    client.put("/api/days/2026-10-05", json={"zones": ZONES})
+    client.put("/api/days/2026-10-05", json={})
 
     client.get("/api/insights/suspects")
     # From the first log up to yesterday; today isn't over.
@@ -55,7 +54,7 @@ def test_past_days_are_fetched_once(client, db_session, frozen_now, weather_sour
 def test_a_failing_source_is_skipped(client, frozen_now, weather_source):
     set_location(client)
     weather_source.fail = True
-    client.put("/api/days/2026-10-05", json={"zones": ZONES})
+    client.put("/api/days/2026-10-05", json={})
 
     assert client.get("/api/insights/suspects").status_code == 200
 
@@ -63,7 +62,7 @@ def test_a_failing_source_is_skipped(client, frozen_now, weather_source):
 def test_moving_forgets_old_weather(client, db_session, frozen_now, weather_source):
     set_location(client)
     weather_source.readings = {date(2026, 10, 5): (20.0, 60.0)}
-    client.put("/api/days/2026-10-05", json={"zones": ZONES})
+    client.put("/api/days/2026-10-05", json={})
     client.get("/api/insights/suspects")
     assert db_session.query(WeatherDay).count() == 1
 
@@ -79,7 +78,7 @@ def test_humid_days_before_breakouts_become_a_suspect(client, frozen_now, weathe
         humid = n % 6 == 0
         weather_source.readings[day] = (22.0, 85.0 if humid else 55.0)
         chin = 3 if n % 6 == 2 else 0  # two days after each humid day
-        client.put(f"/api/days/{day.isoformat()}", json={"zones": {**ZONES, "chin": chin}})
+        client.put(f"/api/days/{day.isoformat()}", json={"stages": {"chin": {"active": chin}}})
 
     result = client.get("/api/insights/suspects").json()
     top = result["suspects"][0]

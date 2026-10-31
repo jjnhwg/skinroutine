@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from skinlog import weather
-from skinlog.models import DayLog, DayStatus, User, WeatherDay
+from skinlog.models import DayLog, DayStatus, Stage, User, WeatherDay
 from skinlog.schemas import file_url
 
 
@@ -26,7 +26,7 @@ class DayRecord:
     products_used: set[int] = field(default_factory=set)
     tag_ids: set[int] = field(default_factory=set)
     total_breakouts: int = 0
-    zones: dict[str, int] = field(default_factory=dict)  # zone -> count, zones with breakouts only
+    zones: dict[str, int] = field(default_factory=dict)  # zone -> active spots, zones with any only
     imported: bool = False
     photos: dict[str, str] = field(default_factory=dict)  # angle -> URL
     weather: set[int] = field(default_factory=set)  # weather factor ids, see weather.py
@@ -43,7 +43,7 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
         select(DayLog)
         .where(DayLog.user_id == user.id, DayLog.date >= start, DayLog.date <= end)
         .options(
-            selectinload(DayLog.zones),
+            selectinload(DayLog.stages),
             selectinload(DayLog.uses),
             selectinload(DayLog.tags),
             selectinload(DayLog.photos),
@@ -63,6 +63,7 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
         if log is None:
             records.append(DayRecord(date=day, status="none", weather=weather_by_date.get(day, set())))
             continue
+        active = {s.zone: s.count for s in log.stages if s.stage == Stage.ACTIVE and s.count}
         exposed = log.status in (DayStatus.LOGGED, DayStatus.ROUTINE_CONFIRMED)
         records.append(
             DayRecord(
@@ -70,8 +71,8 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
                 status=log.status,
                 products_used={u.product_id for u in log.uses} if exposed else set(),
                 tag_ids={t.tag_id for t in log.tags} if log.status == DayStatus.LOGGED else set(),
-                total_breakouts=sum(z.count for z in log.zones),
-                zones={z.zone: z.count for z in log.zones if z.count},
+                total_breakouts=sum(active.values()),
+                zones=active,
                 imported=log.imported,
                 photos={p.angle: file_url(p.path) for p in log.photos},
                 weather=weather_by_date.get(day, set()),

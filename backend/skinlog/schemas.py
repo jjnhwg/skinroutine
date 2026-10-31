@@ -122,18 +122,31 @@ class Planned(BaseModel):
 Count = Annotated[int, Field(ge=0, le=50)]
 
 
-class Zones(BaseModel):
-    """Breakout count per zone. All seven are always sent and returned."""
+class StageCounts(BaseModel):
+    """Spots at each stage in one zone; a stage left out counts 0."""
 
     model_config = ConfigDict(extra="forbid")
 
-    forehead: Count
-    temples: Count
-    nose: Count
-    left_cheek: Count
-    right_cheek: Count
-    chin: Count
-    jawline: Count
+    clogged: Count = 0
+    coming_up: Count = 0
+    active: Count = 0
+    healing: Count = 0
+    red_mark: Count = 0
+    brown_mark: Count = 0
+
+
+class ZoneStages(BaseModel):
+    """Spots per zone and stage. A zone left out has none; all seven are always returned."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    forehead: StageCounts = StageCounts()
+    temples: StageCounts = StageCounts()
+    nose: StageCounts = StageCounts()
+    left_cheek: StageCounts = StageCounts()
+    right_cheek: StageCounts = StageCounts()
+    chin: StageCounts = StageCounts()
+    jawline: StageCounts = StageCounts()
 
 
 class ZoneConditions(BaseModel):
@@ -162,8 +175,11 @@ class TrialNoteIn(BaseModel):
 
 
 class DayIn(BaseModel):
+    # Forbid unknown fields so a client still sending the old "zones" fails loudly.
+    model_config = ConfigDict(extra="forbid")
+
     skin_score: int | None = Field(None, ge=1, le=5)
-    zones: Zones
+    stages: ZoneStages = ZoneStages()
     conditions: ZoneConditions = ZoneConditions()
     notes: str = Field("", max_length=5000)
     product_uses: list[ProductUseIO] = []
@@ -195,8 +211,11 @@ class DayOut(BaseModel):
     date: date
     status: str
     skin_score: int | None
-    zones: Zones
+    stages: ZoneStages
+    # When nothing is saved yet, stages are copied from this earlier logged day.
+    stages_from: date | None
     conditions: ZoneConditions
+    # Active spots only.
     total_breakouts: int
     notes: str
     period: bool

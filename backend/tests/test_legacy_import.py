@@ -4,8 +4,6 @@ from pathlib import Path
 import pytest
 
 BACKUP = json.loads((Path(__file__).parent / "fixtures" / "legacy_backup.json").read_text())
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
-
 
 @pytest.fixture
 def report(client, frozen_now) -> dict:
@@ -96,7 +94,7 @@ def test_second_run_skips_everything(client, report):
 
 
 def test_existing_days_are_never_overwritten(client, frozen_now):
-    client.put("/api/days/2026-09-02", json={"skin_score": 5, "zones": ZONES})
+    client.put("/api/days/2026-09-02", json={"skin_score": 5})
 
     result = client.post("/api/import/legacy", json=BACKUP).json()
 
@@ -107,7 +105,7 @@ def test_existing_days_are_never_overwritten(client, frozen_now):
 
 
 def test_saving_an_imported_day_clears_the_flag(client, report):
-    client.put("/api/days/2026-09-02", json={"skin_score": 2, "zones": ZONES})
+    client.put("/api/days/2026-09-02", json={"skin_score": 2})
 
     assert client.get("/api/days/2026-09-02").json()["imported"] is False
 

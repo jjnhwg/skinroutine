@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDay, getPhotoDays, listDays } from "../api/days";
 import { listProducts } from "../api/products";
 import { listTags } from "../api/tags";
-import { day, NO_ZONES, product } from "../test/fixtures";
+import { day, NO_SPOTS, NO_STAGES, product } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
 import { TimelineScreen } from "./TimelineScreen";
 
@@ -30,7 +30,7 @@ beforeEach(() => {
     day("2026-10-01", {
       status: "logged",
       skin_score: 4,
-      zones: { ...NO_ZONES, chin: 3 },
+      stages: { ...NO_STAGES, chin: { ...NO_SPOTS, active: 3 } },
       total_breakouts: 3,
       notes: "Spot on chin",
       product_uses: [
@@ -84,7 +84,7 @@ describe("TimelineScreen", () => {
     const sheet = await screen.findByRole("dialog");
     expect(getDay).toHaveBeenCalledWith("2026-10-01");
     expect(await within(sheet).findByText("4 — Rough")).toBeInTheDocument();
-    expect(within(sheet).getByText(/Chin 3/)).toBeInTheDocument();
+    expect(within(sheet).getByText("3 active", { exact: false })).toHaveTextContent("Chin: 3 active");
     expect(within(sheet).getByText("Cleanser")).toBeInTheDocument();
     expect(within(sheet).getByText("Retinol")).toBeInTheDocument();
     expect(within(sheet).getByText("Bad sleep")).toBeInTheDocument();

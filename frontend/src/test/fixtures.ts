@@ -1,4 +1,5 @@
 import type { Day, Product, Trial, Verdict, ZoneConditions } from "../api/types";
+import { NO_STAGES } from "../lib/stages";
 
 export function product(id: number, name: string, fields: Partial<Product> = {}): Product {
   return {
@@ -17,7 +18,7 @@ export function product(id: number, name: string, fields: Partial<Product> = {})
   };
 }
 
-export const NO_ZONES = { forehead: 0, temples: 0, nose: 0, left_cheek: 0, right_cheek: 0, chin: 0, jawline: 0 };
+export { NO_SPOTS, NO_STAGES } from "../lib/stages";
 
 export const NO_CONDITIONS: ZoneConditions = {
   forehead: [],
@@ -34,7 +35,8 @@ export function day(date: string, fields: Partial<Day> = {}): Day {
     date,
     status: "none",
     skin_score: null,
-    zones: NO_ZONES,
+    stages: NO_STAGES,
+    stages_from: null,
     conditions: NO_CONDITIONS,
     total_breakouts: 0,
     notes: "",

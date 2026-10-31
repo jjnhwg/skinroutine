@@ -37,17 +37,15 @@ def test_first_day_with_a_spot_counts_as_an_event():
     assert [r.date for r in breakout_events(records)] == [D(1)]
 
 
-ZONES = {"forehead": 1, "temples": 0, "nose": 0, "left_cheek": 2, "right_cheek": 0, "chin": 0, "jawline": 0}
-
-
 def test_build_dataset_from_the_database(client, db_session, frozen_now):
     from skinlog.models import User
     from tests.images import upload
 
     pid = client.post("/api/products", json={"name": "A", "type": "serum", "started_on": "2026-09-01"}).json()["id"]
     tag = client.get("/api/tags").json()[0]["id"]
+    # Only active spots count as breakouts; the healing ones are left out.
     client.put("/api/days/2026-10-02", json={
-        "skin_score": 3, "zones": ZONES,
+        "skin_score": 3, "stages": {"forehead": {"active": 1}, "left_cheek": {"active": 2, "healing": 4}},
         "product_uses": [{"product_id": pid, "time_of_day": "am"}], "tag_ids": [tag],
     })
     client.put("/api/days/2026-10-02/photos/front", files=upload())

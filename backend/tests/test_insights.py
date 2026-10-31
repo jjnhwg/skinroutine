@@ -1,8 +1,6 @@
 from datetime import date
 
-from skinlog.models import DayLog, ProductUse, ZoneBreakout
-
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
+from skinlog.models import DayLog, ProductUse, ZoneStage
 
 
 def log_days(client, days: list[int], serum_days: list[int], serum: int) -> None:
@@ -11,7 +9,7 @@ def log_days(client, days: list[int], serum_days: list[int], serum: int) -> None
         uses = [{"product_id": serum, "time_of_day": "pm"}] if n in serum_days else []
         response = client.put(
             f"/api/days/2026-09-{n:02d}",
-            json={"skin_score": 2, "zones": {**ZONES, "chin": chin}, "product_uses": uses},
+            json={"skin_score": 2, "stages": {"chin": {"active": chin}}, "product_uses": uses},
         )
         assert response.status_code == 200
 
@@ -75,7 +73,7 @@ def test_respects_the_look_ahead_setting(client, frozen_now):
 def test_other_users_logs_are_ignored(client, db_session, other_user, frozen_now):
     for n in range(1, 21):
         log = DayLog(user_id=other_user.id, date=date(2026, 9, n), status="logged", skin_score=2)
-        log.zones = [ZoneBreakout(zone="chin", count=1)]
+        log.stages = [ZoneStage(zone="chin", stage="active", count=1)]
         db_session.add(log)
     db_session.commit()
 
@@ -85,9 +83,9 @@ def test_other_users_logs_are_ignored(client, db_session, other_user, frozen_now
 def test_recap_compares_this_week_with_last(client, frozen_now):
     serum = make_serum(client)
     log_days(client, [1], [], serum)  # outside both weeks
-    client.put("/api/days/2026-10-01", json={"zones": {**ZONES, "nose": 2}})
-    client.put("/api/days/2026-10-08", json={"zones": {**ZONES, "chin": 1}})
-    client.put("/api/days/2026-10-09", json={"zones": ZONES})
+    client.put("/api/days/2026-10-01", json={"stages": {"nose": {"active": 2}}})
+    client.put("/api/days/2026-10-08", json={"stages": {"chin": {"active": 1}}})
+    client.put("/api/days/2026-10-09", json={})
 
     recap = client.get("/api/insights/recap").json()
     assert recap["week"]["start"] == "2026-10-03"
@@ -110,7 +108,7 @@ def _ingredient_products(client) -> tuple[int, int]:
     for n in range(1, 29):
         uses = [{"product_id": a, "time_of_day": "am"}, {"product_id": b, "time_of_day": "pm"}] if n % 7 == 1 else []
         chin = 3 if n % 7 == 3 else 0
-        client.put(f"/api/days/2026-09-{n:02d}", json={"zones": {**ZONES, "chin": chin}, "product_uses": uses})
+        client.put(f"/api/days/2026-09-{n:02d}", json={"stages": {"chin": {"active": chin}}, "product_uses": uses})
     return a, b
 
 
@@ -144,7 +142,7 @@ def test_ingredient_check_before_insights_are_ready_finds_nothing(client, frozen
 
 
 def test_cycle_is_only_reported_when_tracking(client, frozen_now):
-    client.put("/api/days/2026-10-01", json={"zones": ZONES, "period": True})
+    client.put("/api/days/2026-10-01", json={"period": True})
     assert client.get("/api/days/2026-10-01").json()["period"] is True
     assert client.get("/api/insights/suspects").json()["cycle"] is None
 

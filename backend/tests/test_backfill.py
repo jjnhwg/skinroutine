@@ -1,7 +1,5 @@
 import pytest
 
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
-
 
 @pytest.fixture
 def routine(client, frozen_now) -> dict:
@@ -21,7 +19,7 @@ def routine(client, frozen_now) -> dict:
 
 
 def test_open_dates_are_the_last_14_not_today(client, routine):
-    client.put("/api/days/2026-10-08", json={"zones": ZONES})
+    client.put("/api/days/2026-10-08", json={})
     dates = client.get("/api/backfill").json()["dates"]
     assert dates[0] == "2026-09-25"
     assert dates[-1] == "2026-10-07"

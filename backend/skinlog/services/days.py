@@ -17,9 +17,10 @@ from skinlog.models import (
     ProductUse,
     Tag,
     User,
+    Stage,
     Zone,
-    ZoneBreakout,
     ZoneCondition,
+    ZoneStage,
 )
 from skinlog.photos import PhotoStore
 from skinlog.schemas import (
@@ -31,24 +32,47 @@ from skinlog.schemas import (
     Planned,
     ProductUseIO,
     ZoneConditions,
-    Zones,
+    ZoneStages,
     file_url,
 )
 from skinlog.services import routine, trials
 
 MAX_RANGE_DAYS = 92
+# An unsaved day starts from the spots of the last logged day at most this far back.
+CARRY_OVER_DAYS = 7
 
 
 def get_log(db: Session, user: User, day: date) -> DayLog | None:
     return db.scalar(select(DayLog).where(DayLog.user_id == user.id, DayLog.date == day))
 
 
-def zone_counts(log: DayLog | None) -> dict[str, int]:
-    """All seven zones; a zone with no row (or no log) counts 0."""
-    counts = dict.fromkeys((z.value for z in Zone), 0)
-    for row in log.zones if log else []:
-        counts[row.zone] = row.count
-    return counts
+def zone_stages(log: DayLog | None) -> ZoneStages:
+    """All seven zones and six stages; anything with no row (or no log) counts 0."""
+    counts: dict[str, dict[str, int]] = {z.value: {} for z in Zone}
+    for row in log.stages if log else []:
+        counts[row.zone][row.stage] = row.count
+    return ZoneStages(**counts)
+
+
+def breakouts(log: DayLog) -> int:
+    return sum(row.count for row in log.stages if row.stage == Stage.ACTIVE)
+
+
+def carry_over_from(db: Session, user: User, day: date) -> DayLog | None:
+    """The last logged day before `day` within CARRY_OVER_DAYS, if it had any spots."""
+    log = db.scalar(
+        select(DayLog)
+        .where(
+            DayLog.user_id == user.id,
+            DayLog.status == DayStatus.LOGGED,
+            DayLog.imported.is_(False),
+            DayLog.date < day,
+            DayLog.date >= day - timedelta(days=CARRY_OVER_DAYS),
+        )
+        .order_by(DayLog.date.desc())
+        .limit(1)
+    )
+    return log if log and log.stages else None
 
 
 def zone_conditions(log: DayLog | None) -> ZoneConditions:
@@ -90,14 +114,16 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
             ProductUseIO(product_id=u.product_id, time_of_day=u.time_of_day)
             for u in sorted(log.uses, key=lambda u: (u.time_of_day, u.product_id))
         ]
-    zones = zone_counts(log)
+    # Spots last for days, so a day with no check-in yet starts from the last one.
+    source = log if log and log.status == DayStatus.LOGGED else carry_over_from(db, user, day)
     return DayOut(
         date=day,
         status=log.status if log else "none",
         skin_score=log.skin_score if log else None,
-        zones=Zones(**zones),
+        stages=zone_stages(source),
+        stages_from=source.date if source is not None and source is not log else None,
         conditions=zone_conditions(log),
-        total_breakouts=sum(zones.values()),
+        total_breakouts=breakouts(log) if log else 0,
         notes=log.notes if log else "",
         period=log.period if log else False,
         product_uses=uses,
@@ -154,12 +180,17 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     log.notes = body.notes
     log.period = body.period
     # Clear first so replaced rows are deleted before their successors are inserted.
-    log.zones.clear()
+    log.stages.clear()
     log.conditions.clear()
     log.uses.clear()
     log.tags.clear()
     db.flush()
-    log.zones.extend(ZoneBreakout(zone=zone, count=count) for zone, count in body.zones)
+    log.stages.extend(
+        ZoneStage(zone=zone, stage=stage, count=count)
+        for zone, counts in body.stages
+        for stage, count in counts
+        if count > 0
+    )
     log.conditions.extend(
         ZoneCondition(zone=zone, condition=condition)
         for zone, conditions in body.conditions
@@ -188,7 +219,7 @@ def list_days(db: Session, user: User, start: date, end: date) -> list[DaySummar
             date=log.date,
             status=log.status,
             skin_score=log.skin_score,
-            total_breakouts=sum(zone_counts(log).values()),
+            total_breakouts=breakouts(log),
             has_photos=bool(log.photos),
         )
         for log in logs

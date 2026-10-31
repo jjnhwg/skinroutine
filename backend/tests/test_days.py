@@ -6,7 +6,20 @@ from skinlog.models import DayLog, Product
 
 MONDAY = "2026-10-05"
 TUESDAY = "2026-10-06"
-ZONES = {"forehead": 1, "temples": 0, "nose": 0, "left_cheek": 2, "right_cheek": 0, "chin": 3, "jawline": 0}
+ZONES = ["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"]
+STAGES = ["clogged", "coming_up", "active", "healing", "red_mark", "brown_mark"]
+NO_SPOTS = dict.fromkeys(STAGES, 0)
+# 6 active spots, plus spots at other stages that don't count as breakouts.
+SPOTS = {
+    "forehead": {"active": 1, "clogged": 4},
+    "left_cheek": {"active": 2, "healing": 1, "brown_mark": 2},
+    "chin": {"active": 3, "red_mark": 1},
+}
+
+
+def full(spots: dict) -> dict:
+    """What GET returns for `spots`: every zone and stage filled in."""
+    return {zone: {**NO_SPOTS, **spots.get(zone, {})} for zone in ZONES}
 
 
 def make_product(client, name: str, **fields) -> int:
@@ -17,7 +30,7 @@ def make_product(client, name: str, **fields) -> int:
 def checkin(**overrides) -> dict:
     return {
         "skin_score": 2,
-        "zones": ZONES,
+        "stages": SPOTS,
         "notes": "Felt fine",
         "product_uses": [],
         **overrides,
@@ -43,7 +56,8 @@ def test_unsaved_day_is_prefilled_from_the_routine(client, routine):
 
     assert monday["status"] == "none"
     assert monday["skin_score"] is None
-    assert monday["zones"] == dict.fromkeys(ZONES, 0)
+    assert monday["stages"] == full({})
+    assert monday["stages_from"] is None
     assert monday["conditions"] == dict.fromkeys(ZONES, [])
     assert monday["planned"] == {"am": [routine["cleanser"]], "pm": [routine["retinol"]]}
     assert monday["product_uses"] == [
@@ -62,7 +76,8 @@ def test_put_then_get_round_trips(client, routine):
     day = client.get(f"/api/days/{MONDAY}").json()
     assert day["status"] == "logged"
     assert day["skin_score"] == 2
-    assert day["zones"] == ZONES
+    assert day["stages"] == full(SPOTS)
+    assert day["stages_from"] is None
     assert day["total_breakouts"] == 6
     assert day["notes"] == "Felt fine"
     assert day["product_uses"] == uses
@@ -80,13 +95,13 @@ def test_editing_replaces_zones_and_uses(client, routine):
     client.put(
         f"/api/days/{MONDAY}",
         json=checkin(
-            zones={**ZONES, "chin": 0},
+            stages={**SPOTS, "chin": {"red_mark": 1}},
             product_uses=[both[1], both[1]],
         ),
     )
 
     day = client.get(f"/api/days/{MONDAY}").json()
-    assert day["zones"]["chin"] == 0
+    assert day["stages"]["chin"] == {**NO_SPOTS, "red_mark": 1}
     assert day["total_breakouts"] == 3
     assert day["product_uses"] == [both[1]]
 
@@ -94,10 +109,10 @@ def test_editing_replaces_zones_and_uses(client, routine):
 def test_conditions_round_trip_and_replace(client, frozen_now):
     client.put(
         f"/api/days/{MONDAY}",
-        json=checkin(conditions={"chin": ["red", "forming", "red"], "forehead": ["oily"]}),
+        json=checkin(conditions={"chin": ["red", "dry", "red"], "forehead": ["oily"]}),
     )
     day = client.get(f"/api/days/{MONDAY}").json()
-    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "chin": ["forming", "red"], "forehead": ["oily"]}
+    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "chin": ["dry", "red"], "forehead": ["oily"]}
 
     client.put(f"/api/days/{MONDAY}", json=checkin(conditions={"nose": ["dry"]}))
 
@@ -132,16 +147,51 @@ def test_future_date_is_422(client, frozen_now):
     assert client.put("/api/days/2026-10-09", json=checkin()).status_code == 200
 
 
+def test_unsaved_day_starts_from_the_last_logged_days_spots(client, frozen_now):
+    client.put("/api/days/2026-10-05", json=checkin())
+
+    day = client.get("/api/days/2026-10-07").json()
+
+    assert day["status"] == "none"
+    assert day["stages"] == full(SPOTS)
+    assert day["stages_from"] == "2026-10-05"
+    # Nothing is saved for the day, so nothing counts yet.
+    assert day["total_breakouts"] == 0
+
+
+def test_carry_over_skips_old_and_clear_days(client, frozen_now):
+    client.put("/api/days/2026-09-25", json=checkin())
+    assert client.get("/api/days/2026-10-03").json()["stages_from"] is None
+
+    client.put("/api/days/2026-10-04", json=checkin(stages={}))
+    day = client.get("/api/days/2026-10-05").json()
+    assert day["stages"] == full({})
+    assert day["stages_from"] is None
+
+
+def test_saved_day_keeps_its_own_spots(client, frozen_now):
+    client.put("/api/days/2026-10-05", json=checkin())
+    client.put("/api/days/2026-10-06", json=checkin(stages={"chin": {"healing": 3}}))
+
+    day = client.get("/api/days/2026-10-06").json()
+
+    assert day["stages"] == full({"chin": {"healing": 3}})
+    assert day["stages_from"] is None
+    assert day["total_breakouts"] == 0
+
+
 @pytest.mark.parametrize(
     "overrides",
     [
         {"skin_score": 0},
         {"skin_score": 6},
-        {"zones": {**ZONES, "nose": -1}},
-        {"zones": {**ZONES, "nose": 51}},
-        {"zones": {k: v for k, v in ZONES.items() if k != "jawline"}},
-        {"zones": {**ZONES, "ear": 1}},
+        {"stages": {"nose": {"active": -1}}},
+        {"stages": {"nose": {"active": 51}}},
+        {"stages": {"nose": {"blackhead": 1}}},
+        {"stages": {"ear": {"active": 1}}},
+        {"zones": {"chin": 1}},
         {"conditions": {"chin": ["itchy"]}},
+        {"conditions": {"chin": ["forming"]}},
         {"conditions": {"ear": ["dry"]}},
         {"product_uses": [{"product_id": 1, "time_of_day": "noon"}]},
     ],

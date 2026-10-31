@@ -1,5 +1,3 @@
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
-
 
 def make_trial(client, name: str = "Serum", start_date: str = "2026-10-05", **fields) -> int:
     pid = client.post("/api/products", json={"name": name, "type": "serum", "started_on": "2026-09-01"}).json()["id"]
@@ -8,7 +6,7 @@ def make_trial(client, name: str = "Serum", start_date: str = "2026-10-05", **fi
 
 
 def save(client, day: str, trial_notes: list[dict]):
-    return client.put(f"/api/days/{day}", json={"zones": ZONES, "trial_notes": trial_notes})
+    return client.put(f"/api/days/{day}", json={"trial_notes": trial_notes})
 
 
 def test_day_shows_trials_running_that_day(client, frozen_now):

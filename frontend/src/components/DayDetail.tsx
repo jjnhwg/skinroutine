@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { getDay } from "../api/days";
-import type { Angle, Condition, Day, Product, Tag, TimeOfDay, ZoneName } from "../api/types";
+import type { Angle, Day, Product, Tag, TimeOfDay, ZoneName } from "../api/types";
 import { CONDITION_LABELS, RATING_LABELS, ZONE_LABELS } from "../lib/constants";
 import type { Rating } from "../types";
 import { LONG_DATE, prettyDate } from "../lib/dates";
+import { spotSummary } from "../lib/stages";
 import { Lightbox } from "./Lightbox";
 import { ProductThumb } from "./ProductThumb";
 
@@ -85,7 +86,7 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
                 <p className="muted">Usual routine confirmed; no skin check-in yet.</p>
               )}
               {day.imported && (
-                <p className="muted">Imported from the old app — zones weren't recorded.</p>
+                <p className="muted">Imported from the old app — spots weren't recorded.</p>
               )}
               {day.skin_score !== null && (
                 <div className="detail-row">
@@ -98,22 +99,20 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
               {!day.imported && day.status === "logged" && (
                 <p className="detail-line">
                   <b>{day.total_breakouts}</b> breakout{day.total_breakouts === 1 ? "" : "s"}
-                  {day.total_breakouts > 0 &&
-                    ": " +
-                      (Object.entries(day.zones) as [ZoneName, number][])
-                        .filter(([, n]) => n > 0)
-                        .map(([zone, n]) => `${ZONE_LABELS[zone]} ${n}`)
-                        .join(", ")}
                 </p>
               )}
-              {(Object.entries(day.conditions) as [ZoneName, Condition[]][])
-                .filter(([, conditions]) => conditions.length > 0)
-                .map(([zone, conditions]) => (
+              {(Object.keys(ZONE_LABELS) as ZoneName[]).map((zone) => {
+                const parts = [
+                  ...spotSummary(day.stages[zone]),
+                  ...day.conditions[zone].map((c) => CONDITION_LABELS[c].toLowerCase()),
+                ];
+                if (parts.length === 0) return null;
+                return (
                   <p className="detail-line" key={zone}>
-                    <b>{ZONE_LABELS[zone]}:</b>{" "}
-                    {conditions.map((c) => CONDITION_LABELS[c].toLowerCase()).join(", ")}
+                    <b>{ZONE_LABELS[zone]}:</b> {parts.join(", ")}
                   </p>
-                ))}
+                );
+              })}
 
               {SLOTS.map(({ slot, title }) => {
                 const used = day.product_uses.filter((u) => u.time_of_day === slot);

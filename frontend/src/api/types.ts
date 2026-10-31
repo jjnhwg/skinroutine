@@ -83,11 +83,16 @@ export interface ImportReport {
 
 export type ZoneName = "forehead" | "temples" | "nose" | "left_cheek" | "right_cheek" | "chin" | "jawline";
 
-/** Breakout count per zone, 0–50. */
-export type Zones = Record<ZoneName, number>;
+/** Where a spot is in its life, from a clogged pore to the mark it leaves. */
+export type Stage = "clogged" | "coming_up" | "active" | "healing" | "red_mark" | "brown_mark";
 
-/** Something going on in a zone besides a breakout. "forming" is a pimple coming up. */
-export type Condition = "forming" | "dry" | "red" | "oily";
+/** Spots at each stage in one zone, 0–50. */
+export type StageCounts = Record<Stage, number>;
+
+export type ZoneStages = Record<ZoneName, StageCounts>;
+
+/** Something going on in a zone besides spots. */
+export type Condition = "dry" | "red" | "oily";
 
 /** Conditions marked per zone; an empty list means the zone was fine. */
 export type ZoneConditions = Record<ZoneName, Condition[]>;
@@ -118,8 +123,11 @@ export interface Day {
   status: DayStatus;
   /** 1 (clear) … 5 (flare-up); optional. */
   skin_score: number | null;
-  zones: Zones;
+  stages: ZoneStages;
+  /** Set when nothing is saved yet and the stages were copied from this earlier logged day. */
+  stages_from: string | null;
   conditions: ZoneConditions;
+  /** Active spots only. */
   total_breakouts: number;
   notes: string;
   period: boolean;
@@ -127,7 +135,7 @@ export interface Day {
   product_uses: ProductUse[];
   tag_ids: number[];
   photos: Record<Angle, string | null>;
-  /** Moved over from the old app: no zones were recorded. */
+  /** Moved over from the old app: no spots were recorded. */
   imported: boolean;
   planned: Planned;
   trials: DayTrial[];
@@ -135,7 +143,7 @@ export interface Day {
 
 export interface DayInput {
   skin_score: number | null;
-  zones: Zones;
+  stages: ZoneStages;
   conditions: ZoneConditions;
   notes: string;
   product_uses: ProductUse[];

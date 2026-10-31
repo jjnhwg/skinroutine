@@ -1,7 +1,5 @@
 from tests.images import upload
 
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
-
 
 def test_empty_summary(client, frozen_now):
     summary = client.get("/api/summary").json()
@@ -19,7 +17,7 @@ def test_summary_gathers_products_trials_and_photos(client, frozen_now):
     ).json()["id"]
     client.post("/api/trials", json={"product_id": serum, "start_date": "2026-10-01"})
     for day in ("2026-09-20", "2026-10-05"):
-        client.put(f"/api/days/{day}", json={"zones": ZONES})
+        client.put(f"/api/days/{day}", json={})
         client.put(f"/api/days/{day}/photos/front", files=upload())
 
     summary = client.get("/api/summary").json()

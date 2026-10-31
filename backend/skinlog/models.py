@@ -98,10 +98,20 @@ class Zone(StrEnum):
     JAWLINE = "jawline"
 
 
-class Condition(StrEnum):
-    """Something going on in a zone besides a breakout."""
+class Stage(StrEnum):
+    """Where a spot is in its life, from a clogged pore to the mark it leaves."""
 
-    FORMING = "forming"  # a pimple coming up, not yet a breakout
+    CLOGGED = "clogged"
+    COMING_UP = "coming_up"  # under the skin, not yet a breakout
+    ACTIVE = "active"  # the only stage counted as a breakout
+    HEALING = "healing"
+    RED_MARK = "red_mark"  # pink or red left behind (PIE)
+    BROWN_MARK = "brown_mark"  # brown left behind (PIH)
+
+
+class Condition(StrEnum):
+    """Something going on in a zone besides spots."""
+
     DRY = "dry"
     RED = "red"
     OILY = "oily"
@@ -131,20 +141,23 @@ class DayLog(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    zones: Mapped[list["ZoneBreakout"]] = relationship(cascade="all, delete-orphan")
+    stages: Mapped[list["ZoneStage"]] = relationship(cascade="all, delete-orphan")
     conditions: Mapped[list["ZoneCondition"]] = relationship(cascade="all, delete-orphan")
     uses: Mapped[list["ProductUse"]] = relationship(cascade="all, delete-orphan")
     tags: Mapped[list["DayTag"]] = relationship(cascade="all, delete-orphan")
     photos: Mapped[list["Photo"]] = relationship(cascade="all, delete-orphan")
 
 
-class ZoneBreakout(Base):
-    __tablename__ = "zone_breakouts"
+class ZoneStage(Base):
+    """How many spots one zone has at one stage; no row means none."""
+
+    __tablename__ = "zone_stages"
 
     day_log_id: Mapped[int] = mapped_column(
         ForeignKey("day_logs.id", ondelete="CASCADE"), primary_key=True
     )
     zone: Mapped[Zone] = mapped_column(_enum(Zone), primary_key=True)
+    stage: Mapped[Stage] = mapped_column(_enum(Stage), primary_key=True)
     count: Mapped[int]
 
 

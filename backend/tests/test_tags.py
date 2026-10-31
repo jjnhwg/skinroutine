@@ -6,11 +6,9 @@ from skinlog.models import Tag
 from skinlog.services.tags import DEFAULT_TAGS, ensure_default_tags
 
 MONDAY = "2026-10-05"
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
-
 
 def checkin(tag_ids: list[int]) -> dict:
-    return {"skin_score": 2, "zones": ZONES, "tag_ids": tag_ids}
+    return {"skin_score": 2, "tag_ids": tag_ids}
 
 
 def tag_id(client, name: str) -> int:

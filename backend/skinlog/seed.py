@@ -30,7 +30,7 @@ from skinlog.models import (
     Tag,
     Trial,
     User,
-    ZoneBreakout,
+    ZoneStage,
 )
 
 BACKEND = Path(__file__).resolve().parent.parent
@@ -135,7 +135,7 @@ def _seed(db: Session, user: User) -> None:
             status=DayStatus.LOGGED,
             skin_score=_score(p.total_breakouts),
         )
-        log.zones = [ZoneBreakout(zone="chin", count=p.total_breakouts)]
+        log.stages = [ZoneStage(zone="chin", stage="active", count=p.total_breakouts)]
         uses = {(ids[demo.CLEANSER], "am"), (ids[demo.CLEANSER], "pm")}
         if demo.SERUM in p.products:
             uses.add((ids[demo.SERUM], "pm"))

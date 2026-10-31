@@ -24,7 +24,7 @@ const NO_PENDING: Record<Angle, string | null> = { front: null, left: null, righ
 function checkInFrom(day: Day): CheckIn {
   return {
     skin_score: day.skin_score,
-    zones: day.zones,
+    stages: day.stages,
     conditions: day.conditions,
   };
 }
@@ -118,7 +118,7 @@ export function LogScreen({ date }: { date: string }) {
     try {
       const result = await saveDay(date, {
         skin_score: checkIn.skin_score,
-        zones: checkIn.zones,
+        stages: checkIn.stages,
         conditions: checkIn.conditions,
         notes: notes.trim(),
         product_uses: uses,
@@ -199,7 +199,7 @@ export function LogScreen({ date }: { date: string }) {
           )}
           {day.imported && (
             <div className="warn">
-              Imported — zones weren't recorded in the old app. Fill them in and save
+              Imported — spots weren't recorded in the old app. Fill them in and save
               to make this a full entry.
             </div>
           )}
@@ -252,7 +252,7 @@ export function LogScreen({ date }: { date: string }) {
             </div>
             <div>
               <div className="card">
-                <CheckInForm value={checkIn} onChange={setCheckIn} />
+                <CheckInForm value={checkIn} onChange={setCheckIn} carriedFrom={day.stages_from} />
               </div>
               <div className="card">
                 <h2>Photos</h2>

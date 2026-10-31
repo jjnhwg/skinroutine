@@ -1,10 +1,8 @@
-ZONES = dict.fromkeys(["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"], 0)
-
 
 def log(client, day: str, chin: int) -> None:
     response = client.put(
         f"/api/days/{day}",
-        json={"skin_score": 3, "zones": {**ZONES, "chin": chin}},
+        json={"skin_score": 3, "stages": {"chin": {"active": chin}}},
     )
     assert response.status_code == 200
 
