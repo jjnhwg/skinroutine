@@ -1,11 +1,24 @@
-import { useEffect, useRef, useState } from "react";
-import { getDay, getPhotoDays } from "../api/days";
-import type { Day } from "../api/types";
-import { CameraIcon } from "../components/Icons";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { LONG_DATE, prettyDate } from "../lib/dates";
 
-/** At most this many days play in the slider, spread evenly from first to latest. */
-const MAX_FRAMES = 12;
+/** The day each progress photo was taken, first to latest, as they play in the slider. */
+const TAKEN = [
+  "2024-09-20", "2024-09-20", "2024-10-17", "2024-10-17", "2024-11-23", "2024-11-23",
+  "2024-11-27", "2024-12-01", "2024-12-01", "2024-12-03", "2024-12-21", "2024-12-21",
+  "2024-12-26", "2025-03-21", "2025-03-22", "2025-04-03", "2025-04-05", "2025-04-08",
+  "2025-04-14", "2025-04-14", "2025-04-18", "2025-05-25", "2025-05-25",
+];
+
+interface Frame {
+  url: string;
+  date: string;
+}
+
+/** Files in public/progress, numbered in play order. */
+const FRAMES: Frame[] = TAKEN.map((date, i) => ({ url: `/progress/${String(i + 1).padStart(2, "0")}.jpg`, date }));
+
+/** Thumbnail rows hold at most this many, split evenly. */
+const THUMBS_PER_ROW = 9;
 
 /** How see-through the photos beside the current one are, then the ones past those. */
 const SIDE_FADE = 0.4;
@@ -27,46 +40,6 @@ const STEPS = [
   { title: "[Third change]", body: "[What it did for your skin.]", brand: "EADEM", product: "The Mark", colors: ["#E06A4F", "#B44A34", "#F2B8A8"] },
   { title: "[Fourth change]", body: "[What it did for your skin.]", brand: "AESTURA", product: "ATOBARRIER365 Water Cream", colors: ["#E4EAF4", "#4A63A8", "#CFD7E6"] },
 ];
-
-interface Frame {
-  date: string;
-  url: string;
-}
-
-/** Evenly spaced picks from a sorted list, always keeping the first and last. */
-function sample<T>(items: T[], max: number): T[] {
-  if (items.length <= max) return items;
-  return Array.from({ length: max }, (_, i) => items[Math.round((i * (items.length - 1)) / (max - 1))]);
-}
-
-function framePhoto(photos: Day["photos"]): string | null {
-  return photos.front ?? photos.left ?? photos.right;
-}
-
-/** Every day with a photo, oldest first, for the then-and-now slider. */
-function useFrames(): Frame[] | null {
-  const [frames, setFrames] = useState<Frame[] | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    getPhotoDays()
-      .then((dates) => Promise.all(sample(dates, MAX_FRAMES).map((date) => getDay(date))))
-      .then((days) => {
-        if (!live) return;
-        const found = days.flatMap((d) => {
-          const url = framePhoto(d.photos);
-          return url ? [{ date: d.date, url }] : [];
-        });
-        setFrames(found);
-      })
-      .catch(() => live && setFrames([]));
-    return () => {
-      live = false;
-    };
-  }, []);
-
-  return frames;
-}
 
 function PlayIcon() {
   return (
@@ -102,13 +75,13 @@ function fade(d: number): number {
   return FAR_FADE;
 }
 
-/** Drag or play through the daily photos, first to latest, with the days either side showing through. */
-function PhotoSlider({ frames }: { frames: Frame[] | null }) {
+/** Drag or play through the progress photos, first to latest, with the ones either side showing through. */
+function PhotoSlider({ frames }: { frames: Frame[] }) {
   // A fraction while dragging, so the strip glides; whole again when let go.
   const [pos, setPos] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const count = frames?.length ?? 0;
+  const count = frames.length;
   const last = count - 1;
   const clamped = Math.min(Math.max(pos, 0), Math.max(last, 0));
   const current = Math.round(clamped);
@@ -152,17 +125,6 @@ function PhotoSlider({ frames }: { frames: Frame[] | null }) {
     setPos((p) => Math.round(p));
   }
 
-  if (!frames) return <div className="hero-photo" aria-busy="true" />;
-
-  if (count === 0) {
-    return (
-      <div className="hero-photo">
-        <CameraIcon size={34} />
-        <span>Take a front photo on the Log page and your progress plays here.</span>
-      </div>
-    );
-  }
-
   return (
     <div className="slider">
       <div className={`peek-strip${dragging ? " dragging" : ""}`}>
@@ -171,7 +133,7 @@ function PhotoSlider({ frames }: { frames: Frame[] | null }) {
           const stage = i === last && count > 1 ? "Now" : i === 0 ? "Then" : "Along the way";
           return (
             <button
-              key={f.date}
+              key={f.url}
               type="button"
               className="peek-card"
               aria-current={i === current ? "true" : undefined}
@@ -189,6 +151,7 @@ function PhotoSlider({ frames }: { frames: Frame[] | null }) {
               <span className="hero-pill counter">
                 {i + 1} of {count}
               </span>
+              <span className="hero-pill date">{prettyDate(f.date, LONG_DATE)}</span>
             </button>
           );
         })}
@@ -218,16 +181,16 @@ function PhotoSlider({ frames }: { frames: Frame[] | null }) {
               </span>
             </label>
           </div>
-          <div className="slider-thumbs">
+          <div className="slider-thumbs" style={{ "--per-row": Math.ceil(count / Math.ceil(count / THUMBS_PER_ROW)) } as CSSProperties}>
             {frames.map((f, i) => (
               <button
-                key={f.date}
+                key={f.url}
                 type="button"
                 aria-pressed={i === current}
                 aria-label={`Photo ${i + 1} of ${count}, ${prettyDate(f.date, LONG_DATE)}`}
                 onClick={() => pick(i)}
               >
-                <img src={f.url} alt="" />
+                <img src={f.url} alt="" loading="lazy" />
               </button>
             ))}
           </div>
@@ -239,7 +202,6 @@ function PhotoSlider({ frames }: { frames: Frame[] | null }) {
 
 /** Landing page: my skin's progress, what I was dealing with and what fixed it. */
 export function HomeScreen() {
-  const frames = useFrames();
   const story = useRef<HTMLElement>(null);
 
   return (
@@ -259,7 +221,7 @@ export function HomeScreen() {
             </button>
           </div>
         </div>
-        <PhotoSlider frames={frames} />
+        <PhotoSlider frames={FRAMES} />
       </section>
 
       <section className="band" ref={story}>

@@ -343,8 +343,8 @@ main.tab-home { max-width: none; padding: 0; }
 .hero { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; }
 .hero-copy { flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .hero .display { font-size: 46px; line-height: 1.02; }
-.slider { flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.hero-photo { flex: 1 1 480px; min-width: 0; position: relative; height: 420px; border-radius: 32px; overflow: hidden; background: var(--surface-3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; color: var(--text-muted); font-size: 15px; }
+.slider { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.hero-photo { flex: 1 1 520px; min-width: 0; position: relative; height: 420px; border-radius: 32px; overflow: hidden; background: var(--surface-3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; color: var(--text-muted); font-size: 15px; }
 .slider .hero-photo { flex: none; padding: 0; }
 .hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* the days either side of the current photo show through at the edges */
@@ -355,6 +355,7 @@ main.tab-home { max-width: none; padding: 0; }
 .hero-pill { position: absolute; top: 18px; left: 18px; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; background: #fff; color: var(--text-muted); }
 .hero-pill.now { background: var(--accent); color: #fff; }
 .hero-pill.counter { left: auto; right: 18px; font-weight: 500; background: rgba(255, 255, 255, .88); color: var(--text); }
+.hero-pill.date { top: auto; bottom: 18px; font-weight: 500; background: rgba(255, 255, 255, .88); color: var(--text); }
 .slider-controls { display: flex; align-items: center; gap: 14px; }
 .slider-controls .play { width: 48px; height: 48px; flex: none; border-radius: 999px; border: none; background: var(--accent); color: #fff; display: grid; place-items: center; }
 .slider-controls label { display: flex; flex-direction: column; gap: 4px; }
@@ -478,7 +479,10 @@ nav.tabs a[aria-current=page] { color: var(--accent); }
   .landing .wrap { padding: 88px 24px; }
   .landing .display { font-size: 50px; }
   .hero .display { font-size: 72px; }
+  .hero { gap: 56px; }
   .hero-photo, .peek-strip { height: 520px; }
+  /* the thumbnails in even rows under the slider */
+  .slider-thumbs { grid-template-columns: repeat(var(--per-row), minmax(0, 1fr)); }
   .landing blockquote { padding: 32px 36px; font-size: 30px; }
   .cta { padding: 60px 44px; }
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; align-items: start; }
