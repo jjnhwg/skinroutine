@@ -2,9 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { SearchIcon } from "./Icons";
 import { searchProducts } from "../lib/api";
 import { CATALOG, CATEGORIES, PASTELS, guessKind, productArt } from "../lib/catalog";
+import { matchScore } from "../lib/fuzzy";
 import type { CatalogItem, ProductSearchResult } from "../types";
 
 type OnlineState = "idle" | "loading" | "done" | "error";
+
+/** Wait this long after the last keystroke before searching online; the shops rate-limit. */
+const TYPING_PAUSE_MS = 450;
+/** Search online on its own from this many letters; Enter searches from 2. */
+const AUTO_SEARCH_MIN = 3;
 
 const OPEN_BEAUTY_FACTS =
   "https://world.openbeautyfacts.org/cgi/search.pl?search_terms=";
@@ -81,6 +87,9 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
   const [onlineState, setOnlineState] = useState<OnlineState>("idle");
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Bumped on every search, so an answer that arrives after a newer one started is dropped.
+  const searchId = useRef(0);
+  const lastQuery = useRef("");
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -106,17 +115,22 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
   }, [onClose]);
 
   const matches = useMemo(() => {
-    const t = term.trim().toLowerCase();
-    return CATALOG.filter(
-      (it) =>
-        (category === "All" || it.category === category) &&
-        (!t || `${it.brand} ${it.name}`.toLowerCase().includes(t)),
-    );
+    const inCategory = CATALOG.filter((it) => category === "All" || it.category === category);
+    const t = term.trim();
+    if (!t) return inCategory;
+    // Closest first; sort is stable, so equal scores keep the list's order.
+    return inCategory
+      .map((it) => ({ it, score: matchScore(t, it.brand, it.name) }))
+      .filter((m) => m.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((m) => m.it);
   }, [category, term]);
 
-  async function searchOnline() {
+  async function searchOnline(query: string) {
+    if (query === lastQuery.current) return;
+    lastQuery.current = query;
+    const id = ++searchId.current;
     setOnlineState("loading");
-    const query = term.trim();
     try {
       let rows: ProductSearchResult[];
       try {
@@ -124,11 +138,35 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
       } catch {
         rows = await searchOpenBeautyFacts(query);
       }
+      if (id !== searchId.current) return;
       setOnline(toCatalogItems(rows));
       setOnlineState("done");
     } catch {
-      setOnlineState("error");
+      if (id === searchId.current) setOnlineState("error");
     }
+  }
+
+  // Search online once typing pauses, so similar products show up without a tap.
+  useEffect(() => {
+    const query = term.trim();
+    if (query.length < AUTO_SEARCH_MIN) return;
+    const timer = setTimeout(() => searchOnline(query), TYPING_PAUSE_MS);
+    return () => clearTimeout(timer);
+    // searchOnline only touches refs and state setters.
+  }, [term]);
+
+  function changeTerm(value: string) {
+    setTerm(value);
+    if (value.trim() === lastQuery.current) return;
+    // Forget the old search: its results no longer fit what's typed.
+    searchId.current++;
+    lastQuery.current = "";
+    setOnlineState(value.trim().length >= AUTO_SEARCH_MIN ? "loading" : "idle");
+  }
+
+  function retry() {
+    lastQuery.current = "";
+    searchOnline(term.trim());
   }
 
   const canSearch = term.trim().length >= 2;
@@ -193,12 +231,9 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
               autoComplete="off"
               ref={inputRef}
               value={term}
-              onChange={(e) => {
-                setTerm(e.target.value);
-                if (onlineState !== "loading") setOnlineState("idle");
-              }}
+              onChange={(e) => changeTerm(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && term.trim().length >= 2) searchOnline();
+                if (e.key === "Enter" && canSearch) searchOnline(term.trim());
               }}
             />
           </div>
@@ -223,7 +258,9 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
           ) : (
             <div className="empty" style={{ paddingTop: 8 }}>
               <strong>No match in the list</strong>
-              Try searching online below.
+              {term.trim().length >= AUTO_SEARCH_MIN
+                ? "Looking online below."
+                : "Keep typing to search online."}
             </div>
           )}
 
@@ -231,6 +268,10 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
           {onlineState === "error" && (
             <div className="online">
               Couldn't reach the online database. Check your connection and try again.
+              <br />
+              <button type="button" className="btn small" style={{ marginTop: 8 }} onClick={retry}>
+                Try again
+              </button>
               <br />
               {addOwn("Or add")}
             </div>
@@ -265,24 +306,27 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
               )}
             </>
           )}
-          {onlineState !== "loading" && onlineState !== "done" && (
+          {onlineState === "idle" && (
             <div className="online">
-              Can't find it?
-              <br />
-              <button
-                type="button"
-                className="btn small"
-                style={{ marginTop: 8 }}
-                disabled={!canSearch}
-                onClick={searchOnline}
-              >
-                Search {term.trim() && `“${term.trim()}”`} online
-              </button>
-              <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                {canSearch
-                  ? "Searches Open Beauty Facts and K-beauty shops for photos."
-                  : "Type a name above first."}
-              </div>
+              {canSearch && term.trim().length < AUTO_SEARCH_MIN ? (
+                <>
+                  Can't find it?
+                  <br />
+                  <button
+                    type="button"
+                    className="btn small"
+                    style={{ marginTop: 8 }}
+                    onClick={() => searchOnline(term.trim())}
+                  >
+                    Search “{term.trim()}” online
+                  </button>
+                </>
+              ) : (
+                <div className="muted" style={{ fontSize: 12 }}>
+                  Type {AUTO_SEARCH_MIN}+ letters to also search Open Beauty Facts and K-beauty
+                  shops.
+                </div>
+              )}
               {term.trim() && <div style={{ marginTop: 4 }}>{addOwn("Or add")}</div>}
             </div>
           )}

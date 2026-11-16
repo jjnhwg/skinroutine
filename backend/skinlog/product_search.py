@@ -49,15 +49,52 @@ def _squash(text: str) -> str:
     return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
-def _matches(query: str, brand: str, name: str) -> bool:
-    """True if every word of the query appears in the brand or name.
+def _edits(a: str, b: str) -> int:
+    """How many typos turn a into b: a letter added, dropped, changed, or two swapped."""
+    d = [[i + j if i * j == 0 else 0 for j in range(len(b) + 1)] for i in range(len(a) + 1)]
+    for i in range(1, len(a) + 1):
+        for j in range(1, len(b) + 1):
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] != b[j - 1]))
+            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
+    return d[-1][-1]
 
-    The shops' own search is fuzzy — "cerave" returns COSRX's ceramide
-    cream — so we keep only real hits.
+
+def _word_score(word: str, haystack: str, tokens: list[str]) -> float:
+    """How well one typed word fits a product: 1.0 exact, less for a typo, 0 for none.
+
+    Short words must match exactly; longer ones may have a typo or two
+    ("snial" still finds "snail"). A half-typed word matches the start of a
+    longer one ("hyalu" finds "hyaluronic").
     """
-    haystack = _squash(f"{brand} {name}")
+    if word in haystack:
+        return 1.0
+    allowed = 0 if len(word) < 4 else 1 if len(word) <= 6 else 2
+    best = min(
+        (min(_edits(word, t), _edits(word, t[: len(word)])) for t in tokens),
+        default=allowed + 1,
+    )
+    return 0.0 if best > allowed else 0.9 - 0.2 * (best - 1)
+
+
+def _score(query: str, brand: str, name: str) -> float:
+    """How closely a product matches the query, 0 to 1; 0 means leave it out.
+
+    Every typed word has to fit, allowing for typos. The shops' own search is
+    loose — "cerave" returns COSRX's ceramide cream — so this keeps real hits
+    and puts the closest first.
+    """
     words = [_squash(w) for w in query.split()]
-    return all(w in haystack for w in words if w)
+    words = [w for w in words if w]
+    if not words:
+        return 0.0
+    text = f"{brand} {name}"
+    haystack = _squash(text)
+    tokens = [t for t in (_squash(w) for w in re.split(r"[\s\-/]+", text)) if t]
+    scores = [_word_score(w, haystack, tokens) for w in words]
+    if min(scores) == 0:
+        return 0.0
+    return sum(scores) / len(scores)
 
 
 def _clean_name(brand: str, name: str) -> str:
@@ -151,7 +188,7 @@ def search_products(query: str) -> list[dict]:
     with ThreadPoolExecutor(max_workers=len(searches)) as pool:
         futures = [pool.submit(search) for search in searches]
 
-    merged, seen = [], set()
+    scored, seen = [], set()
     all_answered = True
     for future in futures:
         try:
@@ -160,15 +197,18 @@ def search_products(query: str) -> list[dict]:
             all_answered = False
             continue
         for row in rows:
-            if not row["name"] or not _matches(query, row["brand"], row["name"]):
+            score = _score(query, row["brand"], row["name"]) if row["name"] else 0
+            if not score:
                 continue
             key = _squash(row["brand"] + row["name"])
             if key in seen:
                 continue
             seen.add(key)
-            merged.append(row)
+            scored.append((score, row))
 
-    merged = merged[:MAX_RESULTS]
+    # Closest first; sorted() is stable, so equal scores keep the shop order.
+    scored = sorted(scored, key=lambda pair: -pair[0])
+    merged = [row for _, row in scored[:MAX_RESULTS]]
     # Don't remember a search that a failing shop left incomplete.
     if all_answered:
         _cache[cache_key] = merged
