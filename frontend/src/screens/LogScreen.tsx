@@ -24,8 +24,7 @@ const NO_PENDING: Record<Angle, string | null> = { front: null, left: null, righ
 function checkInFrom(day: Day): CheckIn {
   return {
     skin_score: day.skin_score,
-    stages: day.stages,
-    conditions: day.conditions,
+    pins: day.pins,
   };
 }
 
@@ -118,8 +117,7 @@ export function LogScreen({ date }: { date: string }) {
     try {
       const result = await saveDay(date, {
         skin_score: checkIn.skin_score,
-        stages: checkIn.stages,
-        conditions: checkIn.conditions,
+        pins: checkIn.pins,
         notes: notes.trim(),
         product_uses: uses,
         tag_ids: tagIds,

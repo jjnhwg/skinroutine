@@ -97,6 +97,16 @@ export type Condition = "dry" | "red" | "oily";
 /** Conditions marked per zone; an empty list means the zone was fine. */
 export type ZoneConditions = Record<ZoneName, Condition[]>;
 
+/** A spot (by stage) or a condition pinned on the face map. */
+export type PinKind = Stage | Condition;
+
+/** x and y run 0–1 across and down the face drawing, which is a mirror. */
+export interface Pin {
+  x: number;
+  y: number;
+  kind: PinKind;
+}
+
 export interface ProductUse {
   product_id: number;
   time_of_day: TimeOfDay;
@@ -123,8 +133,10 @@ export interface Day {
   status: DayStatus;
   /** 1 (clear) … 5 (flare-up); optional. */
   skin_score: number | null;
+  /** Spots and conditions on the face map; stages and conditions are these counted per zone. */
+  pins: Pin[];
   stages: ZoneStages;
-  /** Set when nothing is saved yet and the stages were copied from this earlier logged day. */
+  /** Set when nothing is saved yet and the spots were copied from this earlier logged day. */
   stages_from: string | null;
   conditions: ZoneConditions;
   /** Active spots only. */
@@ -143,8 +155,8 @@ export interface Day {
 
 export interface DayInput {
   skin_score: number | null;
-  stages: ZoneStages;
-  conditions: ZoneConditions;
+  /** The backend files these per zone. */
+  pins: Pin[];
   notes: string;
   product_uses: ProductUse[];
   tag_ids: number[];

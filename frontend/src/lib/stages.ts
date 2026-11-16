@@ -1,5 +1,5 @@
-import type { Stage, StageCounts, ZoneStages } from "../api/types";
-import { ZONE_LABELS } from "./constants";
+import type { Condition, Pin, PinKind, Stage, StageCounts, ZoneStages } from "../api/types";
+import { CONDITIONS, ZONE_LABELS } from "./constants";
 
 /** In the order a spot goes through them. */
 export const STAGES: Stage[] = ["clogged", "coming_up", "active", "healing", "red_mark", "brown_mark"];
@@ -36,4 +36,33 @@ export function spotSummary(counts: StageCounts): string[] {
   return STAGES.filter((s) => counts[s] > 0).map(
     (s) => `${counts[s]} ${counts[s] === 1 ? STAGE_LABELS[s].one : STAGE_LABELS[s].many}`,
   );
+}
+
+/** What a pin is called on its own, e.g. on its chip and in its label. */
+export const PIN_LABELS: Record<PinKind, string> = {
+  clogged: "Clogged pore",
+  coming_up: "Coming up",
+  active: "Active pimple",
+  healing: "Healing",
+  red_mark: "Red mark",
+  brown_mark: "Brown mark",
+  dry: "Dry",
+  red: "Red",
+  oily: "Oily",
+};
+
+export const isCondition = (kind: PinKind): kind is Condition => (CONDITIONS as PinKind[]).includes(kind);
+
+/** e.g. ["2 active", "1 brown mark", "dry (2)"]; spots first, in stage order. */
+export function pinSummary(pins: Pin[]): string[] {
+  const counts = Object.fromEntries(STAGES.map((s) => [s, 0])) as StageCounts;
+  const areas: Partial<Record<Condition, number>> = {};
+  for (const { kind } of pins) {
+    if (isCondition(kind)) areas[kind] = (areas[kind] ?? 0) + 1;
+    else counts[kind] += 1;
+  }
+  return [
+    ...spotSummary(counts),
+    ...CONDITIONS.filter((c) => areas[c]).map((c) => `${c} (${areas[c]})`),
+  ];
 }

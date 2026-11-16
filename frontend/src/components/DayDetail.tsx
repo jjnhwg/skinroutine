@@ -5,6 +5,7 @@ import { CONDITION_LABELS, RATING_LABELS, ZONE_LABELS } from "../lib/constants";
 import type { Rating } from "../types";
 import { LONG_DATE, prettyDate } from "../lib/dates";
 import { spotSummary } from "../lib/stages";
+import { FaceMap } from "./FaceMap";
 import { Lightbox } from "./Lightbox";
 import { ProductThumb } from "./ProductThumb";
 
@@ -101,6 +102,7 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
                   <b>{day.total_breakouts}</b> breakout{day.total_breakouts === 1 ? "" : "s"}
                 </p>
               )}
+              {day.pins.length > 0 && <FaceMap pins={day.pins} small label="Where the spots were" />}
               {(Object.keys(ZONE_LABELS) as ZoneName[]).map((zone) => {
                 const parts = [
                   ...spotSummary(day.stages[zone]),

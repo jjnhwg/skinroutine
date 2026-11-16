@@ -143,6 +143,11 @@ class DayLog(Base):
 
     stages: Mapped[list["ZoneStage"]] = relationship(cascade="all, delete-orphan")
     conditions: Mapped[list["ZoneCondition"]] = relationship(cascade="all, delete-orphan")
+    # Exact spots on the face map. stages and conditions are filed from these per zone;
+    # a day logged as counts only has stages and conditions but no pins.
+    pins: Mapped[list["FacePin"]] = relationship(
+        cascade="all, delete-orphan", order_by="FacePin.id"
+    )
     uses: Mapped[list["ProductUse"]] = relationship(cascade="all, delete-orphan")
     tags: Mapped[list["DayTag"]] = relationship(cascade="all, delete-orphan")
     photos: Mapped[list["Photo"]] = relationship(cascade="all, delete-orphan")
@@ -171,6 +176,21 @@ class ZoneCondition(Base):
     )
     zone: Mapped[Zone] = mapped_column(_enum(Zone), primary_key=True)
     condition: Mapped[Condition] = mapped_column(_enum(Condition), primary_key=True)
+
+
+class FacePin(Base):
+    """One spot or condition pinned on the face map. x and y run 0–1 across and down
+    the drawing (see skinlog.face); kind is a Stage or a Condition value."""
+
+    __tablename__ = "face_pins"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    day_log_id: Mapped[int] = mapped_column(
+        ForeignKey("day_logs.id", ondelete="CASCADE"), index=True
+    )
+    x: Mapped[float]
+    y: Mapped[float]
+    kind: Mapped[str] = mapped_column(String(20))
 
 
 class ProductUse(Base):

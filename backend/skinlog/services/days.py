@@ -1,5 +1,6 @@
 """One day's log: products used, skin check-in and notes."""
 
+from collections import Counter
 from datetime import date, timedelta
 
 from fastapi import HTTPException
@@ -7,11 +8,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from skinlog import clock
+from skinlog.face import anchor_point, zone_of
 from skinlog.models import (
     Angle,
+    Condition,
     DayLog,
     DayStatus,
     DayTag,
+    FacePin,
     Photo,
     Product,
     ProductUse,
@@ -29,6 +33,7 @@ from skinlog.schemas import (
     DayPhotos,
     DaySummary,
     DayTrial,
+    Pin,
     Planned,
     ProductUseIO,
     ZoneConditions,
@@ -40,6 +45,8 @@ from skinlog.services import routine, trials
 MAX_RANGE_DAYS = 92
 # An unsaved day starts from the spots of the last logged day at most this far back.
 CARRY_OVER_DAYS = 7
+# Matches the most a zone can count of one stage (schemas.Count).
+MAX_PER_ZONE = 50
 
 
 def get_log(db: Session, user: User, day: date) -> DayLog | None:
@@ -73,6 +80,51 @@ def carry_over_from(db: Session, user: User, day: date) -> DayLog | None:
         .limit(1)
     )
     return log if log and log.stages else None
+
+
+def log_pins(log: DayLog) -> list[Pin]:
+    """The day's pins; a day logged as counts only gets them drawn round each zone's middle."""
+    if log.pins:
+        return [Pin(x=p.x, y=p.y, kind=p.kind) for p in log.pins]
+    drawn: Counter[Zone] = Counter()
+    out = []
+    stage_order = list(Stage)
+    rows = sorted(log.stages, key=lambda r: (list(Zone).index(r.zone), stage_order.index(r.stage)))
+    marks = [(r.zone, r.stage.value) for r in rows for _ in range(r.count)]
+    marks += sorted((r.zone, r.condition.value) for r in log.conditions)
+    for zone, kind in marks:
+        x, y = anchor_point(zone, drawn[zone])
+        drawn[zone] += 1
+        out.append(Pin(x=x, y=y, kind=kind))
+    return out
+
+
+CONDITION_KINDS = {c.value for c in Condition}
+
+
+def day_pins(log: DayLog | None, source: DayLog | None) -> list[Pin]:
+    """Spots from `source` (the day itself, or the day they carry over from) and the
+    day's own conditions, which don't carry over."""
+    spots = [p for p in log_pins(source) if p.kind not in CONDITION_KINDS] if source else []
+    marked = [p for p in log_pins(log) if p.kind in CONDITION_KINDS] if log else []
+    return spots + marked
+
+
+def _file_pins(pins: list[Pin]) -> tuple[list[ZoneStage], list[ZoneCondition]]:
+    """Count pins per zone for analysis, which works per zone."""
+    counts: Counter[tuple[Zone, Stage]] = Counter()
+    marked: set[tuple[Zone, Condition]] = set()
+    for pin in pins:
+        zone = zone_of(pin.x, pin.y)
+        if pin.kind in CONDITION_KINDS:
+            marked.add((zone, Condition(pin.kind)))
+        else:
+            counts[zone, Stage(pin.kind)] += 1
+    if any(n > MAX_PER_ZONE for n in counts.values()):
+        raise HTTPException(422, f"At most {MAX_PER_ZONE} spots of one kind in one area")
+    stages = [ZoneStage(zone=z, stage=s, count=n) for (z, s), n in counts.items()]
+    conditions = [ZoneCondition(zone=z, condition=c) for z, c in marked]
+    return stages, conditions
 
 
 def zone_conditions(log: DayLog | None) -> ZoneConditions:
@@ -120,6 +172,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         date=day,
         status=log.status if log else "none",
         skin_score=log.skin_score if log else None,
+        pins=day_pins(log, source),
         stages=zone_stages(source),
         stages_from=source.date if source is not None and source is not log else None,
         conditions=zone_conditions(log),
@@ -182,20 +235,27 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
     # Clear first so replaced rows are deleted before their successors are inserted.
     log.stages.clear()
     log.conditions.clear()
+    log.pins.clear()
     log.uses.clear()
     log.tags.clear()
     db.flush()
-    log.stages.extend(
-        ZoneStage(zone=zone, stage=stage, count=count)
-        for zone, counts in body.stages
-        for stage, count in counts
-        if count > 0
-    )
-    log.conditions.extend(
-        ZoneCondition(zone=zone, condition=condition)
-        for zone, conditions in body.conditions
-        for condition in set(conditions)
-    )
+    if body.pins is not None:
+        stages, conditions = _file_pins(body.pins)
+        log.stages.extend(stages)
+        log.conditions.extend(conditions)
+        log.pins.extend(FacePin(x=p.x, y=p.y, kind=p.kind) for p in body.pins)
+    else:
+        log.stages.extend(
+            ZoneStage(zone=zone, stage=stage, count=count)
+            for zone, counts in body.stages
+            for stage, count in counts
+            if count > 0
+        )
+        log.conditions.extend(
+            ZoneCondition(zone=zone, condition=condition)
+            for zone, conditions in body.conditions
+            for condition in set(conditions)
+        )
     unique_uses = {(u.product_id, u.time_of_day) for u in body.product_uses}
     log.uses.extend(ProductUse(product_id=pid, time_of_day=tod) for pid, tod in unique_uses)
     log.tags.extend(DayTag(tag_id=tag_id) for tag_id in set(body.tag_ids))

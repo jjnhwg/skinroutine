@@ -35,6 +35,7 @@ export function day(date: string, fields: Partial<Day> = {}): Day {
     date,
     status: "none",
     skin_score: null,
+    pins: [],
     stages: NO_STAGES,
     stages_from: null,
     conditions: NO_CONDITIONS,

@@ -5,6 +5,7 @@ import { deleteDayPhoto, getDay, saveDay, uploadDayPhoto } from "../api/days";
 import { ApiError } from "../api/http";
 import { listProducts } from "../api/products";
 import { listTags } from "../api/tags";
+import { tapFace } from "../test/face";
 import { day, NO_CONDITIONS, NO_SPOTS, NO_STAGES, product } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
 import { LogScreen } from "./LogScreen";
@@ -24,9 +25,13 @@ const RETINOL = product(2, "Retinol", { type: "treatment" });
 const SAVED = day("2026-10-05", {
   status: "logged",
   skin_score: 4,
-  stages: { ...NO_STAGES, chin: { ...NO_SPOTS, active: 3 } },
+  pins: [
+    { x: 0.5, y: 0.82, kind: "active" },
+    { x: 0.52, y: 0.8, kind: "red" },
+  ],
+  stages: { ...NO_STAGES, chin: { ...NO_SPOTS, active: 1 } },
   conditions: { ...NO_CONDITIONS, chin: ["red"] },
-  total_breakouts: 3,
+  total_breakouts: 1,
   notes: "Spot on chin",
   product_uses: [{ product_id: 1, time_of_day: "am" }],
   tag_ids: [7],
@@ -51,7 +56,8 @@ describe("LogScreen", () => {
     renderWithApp(<LogScreen date="2026-10-05" />);
 
     expect(await screen.findByRole("button", { name: "4 — Rough" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Chin — 3 active, red" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Active pimple, pin 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Red, pin 2" })).toBeInTheDocument();
     expect(screen.getByLabelText("Notes")).toHaveValue("Spot on chin");
     expect(screen.getByRole("button", { name: /Retinol/ })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByText(/Editing your saved entry/)).toBeInTheDocument();
@@ -66,17 +72,22 @@ describe("LogScreen", () => {
     await screen.findByLabelText("Notes");
 
     await user.click(screen.getByRole("button", { name: /Retinol/ }));
-    await user.click(screen.getByRole("button", { name: "Nose" }));
-    await user.click(screen.getByRole("button", { name: "More clogged pores on nose" }));
+    await user.click(screen.getByRole("button", { name: "Clogged pore" }));
+    tapFace(100, 120);
     await user.click(screen.getByRole("button", { name: "Oily" }));
+    tapFace(100, 110);
     await user.type(screen.getByLabelText("Notes"), "!");
     await user.click(await screen.findByRole("button", { name: "Alcohol" }));
     await user.click(screen.getByRole("button", { name: "Update entry" }));
 
     expect(saveDay).toHaveBeenCalledWith("2026-10-05", {
       skin_score: 4,
-      stages: { ...NO_STAGES, chin: { ...NO_SPOTS, active: 3 }, nose: { ...NO_SPOTS, clogged: 1 } },
-      conditions: { ...NO_CONDITIONS, chin: ["red"], nose: ["oily"] },
+      pins: [
+        { x: 0.5, y: 0.82, kind: "active" },
+        { x: 0.52, y: 0.8, kind: "red" },
+        { x: 0.5, y: 120 / 260, kind: "clogged" },
+        { x: 0.5, y: 110 / 260, kind: "oily" },
+      ],
       notes: "Spot on chin!",
       product_uses: [
         { product_id: 1, time_of_day: "am" },

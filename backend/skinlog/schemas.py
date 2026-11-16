@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from skinlog import clock
 from skinlog.models import Condition, Product, ProductType
@@ -163,6 +163,21 @@ class ZoneConditions(BaseModel):
     jawline: list[Condition] = []
 
 
+PinKind = Literal[
+    "clogged", "coming_up", "active", "healing", "red_mark", "brown_mark", "dry", "red", "oily"
+]
+
+
+class Pin(BaseModel):
+    """A spot (a stage) or a condition at one point on the face map; see skinlog.face."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+    kind: PinKind
+
+
 class ProductUseIO(BaseModel):
     product_id: int
     time_of_day: TimeOfDay
@@ -179,6 +194,9 @@ class DayIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     skin_score: int | None = Field(None, ge=1, le=5)
+    # Exact spots on the face map. When sent, stages and conditions are filed from
+    # them per zone; leave pins out to log counts per zone instead.
+    pins: list[Pin] | None = Field(None, max_length=400)
     stages: ZoneStages = ZoneStages()
     conditions: ZoneConditions = ZoneConditions()
     notes: str = Field("", max_length=5000)
@@ -186,6 +204,12 @@ class DayIn(BaseModel):
     tag_ids: list[int] = []
     period: bool = False
     trial_notes: list[TrialNoteIn] = []
+
+    @model_validator(mode="after")
+    def _pins_or_counts(self) -> "DayIn":
+        if self.pins is not None and {"stages", "conditions"} & self.model_fields_set:
+            raise ValueError("Send pins or stages and conditions, not both")
+        return self
 
 
 class DayPhotos(BaseModel):
@@ -211,8 +235,11 @@ class DayOut(BaseModel):
     date: date
     status: str
     skin_score: int | None
+    # Spots and conditions on the face map. Days logged as counts only get their
+    # pins drawn around each zone's middle.
+    pins: list[Pin]
     stages: ZoneStages
-    # When nothing is saved yet, stages are copied from this earlier logged day.
+    # When nothing is saved yet, spots (pins and stages) are copied from this earlier logged day.
     stages_from: date | None
     conditions: ZoneConditions
     # Active spots only.
