@@ -20,12 +20,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str | None] = mapped_column(String(254))
     timezone: Mapped[str] = mapped_column(String(64), default="America/New_York")
-    reminder_time: Mapped[str] = mapped_column(String(5), default="21:00")
-    reminder_enabled: Mapped[bool] = mapped_column(default=True)
     lookahead_min_days: Mapped[int] = mapped_column(default=1)
     lookahead_max_days: Mapped[int] = mapped_column(default=5)
-    # The user's local date of the last reminder, so each day gets at most one.
-    last_reminder_sent_on: Mapped[date | None] = mapped_column(Date)
     # Where to look up the weather; rounded, and None until the user shares it.
     latitude: Mapped[float | None]
     longitude: Mapped[float | None]
@@ -288,15 +284,3 @@ class WeatherDay(Base):
     date: Mapped[date] = mapped_column(Date, primary_key=True)
     temp_max_c: Mapped[float | None]
     humidity_pct: Mapped[float | None]
-
-
-class PushSubscription(Base):
-    """One browser that agreed to get push reminders. Removed when the push service says it's gone."""
-
-    __tablename__ = "push_subscriptions"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
-    p256dh: Mapped[str] = mapped_column(String(200))
-    auth: Mapped[str] = mapped_column(String(100))

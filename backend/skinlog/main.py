@@ -15,7 +15,6 @@ from skinlog.routers import (
     legacy,
     missed,
     products,
-    push,
     routine,
     settings,
     summary,
@@ -49,7 +48,6 @@ def create_app() -> FastAPI:
     app.include_router(insights.router, prefix="/api")
     app.include_router(backfill.router, prefix="/api")
     app.include_router(summary.router, prefix="/api")
-    app.include_router(push.router, prefix="/api")
     return app
 
 

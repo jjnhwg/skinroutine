@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/http";
 import { importLegacy } from "../api/legacy";
 import { createTag, listTags, updateTag } from "../api/tags";
-import { getSettings, sendTestEmail, updateSettings } from "../api/settings";
+import { getSettings, updateSettings } from "../api/settings";
 import type { Settings } from "../api/types";
 import { SettingsProvider } from "../api/SettingsProvider";
 import { ToastProvider } from "../components/Toast";
@@ -19,10 +19,7 @@ vi.mock("../api/legacy", async (importOriginal) => ({
 vi.mock("../api/tags");
 
 const SAVED: Settings = {
-  email: "me@example.com",
   timezone: "America/New_York",
-  reminder_time: "21:00",
-  reminder_enabled: true,
   lookahead_min_days: 1,
   lookahead_max_days: 5,
   latitude: null,
@@ -44,7 +41,6 @@ function renderScreen() {
 beforeEach(() => {
   vi.mocked(getSettings).mockReset().mockResolvedValue(SAVED);
   vi.mocked(updateSettings).mockReset();
-  vi.mocked(sendTestEmail).mockReset();
   vi.mocked(importLegacy).mockReset();
   vi.mocked(listTags).mockReset().mockResolvedValue([
     { id: 4, name: "Bad sleep", is_default: true, hidden: false },
@@ -55,14 +51,11 @@ beforeEach(() => {
   vi.mocked(createTag).mockReset();
 });
 
-describe("SettingsScreen reminders & insights", () => {
+describe("SettingsScreen time zone & insights", () => {
   it("shows the saved settings", async () => {
     renderScreen();
 
-    expect(await screen.findByLabelText("Email")).toHaveValue("me@example.com");
-    expect(screen.getByLabelText("Time zone")).toHaveValue("America/New_York");
-    expect(screen.getByLabelText("Reminder time")).toHaveValue("21:00");
-    expect(screen.getByLabelText("Send a daily reminder")).toBeChecked();
+    expect(await screen.findByLabelText("Time zone")).toHaveValue("America/New_York");
     expect(screen.getByLabelText("From day")).toHaveValue(1);
     expect(screen.getByLabelText("To day")).toHaveValue(5);
   });
@@ -82,17 +75,6 @@ describe("SettingsScreen reminders & insights", () => {
 
     expect(updateSettings).toHaveBeenCalledWith({ lookahead_min_days: 2, lookahead_max_days: 4 });
     expect(await screen.findByText("Settings saved")).toBeInTheDocument();
-  });
-
-  it("sends a cleared email as null", async () => {
-    vi.mocked(updateSettings).mockResolvedValue({ ...SAVED, email: null });
-    const user = userEvent.setup();
-    renderScreen();
-
-    await user.clear(await screen.findByLabelText("Email"));
-    await user.click(screen.getByRole("button", { name: "Save settings" }));
-
-    expect(updateSettings).toHaveBeenCalledWith({ email: null });
   });
 
   it("shows the server's validation message", async () => {
@@ -121,7 +103,7 @@ describe("SettingsProvider", () => {
 
     await user.click(await screen.findByRole("button", { name: "Retry" }));
 
-    await waitFor(() => expect(screen.getByLabelText("Email")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText("Time zone")).toBeInTheDocument());
     expect(getSettings).toHaveBeenCalledTimes(2);
   });
 });
@@ -233,29 +215,6 @@ describe("Tags", () => {
     await user.type(screen.getByLabelText("New tag"), "Swam");
     await user.click(screen.getByRole("button", { name: "Add tag" }));
     expect(createTag).toHaveBeenCalledWith("Swam");
-  });
-});
-
-describe("Send test email", () => {
-  it("sends one now", async () => {
-    vi.mocked(sendTestEmail).mockResolvedValue(undefined);
-    const user = userEvent.setup();
-    renderScreen();
-
-    await user.click(await screen.findByRole("button", { name: "Send test email" }));
-
-    expect(sendTestEmail).toHaveBeenCalled();
-    expect(await screen.findByText("Test email sent to me@example.com")).toBeInTheDocument();
-  });
-
-  it("shows why it couldn't", async () => {
-    vi.mocked(sendTestEmail).mockRejectedValue(new ApiError(422, "Add an email address first"));
-    const user = userEvent.setup();
-    renderScreen();
-
-    await user.click(await screen.findByRole("button", { name: "Send test email" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("Add an email address first");
   });
 });
 

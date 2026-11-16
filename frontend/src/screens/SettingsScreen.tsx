@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { ApiError } from "../api/http";
 import { importLegacy, readLegacyBackup } from "../api/legacy";
-import { sendTestEmail } from "../api/settings";
 import type { LegacyData } from "../api/legacy";
 import type { ImportReport, SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
 import { CycleSettings } from "../components/CycleSettings";
-import { PushSettings } from "../components/PushSettings";
 import { TagSettings } from "../components/TagSettings";
 import { WeatherSettings } from "../components/WeatherSettings";
 import { useToast } from "../components/useToast";
@@ -20,14 +18,11 @@ function looksLikeBackup(data: unknown): data is LegacyData {
 
 const TIME_ZONES = Intl.supportedValuesOf("timeZone");
 
-/** Reminder and insight settings, saved to the server. */
-function ReminderSettings() {
+/** Time zone and insight settings, saved to the server. */
+function InsightSettings() {
   const { settings, update } = useSettings();
   const toast = useToast();
-  const [email, setEmail] = useState(settings.email ?? "");
   const [timezone, setTimezone] = useState(settings.timezone);
-  const [reminderTime, setReminderTime] = useState(settings.reminder_time);
-  const [reminderEnabled, setReminderEnabled] = useState(settings.reminder_enabled);
   const [minDays, setMinDays] = useState(String(settings.lookahead_min_days));
   const [maxDays, setMaxDays] = useState(String(settings.lookahead_max_days));
   const [error, setError] = useState("");
@@ -36,23 +31,10 @@ function ReminderSettings() {
   // The saved zone may be an alias the browser doesn't list; keep it selectable.
   const zones = TIME_ZONES.includes(settings.timezone) ? TIME_ZONES : [settings.timezone, ...TIME_ZONES];
 
-  async function testEmail() {
-    setError("");
-    try {
-      await sendTestEmail();
-      toast(`Test email sent to ${settings.email}`);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.detail : "Couldn't send — is the server running?");
-    }
-  }
-
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const form: Required<Omit<SettingsPatch, "latitude" | "longitude" | "cycle_tracking">> = {
-      email: email.trim() || null,
       timezone,
-      reminder_time: reminderTime,
-      reminder_enabled: reminderEnabled,
       lookahead_min_days: Number(minDays),
       lookahead_max_days: Number(maxDays),
     };
@@ -76,18 +58,7 @@ function ReminderSettings() {
 
   return (
     <form className="card" onSubmit={save}>
-      <h2>Reminders & insights</h2>
-
-      <label className="field" htmlFor="set-email">
-        Email
-      </label>
-      <input
-        type="email"
-        id="set-email"
-        placeholder="Where reminders go"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <h2>Time zone & insights</h2>
 
       <label className="field" htmlFor="set-tz">
         Time zone
@@ -99,29 +70,6 @@ function ReminderSettings() {
           </option>
         ))}
       </select>
-
-      <div className="row">
-        <div className="grow">
-          <label className="field" htmlFor="set-time">
-            Reminder time
-          </label>
-          <input
-            type="time"
-            id="set-time"
-            required
-            value={reminderTime}
-            onChange={(e) => setReminderTime(e.target.value)}
-          />
-        </div>
-        <label className="check-row grow">
-          <input
-            type="checkbox"
-            checked={reminderEnabled}
-            onChange={(e) => setReminderEnabled(e.target.checked)}
-          />
-          Send a daily reminder
-        </label>
-      </div>
 
       <p className="muted" style={{ margin: "16px 0 0" }}>
         Insights look for breakouts this many days after a product or habit.
@@ -166,9 +114,6 @@ function ReminderSettings() {
       <div className="row" style={{ marginTop: 14 }}>
         <button type="submit" className="btn primary" disabled={saving}>
           Save settings
-        </button>
-        <button type="button" className="btn ghost" onClick={testEmail}>
-          Send test email
         </button>
       </div>
     </form>
@@ -274,10 +219,9 @@ export function SettingsScreen() {
   return (
     <>
       <h2 className="page-title">Settings</h2>
-      <p className="page-sub">Reminders, insights, tags, weather and cycle.</p>
+      <p className="page-sub">Time zone, insights, tags, weather and cycle.</p>
 
-      <ReminderSettings />
-      <PushSettings />
+      <InsightSettings />
       <TagSettings />
       <WeatherSettings />
       <CycleSettings />

@@ -1,11 +1,7 @@
 /** Shapes the FastAPI backend sends and accepts. Field names match the API. */
 
 export interface Settings {
-  email: string | null;
   timezone: string;
-  /** "HH:MM", 24-hour, in the user's time zone. */
-  reminder_time: string;
-  reminder_enabled: boolean;
   lookahead_min_days: number;
   lookahead_max_days: number;
   /** Where weather is looked up, rounded to ~1 km; null until shared. */

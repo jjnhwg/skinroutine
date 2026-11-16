@@ -6,12 +6,10 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from skinlog import clock
 from skinlog.db import Base, get_db, make_engine
-from skinlog.email import get_email_sender
 from skinlog.main import create_app
 from skinlog.models import User
 from skinlog.photos import LocalDiskPhotoStore, get_photo_store
 from skinlog.services.tags import ensure_default_tags
-from skinlog.push import SubscriptionGone, get_push_sender
 from skinlog.weather import get_weather_source
 
 
@@ -33,21 +31,6 @@ def db_session(tmp_path) -> Session:
 @pytest.fixture
 def photo_store(tmp_path) -> LocalDiskPhotoStore:
     return LocalDiskPhotoStore(tmp_path / "photos")
-
-
-class FakeEmailSender:
-    """Keeps sent emails in a list instead of sending them."""
-
-    def __init__(self):
-        self.sent: list[tuple[str, str, str]] = []
-
-    def send(self, to: str, subject: str, body: str) -> None:
-        self.sent.append((to, subject, body))
-
-
-@pytest.fixture
-def email_sender() -> FakeEmailSender:
-    return FakeEmailSender()
 
 
 class FakeWeather:
@@ -72,32 +55,12 @@ def weather_source() -> FakeWeather:
     return FakeWeather()
 
 
-class FakePushSender:
-    """Keeps pushes in a list; endpoints in `gone` answer like an expired subscription."""
-
-    def __init__(self):
-        self.sent: list[tuple[str, str, str, str]] = []
-        self.gone: set[str] = set()
-
-    def send(self, subscription, title, body, url):
-        if subscription.endpoint in self.gone:
-            raise SubscriptionGone
-        self.sent.append((subscription.endpoint, title, body, url))
-
-
 @pytest.fixture
-def push_sender() -> FakePushSender:
-    return FakePushSender()
-
-
-@pytest.fixture
-def client(db_session, photo_store, email_sender, weather_source, push_sender) -> TestClient:
+def client(db_session, photo_store, weather_source) -> TestClient:
     app = create_app()
-    app.dependency_overrides[get_push_sender] = lambda: push_sender
     app.dependency_overrides[get_weather_source] = lambda: weather_source
     app.dependency_overrides[get_db] = lambda: db_session
     app.dependency_overrides[get_photo_store] = lambda: photo_store
-    app.dependency_overrides[get_email_sender] = lambda: email_sender
     return TestClient(app)
 
 

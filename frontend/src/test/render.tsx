@@ -7,10 +7,7 @@ import { SettingsProvider } from "../api/SettingsProvider";
 import { ToastProvider } from "../components/Toast";
 
 export const TEST_SETTINGS: Settings = {
-  email: null,
   timezone: "America/New_York",
-  reminder_time: "21:00",
-  reminder_enabled: true,
   lookahead_min_days: 1,
   lookahead_max_days: 5,
   latitude: null,

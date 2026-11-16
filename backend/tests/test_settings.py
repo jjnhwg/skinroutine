@@ -11,10 +11,7 @@ def test_get_returns_defaults(client):
 
     assert response.status_code == 200
     body = response.json()
-    assert body["email"] is None
     assert body["timezone"] == "America/New_York"
-    assert body["reminder_time"] == "21:00"
-    assert body["reminder_enabled"] is True
     assert body["lookahead_min_days"] == 1
     assert body["lookahead_max_days"] == 5
     assert len(body["today"]) == 10
@@ -32,11 +29,8 @@ def test_today_follows_the_clock(client, monkeypatch):
 @pytest.mark.parametrize(
     "patch",
     [
-        {"email": "me@example.com"},
-        {"email": None},
         {"timezone": "Europe/London"},
-        {"reminder_time": "07:45"},
-        {"reminder_enabled": False},
+        {"cycle_tracking": True},
         {"lookahead_min_days": 2},
         {"lookahead_max_days": 14},
         {"lookahead_min_days": 0, "lookahead_max_days": 0},
@@ -52,10 +46,10 @@ def test_patch_updates_one_field(client, patch):
 
 
 def test_patch_leaves_other_fields_alone(client):
-    client.patch("/api/settings", json={"reminder_time": "08:00"})
-    body = client.patch("/api/settings", json={"reminder_enabled": False}).json()
+    client.patch("/api/settings", json={"lookahead_min_days": 2})
+    body = client.patch("/api/settings", json={"cycle_tracking": True}).json()
 
-    assert body["reminder_time"] == "08:00"
+    assert body["lookahead_min_days"] == 2
     assert body["timezone"] == "America/New_York"
 
 
@@ -64,15 +58,11 @@ def test_patch_leaves_other_fields_alone(client):
     [
         {"timezone": "Mars/Olympus"},
         {"timezone": ""},
-        {"reminder_time": "9:00"},
-        {"reminder_time": "24:00"},
-        {"reminder_time": "21:60"},
-        {"email": "not-an-email"},
         {"lookahead_min_days": -1},
         {"lookahead_max_days": 15},
         {"lookahead_min_days": 4, "lookahead_max_days": 3},
         {"lookahead_min_days": 6},  # above the stored max of 5
-        {"reminder_enabled": None},
+        {"cycle_tracking": None},
     ],
 )
 def test_patch_rejects_invalid_values(client, patch):
@@ -94,6 +84,6 @@ def test_missing_user_explains_how_to_fix(client, db_session):
 
 
 def test_validation_message_reads_plainly(client):
-    response = client.patch("/api/settings", json={"reminder_time": "25:00"})
+    response = client.patch("/api/settings", json={"timezone": "Mars/Olympus"})
 
-    assert response.json()["detail"][0]["msg"] == "Use 24-hour HH:MM, like 21:00"
+    assert response.json()["detail"][0]["msg"] == "Unknown time zone"
