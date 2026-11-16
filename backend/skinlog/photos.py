@@ -1,8 +1,11 @@
 """Photo storage behind one small interface, so cloud storage can replace local disk later
 (spec open question 3), plus the checks every uploaded photo goes through."""
 
+import hashlib
+import hmac
 import re
 import uuid
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -60,9 +63,35 @@ def get_photo_store() -> PhotoStore:
     return LocalDiskPhotoStore(get_config().photo_dir)
 
 
-def owner_of(key: str) -> int | None:
-    match = KEY_PATTERN.match(key)
-    return int(match.group(1)) if match else None
+def link_secret() -> str:
+    """The server's secret for stamping photo links (PHOTO_LINK_SECRET)."""
+    secret = get_config().photo_link_secret
+    if not secret:
+        raise HTTPException(500, "PHOTO_LINK_SECRET isn't set on the server.")
+    return secret
+
+
+def link_expiry(now: datetime) -> int:
+    """When links made now stop working: midnight UTC at the end of tomorrow, as
+    seconds since 1970. A link lasts 24–48 hours, and every link made on the same
+    day is identical, so the browser can reuse a photo it already downloaded."""
+    end = datetime.combine(now.date() + timedelta(days=2), time(), tzinfo=timezone.utc)
+    return int(end.timestamp())
+
+
+def stamp_for(secret: str, key: str, expires: int) -> str:
+    """The proof a photo link carries: only someone with the secret can make it, and
+    it only fits this exact file and expiry. Change either and it no longer matches."""
+    message = f"{key}|{expires}".encode()
+    return hmac.new(secret.encode(), message, hashlib.sha256).hexdigest()
+
+
+def stamp_is_valid(secret: str, key: str, expires: int, stamp: str, now: int) -> bool:
+    if now > expires:
+        return False
+    # compare_digest takes the same time however many characters match, so the
+    # stamp can't be guessed one character at a time by timing the answers.
+    return hmac.compare_digest(stamp, stamp_for(secret, key, expires))
 
 
 def check_photo(data: bytes, content_type: str) -> str:

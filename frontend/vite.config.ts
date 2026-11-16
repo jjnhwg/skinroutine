@@ -19,6 +19,12 @@ export default defineConfig({
     },
   },
   test: {
+    // Placeholders so tests never need frontend/.env.local (which isn't in git);
+    // the tests that touch Supabase replace the client with a fake anyway.
+    env: {
+      VITE_SUPABASE_URL: "https://test-project.supabase.co",
+      VITE_SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
+    },
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
   },

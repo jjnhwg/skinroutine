@@ -7,11 +7,20 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 
 from skinlog import clock
 from skinlog.models import Condition, Product, ProductType
+from skinlog.photos import link_expiry, link_secret, stamp_for
 from skinlog.services import trials
 
 
 def file_url(key: str | None) -> str | None:
-    return f"/api/files/{key}" if key else None
+    """A photo's link, stamped so an <img> can load it without a sign-in token.
+
+    Only sent to the photo's owner (every route that returns one checked their token),
+    and the stamp only fits this file until `expires`."""
+    if not key:
+        return None
+    expires = link_expiry(clock.now_utc())
+    stamp = stamp_for(link_secret(), key, expires)
+    return f"/api/files/{key}?expires={expires}&stamp={stamp}"
 
 
 def _not_blank(value: str) -> str:

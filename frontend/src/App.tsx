@@ -21,8 +21,13 @@ import { TimelineScreen } from "./screens/TimelineScreen";
 /** Tabs anyone can read: the landing page and the guide are the advertisement. Everything else is your own log. */
 const PUBLIC_TABS: Tab[] = ["home", "guide"];
 
-function Screens({ tab, date, signedIn }: Route & { signedIn: boolean }) {
+/** The log for `date`, or for today, which comes from the signed-in user's settings. */
+function LogRoute({ date }: { date: string | null }) {
   const { today } = useSettings();
+  return <LogScreen date={date ?? today} />;
+}
+
+function Screens({ tab, date, signedIn }: Route & { signedIn: boolean }) {
   // The gate: a logging tab shows the sign-up pitch until someone is signed in.
   if (!signedIn && !PUBLIC_TABS.includes(tab)) {
     return (
@@ -40,7 +45,7 @@ function Screens({ tab, date, signedIn }: Route & { signedIn: boolean }) {
       {tab === "settings" && <SettingsScreen />}
       {tab === "summary" && <SummaryScreen />}
       {tab === "guide" && <GuideScreen />}
-      {tab === "log" && <LogScreen date={date ?? today} />}
+      {tab === "log" && <LogRoute date={date} />}
     </main>
   );
 }
@@ -82,10 +87,17 @@ export default function App() {
           </div>
         )}
       </header>
-      <SettingsProvider>
-        <Screens {...route} signedIn={session !== null} />
-        {session && <MissedDaysPrompt />}
-      </SettingsProvider>
+      {session ? (
+        // Settings come from /api, which needs a signed-in user. Keyed by user so
+        // switching accounts loads the new person's settings, not the last one's.
+        <SettingsProvider key={session.user.id}>
+          <Screens {...route} signedIn />
+          <MissedDaysPrompt />
+        </SettingsProvider>
+      ) : (
+        // Signed out: only Home, Guide and the sign-up pitch, none of which call /api.
+        <Screens {...route} signedIn={false} />
+      )}
     </ToastProvider>
   );
 }

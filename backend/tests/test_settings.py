@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
 import pytest
-from sqlalchemy import text
 
 from skinlog import clock
 
@@ -70,17 +69,6 @@ def test_patch_rejects_invalid_values(client, patch):
 
     assert response.status_code == 422
     assert client.get("/api/settings").json()["lookahead_min_days"] == 1
-
-
-def test_missing_user_explains_how_to_fix(client, db_session):
-    db_session.execute(text("DELETE FROM tags"))
-    db_session.execute(text("DELETE FROM users"))
-    db_session.commit()
-
-    response = client.get("/api/settings")
-
-    assert response.status_code == 500
-    assert "alembic upgrade head" in response.json()["detail"]
 
 
 def test_validation_message_reads_plainly(client):

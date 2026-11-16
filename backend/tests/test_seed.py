@@ -5,9 +5,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
 from skinlog import clock
+from skinlog.auth import get_token_verifier
+from skinlog.link_account import link
 from skinlog.db import get_db, make_engine
 from skinlog.main import create_app
 from skinlog.seed import SeedRefused, seed_demo
+from tests.tokens import USER_1, auth_header, fake_verifier
 
 NOW = datetime(2026, 10, 9, 15, 0, tzinfo=timezone.utc)
 
@@ -27,9 +30,11 @@ def seeded(tmp_path, monkeypatch):
 @pytest.fixture
 def demo_client(seeded) -> TestClient:
     _, session = seeded
+    link(session, 1, USER_1)  # the demo data is user 1's; sign in as them
     app = create_app()
     app.dependency_overrides[get_db] = lambda: session
-    return TestClient(app)
+    app.dependency_overrides[get_token_verifier] = fake_verifier
+    return TestClient(app, headers=auth_header(USER_1))
 
 
 def test_suspects_are_ready_with_the_serum_on_top(demo_client):

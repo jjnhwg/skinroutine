@@ -1,7 +1,9 @@
 /**
- * The one way the app talks to the FastAPI backend. Every non-2xx response
- * becomes an ApiError carrying the server's human-readable `detail`.
+ * The one way the app talks to the FastAPI backend. Every request carries the
+ * signed-in user's Supabase token, and every non-2xx response becomes an
+ * ApiError carrying the server's human-readable `detail`.
  */
+import { supabase } from "../lib/supabase";
 
 export class ApiError extends Error {
   status: number;
@@ -23,8 +25,19 @@ function detailOf(body: unknown, status: number): string {
   return `Server responded ${status}`;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
+/**
+ * "Authorization: Bearer <token>" for whoever is signed in, or nothing. getSession()
+ * reads the saved session and, if its token has expired, refreshes it first.
+ */
+async function authHeader(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = { ...(init.headers as Record<string, string> | undefined), ...(await authHeader()) };
+  const response = await fetch(path, { ...init, headers });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new ApiError(response.status, detailOf(body, response.status));

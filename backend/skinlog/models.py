@@ -18,6 +18,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # The Supabase user id (the token's "sub") this row belongs to. None until linked.
+    auth_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
+    # Copied from the token on each request, so it follows changes made in Supabase.
     email: Mapped[str | None] = mapped_column(String(254))
     timezone: Mapped[str] = mapped_column(String(64), default="America/New_York")
     lookahead_min_days: Mapped[int] = mapped_column(default=1)
