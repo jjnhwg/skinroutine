@@ -1,13 +1,28 @@
 import { useState } from "react";
-import { GUIDE_STEPS, NEEDS, productImage, type GuideProduct, type Need } from "../lib/barrierGuide";
+import { GUIDE_STEPS, INGREDIENT_GROUPS, productImage, type GuideProduct } from "../lib/barrierGuide";
 
-function Badges({ p, fits }: { p: GuideProduct; fits: boolean }) {
+/** A product's ingredients sorted by what they do, e.g. "Calms: Centella, Panthenol". */
+function IngredientJobs({ p, byJob }: { p: GuideProduct; byJob?: boolean }) {
+  const has: readonly string[] = p.has ?? [];
+  if (!byJob) {
+    return has.length > 0 ? (
+      <span className="pick-jobs">
+        <b>Key ingredients:</b> {has.join(", ")}
+      </span>
+    ) : null;
+  }
+  const rows = INGREDIENT_GROUPS.map((g) => ({ ...g, found: g.items.filter((i) => has.includes(i)) })).filter(
+    (g) => g.found.length > 0,
+  );
+  if (rows.length === 0) return null;
   return (
-    <>
-      {fits && <span className="badge fit">Fits your skin</span>}
-      {p.paid && <span className="badge paid">PAID</span>}
-      {p.unconfirmed && <span className="badge unc">Name unconfirmed</span>}
-    </>
+    <ul className="pick-jobs" aria-label="Key ingredients">
+      {rows.map((g) => (
+        <li key={g.job}>
+          <b>{g.job}:</b> {g.found.join(", ")}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -29,16 +44,9 @@ function ProductPhoto({ p, small }: { p: GuideProduct; small?: boolean }) {
   );
 }
 
-/** Barrier repair routine: each step's creator-recommended options, highlighted by skin need. */
+/** Barrier repair routine: each step's creator-recommended options. */
 export function GuideScreen() {
-  const [need, setNeed] = useState<Need | "all">("all");
   const [open, setOpen] = useState<Record<string, boolean>>({});
-
-  const filtering = need !== "all";
-  const fits = (p: GuideProduct) => filtering && p.needs.includes(need);
-  // Matches move first; the rest stay visible, just faded.
-  const sorted = (list: GuideProduct[]) => (filtering ? [...list].sort((a, b) => Number(fits(b)) - Number(fits(a))) : list);
-  const faded = (p: GuideProduct) => filtering && !fits(p);
 
   return (
     <div className="guide">
@@ -46,66 +54,94 @@ export function GuideScreen() {
         <span className="eyebrow">Barrier repair guide</span>
         <h2 className="display">Your routine, step by step. Pick what fits your skin.</h2>
         <p className="lead">
-          <b>These products are for a damaged skin barrier and sensitive skin.</b> They’ll work whatever your main
-          concern is, because a strong barrier makes your skin more tolerant, so it’s less likely to break out or get
-          irritated. If you have a specific need, use{" "}
-          <button
-            type="button"
-            className="link-btn"
-            onClick={() => document.getElementById("guide-filter")?.scrollIntoView({ behavior: "smooth" })}
-          >
-            the skin type buttons
-          </button>{" "}
-          below to find the products made for it.
-        </p>
-        <p className="lead">
-          There’s no single best product. Each option says who it’s best for, according to the creator who recommended it.
-          Every one cites the video and timestamp.
+          <b>Made for a damaged barrier and sensitive skin, and just as good for keeping a healthy one strong.</b> A
+          stronger barrier makes skin more tolerant, so this helps whatever your main concern is. It’s a good routine if
+          you’re just starting skincare, and worth keeping after your skin heals. Each product says who it’s best for.
         </p>
 
-        <div className="guide-how">
-          <div>
-            <b>Every product here is gentle and made for sensitive skin.</b>
-            <span>
-              They skip the harsh stuff, so any of them is a safe place to start. You don’t need to find the perfect one.
-            </span>
-          </div>
-          <div>
-            <b>Try one, then watch how your skin reacts.</b>
-            <span>
-              Pick one per step and stick with it for about two weeks. If it stings, turns red, or breaks you out, swap
-              it for another option in the same step.
-            </span>
-          </div>
-          <div>
-            <b>Prone to pimples?</b>
-            <span>
-              Gentle products are much less likely to break you out, but any new product can. Add one new thing at a
-              time so you know which one caused it.
-            </span>
-          </div>
-        </div>
+        <section className="guide-base" aria-labelledby="guide-start-h">
+          <b id="guide-start-h">How to start</b>
+          <ol className="guide-timeline">
+            <li>
+              <span className="chip accent">First 4–6 weeks</span>
+              <details className="guide-fold">
+                <summary>Find a base routine that doesn’t break you out.</summary>
+                <span>
+                  Just a gentle cleanser, a moisturizer and sunscreen. With only three products, a breakout’s cause is
+                  easy to find, and everything you add later goes on top. Give it 4–6 weeks: clogged pores can take that
+                  long to show up.
+                </span>
+              </details>
+            </li>
+            <li>
+              <span className="chip accent">The whole time</span>
+              <details className="guide-fold">
+                <summary>Be patient. It’s the hardest part, and it matters most.</summary>
+                <span>It’s tempting to try lots of new products to heal faster, but that usually sets you back:</span>
+                <ul>
+                  <li>Every new product is another chance to irritate skin that’s already struggling.</li>
+                  <li>Start several at once and break out, and you won’t know which one did it.</li>
+                  <li>A damaged barrier needs weeks of calm. More products won’t speed that up.</li>
+                </ul>
+                <span className="guide-voice">
+                  I learned this the hard way: I kept switching to something new, and that was a mistake.
+                </span>
+              </details>
+            </li>
+            <li>
+              <span className="chip accent">Once skin stays calm</span>
+              <details className="guide-fold">
+                <summary>Add one product at a time.</summary>
+                <span>
+                  Add a toner or serum and give it about 3 weeks. Gentle products rarely break you out, but any new one
+                  can. If it stings, turns red or breaks you out, swap it for another option in the same step.
+                </span>
+              </details>
+            </li>
+          </ol>
+        </section>
 
-        <div className="guide-filter" id="guide-filter">
-          <div className="row" role="group" aria-label="Filter by skin type">
-            {NEEDS.map((n) => (
-              <button
-                key={n.id}
-                type="button"
-                className="pill"
-                aria-pressed={need === n.id}
-                onClick={() => setNeed(n.id)}
-              >
-                {n.label}
-              </button>
-            ))}
-          </div>
-          <span className="muted">
-            {filtering
-              ? "Options that fit are highlighted and moved first. The rest are faded, not hidden."
-              : "Pick one to highlight the options that fit you in every step."}
+        <section className="guide-base" aria-labelledby="guide-ingredients-h">
+          <b id="guide-ingredients-h">What ingredients are good for your skin barrier?</b>
+          <span>
+            You’ll see these again and again in this guide, on purpose. Each product lists its ingredients under these same
+            jobs, so you can see why they’re in there.
           </span>
-        </div>
+          <ul className="guide-ingredients">
+            {INGREDIENT_GROUPS.map(({ title, items, what }) => (
+              <li key={title}>
+                <b>{title}</b>
+                <span className="guide-ingredient-names">{items.join(", ")}</span>
+                <span>{what}</span>
+              </li>
+            ))}
+          </ul>
+          <details className="guide-fold">
+            <summary>Why these help</summary>
+            <span>
+              Your barrier is like a brick wall: skin cells are the bricks, and fats are the mortar holding them together.
+              When it’s damaged, the mortar has gaps, so water escapes and irritants get in. These ingredients fill the
+              gaps, put water back and calm skin while it heals.
+            </span>
+            <span>
+              Seeing them on a label is a good sign, not a guarantee. How much is in it and what else is in the formula
+              matter too, so still try one new product at a time.
+            </span>
+          </details>
+        </section>
+
+        <details className="guide-base guide-fold">
+          <summary>These are options, not the only products that can work.</summary>
+          <span>
+            I chose these because they’re made for sensitive skin and they’ve worked for me and my friends, so any of them
+            is a safe place to start. You don’t need the perfect one. Some suit drier skin, some suit oily skin, and some
+            may not work for you at all.
+          </span>
+          <span>
+            Other products may work even better. Just make sure they’re made for sensitive skin, and learn which ingredients
+            your skin reacts to. Niacinamide is a common one, so check the ingredient list before you buy.
+          </span>
+        </details>
 
         {/* Buttons, not #anchors: the hash holds the app's route. */}
         <nav className="row" aria-label="Steps">
@@ -124,7 +160,6 @@ export function GuideScreen() {
 
       {GUIDE_STEPS.map((s, i) => {
         const isOpen = !!open[s.id];
-        const restFits = s.rest.filter(fits).length;
         return (
           <section key={s.id} id={`step-${s.id}`} className="guide-step" aria-labelledby={`step-${s.id}-h`}>
             <div className="guide-step-head">
@@ -135,15 +170,12 @@ export function GuideScreen() {
                 <div className="row">
                   <h3 id={`step-${s.id}-h`}>{s.name}</h3>
                   <span className="chip accent">{s.when}</span>
+                  {s.later && <span className="chip">Add later</span>}
                 </div>
-                <p>
-                  <b>What this step does: </b>
-                  {s.does}
-                </p>
-                {s.why && (
+                {s.does && (
                   <p>
-                    <b>Why it’s needed: </b>
-                    {s.why}
+                    <b>What this step does: </b>
+                    {s.does}
                   </p>
                 )}
                 {s.note && (
@@ -152,24 +184,25 @@ export function GuideScreen() {
                     {s.note}
                   </p>
                 )}
-                {s.how && (
-                  <>
-                    <p>
-                      <b>How to do it:</b>
-                    </p>
-                    <ol className="guide-how-to">
-                      {s.how.map((h) => (
-                        <li key={h}>{h}</li>
-                      ))}
-                    </ol>
-                  </>
+                {s.why && (
+                  <details className="guide-fold">
+                    <summary>Why it’s needed</summary>
+                    <span>{s.why}</span>
+                  </details>
                 )}
               </div>
             </div>
 
+            {s.comingSoon && (
+              <div className="guide-soon">
+                <span className="chip">Coming soon</span>
+                <span>{s.comingSoon}</span>
+              </div>
+            )}
+
             <div className="guide-picks">
-              {sorted(s.picks).map((p) => (
-                <article key={p.name} className={`pick${fits(p) ? " fits" : ""}${faded(p) ? " faded" : ""}`}>
+              {s.picks.map((p) => (
+                <article key={p.name} className="pick">
                   {p.label && <div className="pick-label">{p.label}</div>}
                   <ProductPhoto p={p} />
                   <div className="pick-body">
@@ -177,28 +210,26 @@ export function GuideScreen() {
                       <span className="brand">{p.brand}</span>
                       <span className="name">{p.name}</span>
                     </div>
-                    {p.texture && (
-                      <span>
-                        <b>Texture: </b>
-                        {p.texture}
-                      </span>
-                    )}
                     {p.bestFor && (
                       <span>
                         <b>Best skin type: </b>
                         {p.bestFor}
                       </span>
                     )}
-                    <span>
-                      <b>Why: </b>
-                      {p.why}
-                    </span>
-                    <div className="pick-foot">
-                      <div className="row">
-                        <Badges p={p} fits={fits(p)} />
+                    <IngredientJobs p={p} byJob={s.byJob} />
+                    {p.why && (
+                      <span>
+                        <b>Also: </b>
+                        {p.why}
+                      </span>
+                    )}
+                    {p.unconfirmed && (
+                      <div className="pick-foot">
+                        <div className="row">
+                          <span className="badge unc">Name unconfirmed</span>
+                        </div>
                       </div>
-                      {p.source && <span className="source">{p.source}</span>}
-                    </div>
+                    )}
                   </div>
                 </article>
               ))}
@@ -208,7 +239,7 @@ export function GuideScreen() {
               <div className="guide-more">
                 <button type="button" aria-expanded={isOpen} onClick={() => setOpen({ ...open, [s.id]: !isOpen })}>
                   <span>
-                    {s.rest.length} more options{restFits > 0 && ` · ${restFits} fit your skin`}
+                    {s.rest.length} more options
                   </span>
                   <span className="chev" aria-hidden="true">
                     {isOpen ? "Hide −" : "Show +"}
@@ -216,22 +247,24 @@ export function GuideScreen() {
                 </button>
                 {isOpen && (
                   <ul>
-                    {sorted(s.rest).map((p) => (
-                      <li key={p.name} className={faded(p) ? "faded" : undefined}>
+                    {s.rest.map((p) => (
+                      <li key={p.name}>
                         <ProductPhoto p={p} small />
                         <div className="more-main">
                           {p.label && <span className="more-label">{p.label}</span>}
                           <span className="name">
                             {p.brand} {p.name}
                           </span>
-                          <span>{p.why}</span>
+                          <IngredientJobs p={p} byJob={s.byJob} />
+                          {p.why && <span>{p.why}</span>}
                         </div>
-                        <div className="more-side">
-                          <div className="row">
-                            <Badges p={p} fits={fits(p)} />
+                        {p.unconfirmed && (
+                          <div className="more-side">
+                            <div className="row">
+                              <span className="badge unc">Name unconfirmed</span>
+                            </div>
                           </div>
-                          {p.source && <span className="source">{p.source}</span>}
-                        </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -241,14 +274,6 @@ export function GuideScreen() {
           </section>
         );
       })}
-
-      <footer className="guide-foot muted">
-        <span>
-          A summary of creator advice, not medical advice. Follow for 4–6 weeks (8 if very damaged) before adding actives
-          back (v46 2:12).
-        </span>
-        <span>See a dermatologist if skin hurts, blisters, swells, or acne doesn’t improve.</span>
-      </footer>
     </div>
   );
 }
