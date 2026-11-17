@@ -19,4 +19,7 @@ frontend/dist/
 
 # Local database and uploaded photos
 backend/*.db
+# Copies of it (skinlog.db.bak, skinlog.db.backup-…) hold the same personal logs
+backend/*.db.*
+backend/*.db-*
 backend/data/
