@@ -2,7 +2,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/http";
-import { importLegacy } from "../api/legacy";
 import { createTag, listTags, updateTag } from "../api/tags";
 import { getSettings, updateSettings } from "../api/settings";
 import type { Settings } from "../api/types";
@@ -11,11 +10,6 @@ import { ToastProvider } from "../components/Toast";
 import { SettingsScreen } from "./SettingsScreen";
 
 vi.mock("../api/settings");
-// Only the network call; readLegacyBackup really reads localStorage.
-vi.mock("../api/legacy", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../api/legacy")>()),
-  importLegacy: vi.fn(),
-}));
 vi.mock("../api/tags");
 
 const SAVED: Settings = {
@@ -41,7 +35,6 @@ function renderScreen() {
 beforeEach(() => {
   vi.mocked(getSettings).mockReset().mockResolvedValue(SAVED);
   vi.mocked(updateSettings).mockReset();
-  vi.mocked(importLegacy).mockReset();
   vi.mocked(listTags).mockReset().mockResolvedValue([
     { id: 4, name: "Bad sleep", is_default: true, hidden: false },
     { id: 6, name: "Alcohol", is_default: true, hidden: false },
@@ -108,67 +101,6 @@ describe("SettingsProvider", () => {
   });
 });
 
-describe("Move this browser's data to the server", () => {
-  const stored = {
-    products: [
-      {
-        id: "a1",
-        brand: "CeraVe",
-        name: "Cleanser",
-        slot: "BOTH",
-        image: null,
-        startedOn: "2026-09-01",
-        stoppedOn: null,
-        notes: "",
-      },
-    ],
-    logs: [
-      {
-        id: "l1",
-        logDate: "2026-09-02",
-        rating: 2,
-        tags: [],
-        note: "",
-        usedProductIds: ["a1"],
-        photos: [],
-      },
-    ],
-  };
-
-  it("posts the stored data after confirming and shows the report", async () => {
-    localStorage.setItem("skin-test-log-v1", JSON.stringify(stored));
-    vi.mocked(importLegacy).mockResolvedValue({
-      products_created: 1,
-      days_created: 1,
-      days_skipped: 0,
-      photos_saved: 0,
-      warnings: ["Cleanser had a note, which products no longer keep"],
-    });
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    const user = userEvent.setup();
-    renderScreen();
-
-    await user.click(await screen.findByRole("button", { name: "Move this browser's data to the server" }));
-
-    expect(importLegacy).toHaveBeenCalledWith({ app: "skin-test-log", version: 1, ...stored });
-    const report = await screen.findByRole("status", { name: "Import report" });
-    expect(report).toHaveTextContent("1 product");
-    expect(report).toHaveTextContent("1 day");
-    expect(report).toHaveTextContent("Cleanser had a note");
-  });
-
-  it("does nothing without confirmation", async () => {
-    localStorage.setItem("skin-test-log-v1", JSON.stringify(stored));
-    vi.spyOn(window, "confirm").mockReturnValue(false);
-    const user = userEvent.setup();
-    renderScreen();
-
-    await user.click(await screen.findByRole("button", { name: "Move this browser's data to the server" }));
-
-    expect(importLegacy).not.toHaveBeenCalled();
-  });
-});
-
 describe("Tags", () => {
   it("lists every tag, marking defaults and hidden ones", async () => {
     renderScreen();
@@ -215,35 +147,5 @@ describe("Tags", () => {
     await user.type(screen.getByLabelText("New tag"), "Swam");
     await user.click(screen.getByRole("button", { name: "Add tag" }));
     expect(createTag).toHaveBeenCalledWith("Swam");
-  });
-});
-
-describe("SettingsScreen weather", () => {
-  it("saves the browser's location", async () => {
-    const getCurrentPosition = vi.fn((ok: PositionCallback) =>
-      ok({ coords: { latitude: 40.7128, longitude: -74.006 } } as GeolocationPosition),
-    );
-    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition } });
-    vi.mocked(updateSettings).mockResolvedValue({ ...SAVED, latitude: 40.71, longitude: -74.01 });
-    const user = userEvent.setup();
-    renderScreen();
-
-    await user.click(await screen.findByRole("button", { name: "Use my location" }));
-
-    expect(updateSettings).toHaveBeenCalledWith({ latitude: 40.7128, longitude: -74.006 });
-    expect(await screen.findByText("Using weather near 40.71, -74.01")).toBeInTheDocument();
-    vi.unstubAllGlobals();
-  });
-
-  it("removes a saved location", async () => {
-    vi.mocked(getSettings).mockResolvedValue({ ...SAVED, latitude: 40.71, longitude: -74.01 });
-    vi.mocked(updateSettings).mockResolvedValue(SAVED);
-    const user = userEvent.setup();
-    renderScreen();
-
-    await user.click(await screen.findByRole("button", { name: "Remove" }));
-
-    expect(updateSettings).toHaveBeenCalledWith({ latitude: null, longitude: null });
-    expect(await screen.findByRole("button", { name: "Use my location" })).toBeInTheDocument();
   });
 });

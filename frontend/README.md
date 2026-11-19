@@ -58,19 +58,16 @@ The old version of the app kept everything in this browser's `localStorage`
 exported backup file) to the server. That reader in `api/legacy.ts` is the only
 code that still touches `localStorage`.
 
-## Product photos
+## Product search
 
-Picking a product from the catalog stores a real photo of it when one can be
-found. The backend's `/api/products/search` asks Open Beauty Facts plus three
-Shopify-based K-beauty shops (Nudie Glow, Dodoskin, Soko Glam) — Open Beauty
-Facts alone barely covers Korean brands, and the shops send no CORS headers,
-so the browser can't ask them itself. Built-in items are looked up by brand
-and name when picked.
-
-The chosen photo is downloaded through `/api/products/image` (only from
-allow-listed hosts), padded to a square on a canvas and kept as a data URL like
-any uploaded photo, then uploaded. Without the backend, the catalog search falls back to Open Beauty
-Facts directly, and anything without a photo keeps its generated bottle.
+Picking a product from the catalog fills in its brand, name, type and (when
+known) ingredients. It never brings a photo along; the user can add or paste
+their own, and anything without one shows its generated bottle. The backend's
+`/api/products/search` asks Open Beauty Facts plus three Shopify-based K-beauty
+shops (Nudie Glow, Dodoskin, Soko Glam) — Open Beauty Facts alone barely covers
+Korean brands, and the shops send no CORS headers, so the browser can't ask
+them itself. Without the backend, the search falls back to Open Beauty Facts
+directly.
 
 ## Styling
 

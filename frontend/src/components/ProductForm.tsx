@@ -5,7 +5,6 @@ import type { Product, ProductInput, ProductType, SharedIngredient } from "../ap
 import { CATALOG, productArt } from "../lib/catalog";
 import { CATEGORY_TYPES, PRODUCT_TYPE_LABELS, PRODUCT_TYPES } from "../lib/constants";
 import { PRODUCT_IMAGE_MAX, resizeImage } from "../lib/image";
-import { loadProductPhoto } from "../lib/productPhoto";
 import type { CatalogItem } from "../types";
 import { CatalogSheet } from "./CatalogSheet";
 import { CameraIcon, ChevronRightIcon } from "./Icons";
@@ -53,9 +52,6 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
   const [saving, setSaving] = useState(false);
   const startRef = useRef<HTMLInputElement>(null);
   const brandRef = useRef<HTMLInputElement>(null);
-  // The catalog item whose photo is still downloading; cleared when the user
-  // picks their own image, so a late download can't overwrite it.
-  const photoFor = useRef<CatalogItem | null>(null);
 
   function changeName(next: string) {
     setName(next);
@@ -77,7 +73,6 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     setIngredients("");
     setImage(null);
     setImageChanged(false);
-    photoFor.current = null;
   }
 
   async function submit(e: React.FormEvent) {
@@ -102,31 +97,20 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
     }
   }
 
-  async function pickFromCatalog(item: CatalogItem) {
+  /** Fill in the details from the picked product; the photo is left for the user to add. */
+  function pickFromCatalog(item: CatalogItem) {
     setSheetOpen(false);
-    setPhoto(productArt(item)); // shown until the real photo arrives
     setBrand(item.brand);
     changeName(item.name);
     if (item.ingredients) setIngredients(item.ingredients);
     setType(CATEGORY_TYPES[item.category] ?? "other");
     toast(`Pick when you started, then select ${submitLabel}`);
     requestAnimationFrame(() => startRef.current?.focus());
-
-    photoFor.current = item;
-    let photo: string | null = null;
-    try {
-      photo = await loadProductPhoto(item);
-    } catch {
-      // Offline or the shop said no: the drawn bottle stays.
-    }
-    if (photo && photoFor.current === item) setPhoto(photo);
-    if (photoFor.current === item) photoFor.current = null;
   }
 
   /** Came from the picker with a product it didn't have: start the form from the search. */
   function addOwnFromCatalog(typed: string) {
     setSheetOpen(false);
-    photoFor.current = null;
     setPhoto(null);
     setBrand("");
     changeName(typed);
@@ -143,7 +127,6 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
       toast("Only images can be added.");
       return;
     }
-    photoFor.current = null;
     try {
       setPhoto(await resizeImage(file, PRODUCT_IMAGE_MAX, "crop"));
     } catch {
@@ -178,7 +161,6 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
       const file = item?.getAsFile();
       if (!file) return;
       e.preventDefault();
-      photoFor.current = null;
       try {
         setImage(await resizeImage(file, PRODUCT_IMAGE_MAX, "pad"));
         setImageChanged(true);
@@ -234,10 +216,7 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
             <button
               type="button"
               className="link-btn"
-              onClick={() => {
-                photoFor.current = null;
-                setPhoto(null);
-              }}
+              onClick={() => setPhoto(null)}
             >
               Remove
             </button>

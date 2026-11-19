@@ -1,4 +1,4 @@
-"""Search real skincare products — with photos — across a few online sources.
+"""Search real skincare products across a few online sources.
 
 Open Beauty Facts is a free, open database, but it barely covers Korean
 brands. So we also ask three K-beauty shops. They all run on Shopify, and
@@ -12,7 +12,6 @@ itself and this server does it instead.
 
 import re
 from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import urlparse
 
 import requests
 
@@ -28,12 +27,7 @@ SHOPIFY_STORES = [
 
 OPEN_BEAUTY_FACTS = "https://world.openbeautyfacts.org/cgi/search.pl"
 
-# The image proxy only fetches from these hosts, so it can't be pointed
-# at arbitrary URLs.
-IMAGE_HOSTS = {"cdn.shopify.com", "images.openbeautyfacts.org", *SHOPIFY_STORES}
-
 MAX_RESULTS = 24
-MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
 # Finished searches, keyed by the squashed query. The shops rate-limit
 # (HTTP 429) if asked too often, so a repeat search is answered from here.
@@ -121,18 +115,10 @@ def _search_shopify(store: str, query: str) -> list[dict]:
 
     results = []
     for p in products:
-        image = p.get("image") or (p.get("featured_image") or {}).get("url")
-        if not image:
-            continue
-        if image.startswith("//"):
-            image = "https:" + image
         brand = (p.get("vendor") or "").strip()
-        # Shopify resizes on the fly; 400px is all a thumbnail needs.
-        sep = "&" if "?" in image else "?"
         results.append({
             "brand": brand,
             "name": _clean_name(brand, p.get("title") or ""),
-            "image": f"{image}{sep}width=400",
             "source": store.removeprefix("www."),
             "ingredients": "",
         })
@@ -148,7 +134,7 @@ def _search_open_beauty_facts(query: str) -> list[dict]:
             "action": "process",
             "json": 1,
             "page_size": 24,
-            "fields": "product_name,brands,image_front_url,image_url,ingredients_text",
+            "fields": "product_name,brands,ingredients_text",
         },
         headers=HEADERS,
         timeout=TIMEOUT,
@@ -157,15 +143,13 @@ def _search_open_beauty_facts(query: str) -> list[dict]:
 
     results = []
     for p in response.json().get("products", []):
-        image = p.get("image_front_url") or p.get("image_url")
         name = (p.get("product_name") or "").strip()
-        if not image or not name:
+        if not name:
             continue
         brand = (p.get("brands") or "").split(",")[0].strip()
         results.append({
             "brand": brand,
             "name": _clean_name(brand, name),
-            "image": image,
             "source": "openbeautyfacts.org",
             "ingredients": (p.get("ingredients_text") or "").strip(),
         })
@@ -214,29 +198,3 @@ def search_products(query: str) -> list[dict]:
         _cache[cache_key] = merged
     return merged
 
-
-def fetch_image(url: str) -> tuple[bytes, str]:
-    """Download a product image from an allowed host.
-
-    Returns (bytes, content type). Raises ValueError for a URL we won't fetch.
-    """
-    parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in IMAGE_HOSTS:
-        raise ValueError("Image host not allowed")
-
-    # No redirects: a redirect could lead off the allowed hosts.
-    response = requests.get(
-        url, headers=HEADERS, timeout=TIMEOUT, stream=True, allow_redirects=False
-    )
-    response.raise_for_status()
-    if response.status_code != 200:
-        raise ValueError("Image moved")
-
-    content_type = response.headers.get("Content-Type", "")
-    if not content_type.startswith("image/"):
-        raise ValueError("Not an image")
-
-    data = response.raw.read(MAX_IMAGE_BYTES + 1, decode_content=True)
-    if len(data) > MAX_IMAGE_BYTES:
-        raise ValueError("Image too large")
-    return data, content_type

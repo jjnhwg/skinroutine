@@ -16,7 +16,7 @@ describe("CatalogSheet", () => {
     vi.mocked(searchProducts)
       .mockReset()
       .mockImplementation(async (q) => [
-        { brand: "Torriden", name: `${q} result`, image: "", source: "sokoglam.com", ingredients: "" },
+        { brand: "Torriden", name: `${q} result`, source: "sokoglam.com", ingredients: "" },
       ]);
   });
 

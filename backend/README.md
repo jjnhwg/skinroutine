@@ -119,5 +119,4 @@ The Vite dev server proxies `/api` here, so start this before `npm run dev`.
 
 A schedule is `{"kind": "daily"}` or `{"kind": "weekdays", "days": ["mon", "wed", "fri"]}`.
 Weekdays are always `"mon"`…`"sun"`.
-| GET    | `/api/products/search?q=`  | Real products with photos (422 if `q` is under 2 chars)  |
-| GET    | `/api/products/image?url=` | Proxies a product photo from an allow-listed host        |
+| GET    | `/api/products/search?q=`  | Real products, no photos (422 if `q` is under 2 chars)   |

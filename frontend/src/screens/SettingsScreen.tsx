@@ -1,20 +1,9 @@
 import { useState } from "react";
 import { ApiError } from "../api/http";
-import { importLegacy, readLegacyBackup } from "../api/legacy";
-import type { LegacyData } from "../api/legacy";
-import type { ImportReport, SettingsPatch } from "../api/types";
+import type { SettingsPatch } from "../api/types";
 import { useSettings } from "../api/useSettings";
-import { CycleSettings } from "../components/CycleSettings";
 import { TagSettings } from "../components/TagSettings";
-import { WeatherSettings } from "../components/WeatherSettings";
 import { useToast } from "../components/useToast";
-
-/** A backup file exported by the old browser-only app. */
-function looksLikeBackup(data: unknown): data is LegacyData {
-  if (typeof data !== "object" || data === null) return false;
-  const d = data as Partial<LegacyData> & { app?: unknown };
-  return d.app === "skin-test-log" && Array.isArray(d.products) && Array.isArray(d.logs);
-}
 
 const TIME_ZONES = Intl.supportedValuesOf("timeZone");
 
@@ -120,112 +109,14 @@ function InsightSettings() {
   );
 }
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
-/** Sends the old app's data (left in this browser, or a backup file) to the server. */
-function MoveToServer() {
-  const toast = useToast();
-  const [stored] = useState(readLegacyBackup);
-  const [report, setReport] = useState<ImportReport | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function send(data: LegacyData, source: string) {
-    const ok = confirm(
-      `Move ${plural(data.products.length, "product")} and ` +
-        `${plural(data.logs.length, "entry", "entries")} from ${source} to the server?\n\n` +
-        "Days already on the server are kept as they are. Running this twice is safe.",
-    );
-    if (!ok) return;
-    setBusy(true);
-    try {
-      setReport(
-        await importLegacy({ app: "skin-test-log", version: 1, products: data.products, logs: data.logs }),
-      );
-    } catch (err) {
-      toast(err instanceof ApiError ? err.detail : "Couldn't reach the server.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function sendFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    let data: unknown;
-    try {
-      data = JSON.parse(await file.text());
-    } catch {
-      toast("That file isn't valid JSON.");
-      return;
-    }
-    if (!looksLikeBackup(data)) {
-      toast("That doesn't look like a Skin Test Log backup.");
-      return;
-    }
-    await send(data, "that backup");
-  }
-
-  return (
-    <div className="card">
-      <h2>Data from the old app</h2>
-      <p className="muted" style={{ marginTop: 0 }}>
-        Your log now lives on the server. If the old version of this app kept entries in this
-        browser, or you exported a backup from it, move them over here. Old entries come with their
-        score, notes, products and photos; they never recorded zones.
-      </p>
-      <div className="row">
-        {stored && (
-          <button
-            type="button"
-            className="btn primary grow"
-            disabled={busy}
-            onClick={() => send(stored, "this browser")}
-          >
-            Move this browser's data to the server
-          </button>
-        )}
-        <label className="btn grow">
-          Move a backup file
-          <input
-            type="file"
-            accept="application/json,.json"
-            className="sr-only"
-            disabled={busy}
-            onChange={sendFile}
-          />
-        </label>
-      </div>
-      {report && (
-        <div className="warn" role="status" aria-label="Import report">
-          Moved {plural(report.products_created, "product")} and{" "}
-          {plural(report.days_created, "day")}, with {plural(report.photos_saved, "photo")}.
-          {report.days_skipped > 0 &&
-            ` Skipped ${plural(report.days_skipped, "day")} already on the server.`}
-          {report.warnings.length > 0 && (
-            <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-              {report.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function SettingsScreen() {
   return (
     <>
       <h2 className="page-title">Settings</h2>
-      <p className="page-sub">Time zone, insights, tags, weather and cycle.</p>
+      <p className="page-sub">Time zone, insights and tags.</p>
 
       <InsightSettings />
       <TagSettings />
-      <WeatherSettings />
-      <CycleSettings />
-      <MoveToServer />
     </>
   );
 }

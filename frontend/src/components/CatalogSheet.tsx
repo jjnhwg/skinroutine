@@ -18,7 +18,6 @@ const OPEN_BEAUTY_FACTS =
 interface OpenBeautyProduct {
   product_name?: string;
   brands?: string;
-  image_front_url?: string;
   ingredients_text?: string;
 }
 
@@ -29,7 +28,7 @@ interface OpenBeautyProduct {
 async function searchOpenBeautyFacts(term: string): Promise<ProductSearchResult[]> {
   const url = `${OPEN_BEAUTY_FACTS}${encodeURIComponent(
     term,
-  )}&search_simple=1&action=process&json=1&page_size=24&fields=product_name,brands,image_front_url,ingredients_text`;
+  )}&search_simple=1&action=process&json=1&page_size=24&fields=product_name,brands,ingredients_text`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(String(res.status));
   const data = (await res.json()) as { products?: OpenBeautyProduct[] };
@@ -38,13 +37,12 @@ async function searchOpenBeautyFacts(term: string): Promise<ProductSearchResult[
     .map((p) => ({
       brand: (p.brands ?? "").split(",")[0].trim(),
       name: (p.product_name as string).trim(),
-      image: p.image_front_url ?? "",
       source: "openbeautyfacts.org",
       ingredients: (p.ingredients_text ?? "").trim(),
     }));
 }
 
-/** Turn search results into catalog items; generated art stands in for a missing photo. */
+/** Turn search results into catalog items, shown with generated bottle art. */
 function toCatalogItems(rows: ProductSearchResult[]): CatalogItem[] {
   const seen = new Set<string>();
   return rows
@@ -65,7 +63,6 @@ function toCatalogItems(rows: ProductSearchResult[]): CatalogItem[] {
         slot: category === "Sunscreen" ? ("AM" as const) : ("BOTH" as const),
         color: PASTELS[(p.brand.length + p.name.length + i) % PASTELS.length],
         label: (p.brand || p.name).split(/\s+/)[0].slice(0, 8).toUpperCase(),
-        imageUrl: p.image || undefined,
         source: p.source,
         ingredients: p.ingredients || undefined,
       };
@@ -180,13 +177,9 @@ export function CatalogSheet({ onPick, onAddOwn, onClose }: CatalogSheetProps) {
   const item = (it: CatalogItem, key: string) => (
     <button key={key} type="button" className="cat-item" onClick={() => onPick(it)}>
       <img
-        src={it.imageUrl ?? productArt(it)}
+        src={productArt(it)}
         alt=""
         loading="lazy"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = productArt(it);
-        }}
       />
       <span>
         <span className="brand">{it.brand}</span>

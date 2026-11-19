@@ -1,7 +1,6 @@
 """Catalog routes, with the network calls replaced so tests stay offline."""
 
 import pytest
-from requests import RequestException
 
 from skinlog.routers import catalog
 
@@ -13,7 +12,7 @@ def searched(monkeypatch) -> list[str]:
 
     def fake_search(query: str) -> list[dict]:
         queries.append(query)
-        return [{"brand": "COSRX", "name": "Snail Mucin", "image": "https://cdn.shopify.com/a.jpg"}]
+        return [{"brand": "COSRX", "name": "Snail Mucin"}]
 
     monkeypatch.setattr(catalog, "search_products", fake_search)
     return queries
@@ -24,7 +23,7 @@ def test_search_returns_products(client, searched):
 
     assert response.status_code == 200
     assert response.json() == {
-        "products": [{"brand": "COSRX", "name": "Snail Mucin", "image": "https://cdn.shopify.com/a.jpg"}]
+        "products": [{"brand": "COSRX", "name": "Snail Mucin"}]
     }
     assert searched == ["snail"]
 
@@ -44,36 +43,3 @@ def test_search_rejects_missing_query(client, searched):
     assert response.status_code == 422
     assert searched == []
 
-
-def test_image_passes_bytes_through(client, monkeypatch):
-    monkeypatch.setattr(catalog, "fetch_image", lambda url: (b"\x89PNG", "image/png"))
-
-    response = client.get("/api/products/image", params={"url": "https://cdn.shopify.com/a.png"})
-
-    assert response.status_code == 200
-    assert response.content == b"\x89PNG"
-    assert response.headers["content-type"] == "image/png"
-
-
-def test_image_rejects_bad_url(client, monkeypatch):
-    def refuse(url: str):
-        raise ValueError("That image host isn't allowed")
-
-    monkeypatch.setattr(catalog, "fetch_image", refuse)
-
-    response = client.get("/api/products/image", params={"url": "https://evil.example/a.png"})
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == "That image host isn't allowed"
-
-
-def test_image_reports_download_failure(client, monkeypatch):
-    def fail(url: str):
-        raise RequestException("timed out")
-
-    monkeypatch.setattr(catalog, "fetch_image", fail)
-
-    response = client.get("/api/products/image", params={"url": "https://cdn.shopify.com/a.png"})
-
-    assert response.status_code == 502
-    assert response.json()["detail"] == "Couldn't download the image"
