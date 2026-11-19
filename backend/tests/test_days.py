@@ -130,6 +130,25 @@ def test_skin_score_is_optional(client, frozen_now):
     assert day["skin_score"] is None
 
 
+def test_events_are_saved_in_the_order_picked(client, frozen_now):
+    body = checkin(events=["forming", "new_spot", "forming"])
+
+    assert client.put(f"/api/days/{MONDAY}", json=body).status_code == 200
+    assert client.get(f"/api/days/{MONDAY}").json()["events"] == ["forming", "new_spot"]
+
+
+def test_resaving_without_a_score_keeps_the_old_one(client, frozen_now):
+    client.put(f"/api/days/{MONDAY}", json=checkin(skin_score=4))
+    body = checkin(events=["healing"])
+    del body["skin_score"]
+
+    client.put(f"/api/days/{MONDAY}", json=body)
+
+    day = client.get(f"/api/days/{MONDAY}").json()
+    assert day["skin_score"] == 4
+    assert day["events"] == ["healing"]
+
+
 def test_same_product_morning_and_night(client, routine):
     uses = [
         {"product_id": routine["cleanser"], "time_of_day": "am"},
@@ -191,6 +210,8 @@ def test_saved_day_keeps_its_own_spots(client, frozen_now):
         {"stages": {"ear": {"active": 1}}},
         {"zones": {"chin": 1}},
         {"conditions": {"chin": ["itchy"]}},
+        {"events": ["exploded"]},
+        {"events": ["nothing_new", "new_spot"]},
         {"conditions": {"chin": ["forming"]}},
         {"conditions": {"ear": ["dry"]}},
         {"product_uses": [{"product_id": 1, "time_of_day": "noon"}]},
@@ -228,15 +249,15 @@ def test_put_upgrades_other_statuses_to_logged(client, db_session, frozen_now, s
 
 
 def test_range_returns_only_saved_days_in_range(client, frozen_now):
-    for day, score in [("2026-10-01", 1), ("2026-10-03", 4), ("2026-10-08", 2)]:
-        client.put(f"/api/days/{day}", json=checkin(skin_score=score))
+    for day, events in [("2026-10-01", []), ("2026-10-03", ["new_spot"]), ("2026-10-08", ["healing"])]:
+        client.put(f"/api/days/{day}", json=checkin(events=events))
 
     response = client.get("/api/days", params={"from": "2026-10-02", "to": "2026-10-08"})
 
     assert response.status_code == 200
     assert response.json() == [
-        {"date": "2026-10-03", "status": "logged", "skin_score": 4, "total_breakouts": 6, "has_photos": False},
-        {"date": "2026-10-08", "status": "logged", "skin_score": 2, "total_breakouts": 6, "has_photos": False},
+        {"date": "2026-10-03", "status": "logged", "skin_score": 2, "events": ["new_spot"], "total_breakouts": 6, "has_photos": False},
+        {"date": "2026-10-08", "status": "logged", "skin_score": 2, "events": ["healing"], "total_breakouts": 6, "has_photos": False},
     ]
 
 

@@ -116,6 +116,15 @@ class Condition(StrEnum):
     OILY = "oily"
 
 
+class DayEvent(StrEnum):
+    """What happened to the skin today, picked on the log in place of an overall score."""
+
+    NEW_SPOT = "new_spot"
+    FORMING = "forming"
+    HEALING = "healing"
+    NOTHING_NEW = "nothing_new"
+
+
 class DayLog(Base):
     __tablename__ = "day_logs"
     __table_args__ = (UniqueConstraint("user_id", "date"),)
@@ -124,7 +133,10 @@ class DayLog(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     date: Mapped[date] = mapped_column(Date)
     status: Mapped[DayStatus] = mapped_column(_enum(DayStatus))
+    # Retired 1–5 overall score: kept so old values aren't lost, no longer shown.
     skin_score: Mapped[int | None]
+    # What happened today, comma separated DayEvent values ("new_spot,forming"); "" for none.
+    events: Mapped[str] = mapped_column(String(100), default="", server_default="")
     # Retired 0–3 ratings: kept so old values aren't lost, but no longer read or written.
     dryness: Mapped[int | None]
     redness: Mapped[int | None]

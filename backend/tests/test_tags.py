@@ -20,7 +20,8 @@ def test_defaults_exist(client):
     tags = client.get("/api/tags").json()
 
     assert [t["name"] for t in tags] == DEFAULT_TAGS
-    assert len(DEFAULT_TAGS) == 7
+    assert len(DEFAULT_TAGS) == 6
+    assert "No shower after gym" not in DEFAULT_TAGS
     assert all(t["is_default"] and not t["hidden"] for t in tags)
 
 
@@ -28,7 +29,7 @@ def test_ensure_defaults_is_idempotent(db_session):
     ensure_default_tags(db_session, 1)
     db_session.commit()
 
-    assert db_session.query(Tag).filter_by(user_id=1).count() == 7
+    assert db_session.query(Tag).filter_by(user_id=1).count() == 6
 
 
 def test_create_rename_and_hide(client):

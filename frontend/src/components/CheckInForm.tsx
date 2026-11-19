@@ -1,13 +1,13 @@
 import { useState } from "react";
-import type { Pin, PinKind } from "../api/types";
-import { CONDITIONS, RATING_LABELS, RATINGS } from "../lib/constants";
+import type { DayEvent, Pin, PinKind } from "../api/types";
+import { CONDITIONS, DAY_EVENT_LABELS, DAY_EVENTS } from "../lib/constants";
 import { prettyDate } from "../lib/dates";
 import { NEXT_STAGES, PIN_LABELS, isCondition, pinSummary, STAGE_LABELS, STAGES } from "../lib/stages";
 import { FaceMap } from "./FaceMap";
 
 export interface CheckIn {
-  /** Optional overall score; null when not picked. */
-  skin_score: number | null;
+  /** What happened today; optional, any mix except "nothing_new" goes alone. */
+  events: DayEvent[];
   pins: Pin[];
 }
 
@@ -23,7 +23,7 @@ const hint = (kind: PinKind) =>
 
 /**
  * Pick what you're marking, then tap the face exactly where it is. Tap a pin to move
- * it on a stage, change it or remove it. Overall score is optional. Controlled.
+ * it on a stage, change it or remove it. What happened today is optional. Controlled.
  */
 export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) {
   const [kind, setKind] = useState<PinKind>("active");
@@ -47,6 +47,16 @@ export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) 
     setSelected(null);
   };
   const summary = pinSummary(pins);
+
+  // "Nothing new" and the others rule each other out; tapping a picked one unpicks it.
+  const toggleEvent = (event: DayEvent) => {
+    const events = value.events;
+    let next: DayEvent[];
+    if (events.includes(event)) next = events.filter((e) => e !== event);
+    else if (event === "nothing_new") next = ["nothing_new"];
+    else next = [...events.filter((e) => e !== "nothing_new"), event];
+    onChange({ ...value, events: next });
+  };
 
   const kindChip = (k: PinKind) => (
     <button
@@ -153,23 +163,21 @@ export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) 
         </div>
       )}
 
-      <h2 id="score-h" style={{ marginTop: 20 }}>
-        Overall <span className="muted" style={{ fontWeight: 500, fontSize: 14 }}>(optional)</span>
+      <h2 id="events-h" style={{ marginTop: 20 }}>
+        Overall <span className="muted" style={{ fontWeight: 500, fontSize: 14 }}>(pick any, optional)</span>
       </h2>
-      <div className="ratings" role="group" aria-labelledby="score-h">
-        {RATINGS.map((r) => (
+      <div className="chips" role="group" aria-labelledby="events-h">
+        {DAY_EVENTS.map((event) => (
           <button
-            key={r}
+            key={event}
             type="button"
-            className="rating"
-            aria-pressed={value.skin_score === r}
-            aria-label={`${r} — ${RATING_LABELS[r]}`}
-            style={{ ["--rc" as string]: `var(--r${r})` }}
-            onClick={() => onChange({ ...value, skin_score: value.skin_score === r ? null : r })}
+            className="toggle event-chip"
+            data-event={event}
+            aria-pressed={value.events.includes(event)}
+            onClick={() => toggleEvent(event)}
           >
-            <span className="dot" style={{ background: `var(--r${r})` }} aria-hidden="true" />
-            {r}
-            <small>{RATING_LABELS[r]}</small>
+            <span className="event-swatch" aria-hidden="true" />
+            {DAY_EVENT_LABELS[event]}
           </button>
         ))}
       </div>

@@ -24,7 +24,7 @@ const RETINOL = product(2, "Retinol", { type: "treatment" });
 
 const SAVED = day("2026-10-05", {
   status: "logged",
-  skin_score: 4,
+  events: ["forming", "healing"],
   pins: [
     { x: 0.5, y: 0.82, kind: "active" },
     { x: 0.52, y: 0.8, kind: "red" },
@@ -55,7 +55,9 @@ describe("LogScreen", () => {
     vi.mocked(getDay).mockResolvedValue(SAVED);
     renderWithApp(<LogScreen date="2026-10-05" />);
 
-    expect(await screen.findByRole("button", { name: "4 — Rough" })).toHaveAttribute("aria-pressed", "true");
+    expect(await screen.findByRole("button", { name: "Something's forming" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Healing up" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Nothing new" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Active pimple, pin 1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Red, pin 2" })).toBeInTheDocument();
     expect(screen.getByLabelText("Notes")).toHaveValue("Spot on chin");
@@ -81,7 +83,7 @@ describe("LogScreen", () => {
     await user.click(screen.getByRole("button", { name: "Update entry" }));
 
     expect(saveDay).toHaveBeenCalledWith("2026-10-05", {
-      skin_score: 4,
+      events: ["forming", "healing"],
       pins: [
         { x: 0.5, y: 0.82, kind: "active" },
         { x: 0.52, y: 0.8, kind: "red" },
@@ -146,7 +148,7 @@ describe("LogScreen", () => {
     expect(saveDay).toHaveBeenCalledWith("2026-10-09", expect.objectContaining({ period: true }));
   });
 
-  it("saves without a skin score", async () => {
+  it("saves without picking what happened", async () => {
     const fresh = day("2026-10-09", { planned: { am: [1], pm: [] } });
     vi.mocked(getDay).mockResolvedValue(fresh);
     vi.mocked(saveDay).mockResolvedValue({ ...fresh, status: "logged" });
@@ -155,7 +157,7 @@ describe("LogScreen", () => {
 
     await user.click(await screen.findByRole("button", { name: "Save entry" }));
 
-    expect(saveDay).toHaveBeenCalledWith("2026-10-09", expect.objectContaining({ skin_score: null }));
+    expect(saveDay).toHaveBeenCalledWith("2026-10-09", expect.objectContaining({ events: [] }));
     expect(await screen.findByText("Entry saved")).toBeInTheDocument();
   });
 
@@ -194,7 +196,7 @@ describe("LogScreen photos", () => {
 
   it("holds a photo picked before saving, then uploads it after the save", async () => {
     const fresh = day("2026-10-09");
-    const savedNow = day("2026-10-09", { status: "logged", skin_score: 2 });
+    const savedNow = day("2026-10-09", { status: "logged", events: ["nothing_new"] });
     vi.mocked(getDay).mockResolvedValue(fresh);
     vi.mocked(saveDay).mockResolvedValue(savedNow);
     vi.mocked(uploadDayPhoto).mockResolvedValue({
@@ -207,7 +209,7 @@ describe("LogScreen photos", () => {
     await user.upload(await screen.findByLabelText("Take or choose a left photo"), photo());
     expect(uploadDayPhoto).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "2 — Good" }));
+    await user.click(screen.getByRole("button", { name: "Nothing new" }));
     await user.click(screen.getByRole("button", { name: "Save entry" }));
 
     await waitFor(() => expect(uploadDayPhoto).toHaveBeenCalledTimes(1));

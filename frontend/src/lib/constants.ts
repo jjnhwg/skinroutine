@@ -1,15 +1,18 @@
-import type { Condition, ProductType, Weekday, ZoneName } from "../api/types";
-import type { Rating } from "../types";
+import type { Condition, DayEvent, ProductType, Weekday, ZoneName } from "../api/types";
 
-export const RATING_LABELS: Record<Rating, string> = {
-  1: "Clear",
-  2: "Good",
-  3: "Okay",
-  4: "Rough",
-  5: "Flare-up",
+/** What happened today, worst first: a day's calendar color comes from the first one it has. */
+export const DAY_EVENTS: DayEvent[] = ["new_spot", "forming", "healing", "nothing_new"];
+
+export const DAY_EVENT_LABELS: Record<DayEvent, string> = {
+  new_spot: "New pimple showed up",
+  forming: "Something's forming",
+  healing: "Healing up",
+  nothing_new: "Nothing new",
 };
 
-export const RATINGS: Rating[] = [1, 2, 3, 4, 5];
+/** The day's worst event, which colors its calendar cell; null when none was picked. */
+export const worstEvent = (events: DayEvent[]): DayEvent | null =>
+  DAY_EVENTS.find((e) => events.includes(e)) ?? null;
 
 export const ZONE_LABELS: Record<ZoneName, string> = {
   forehead: "Forehead",

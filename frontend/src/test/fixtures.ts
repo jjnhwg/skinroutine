@@ -34,7 +34,7 @@ export function day(date: string, fields: Partial<Day> = {}): Day {
   return {
     date,
     status: "none",
-    skin_score: null,
+    events: [],
     pins: [],
     stages: NO_STAGES,
     stages_from: null,

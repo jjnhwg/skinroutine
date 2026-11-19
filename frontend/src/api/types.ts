@@ -68,15 +68,6 @@ export type Routine = Record<TimeOfDay, RoutineItem[]>;
 /** Product ids planned for a date, in routine order. */
 export type Planned = Record<TimeOfDay, number[]>;
 
-/** What POST /api/import/legacy did. */
-export interface ImportReport {
-  products_created: number;
-  days_created: number;
-  days_skipped: number;
-  photos_saved: number;
-  warnings: string[];
-}
-
 export type ZoneName = "forehead" | "temples" | "nose" | "left_cheek" | "right_cheek" | "chin" | "jawline";
 
 /** Where a spot is in its life, from a clogged pore to the mark it leaves. */
@@ -124,11 +115,13 @@ export interface DayTrial {
   note: string;
 }
 
+/** What happened to the skin today; "nothing_new" is never picked with the others. */
+export type DayEvent = "new_spot" | "forming" | "healing" | "nothing_new";
+
 export interface Day {
   date: string;
   status: DayStatus;
-  /** 1 (clear) … 5 (flare-up); optional. */
-  skin_score: number | null;
+  events: DayEvent[];
   /** Spots and conditions on the face map; stages and conditions are these counted per zone. */
   pins: Pin[];
   stages: ZoneStages;
@@ -150,7 +143,7 @@ export interface Day {
 }
 
 export interface DayInput {
-  skin_score: number | null;
+  events: DayEvent[];
   /** The backend files these per zone. */
   pins: Pin[];
   notes: string;
@@ -165,7 +158,7 @@ export interface DayInput {
 export interface DaySummary {
   date: string;
   status: Exclude<DayStatus, "none">;
-  skin_score: number | null;
+  events: DayEvent[];
   total_breakouts: number;
   has_photos: boolean;
 }

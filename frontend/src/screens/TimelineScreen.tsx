@@ -7,9 +7,8 @@ import { useTags } from "../api/useTags";
 import { DayDetail } from "../components/DayDetail";
 import { CameraIcon, ChevronLeftIcon, ChevronRightIcon } from "../components/Icons";
 import { PhotoCompare } from "../components/PhotoCompare";
-import { RATING_LABELS, RATINGS, WEEKDAYS } from "../lib/constants";
+import { DAY_EVENT_LABELS, DAY_EVENTS, WEEKDAYS, worstEvent } from "../lib/constants";
 import { addDays, fmt, prettyDate } from "../lib/dates";
-import type { Rating } from "../types";
 
 /** "YYYY-MM" of a YYYY-MM-DD date. */
 const monthOf = (date: string) => date.slice(0, 7);
@@ -34,11 +33,12 @@ function gridFor(month: string): string[] {
 
 function cellClass(date: string, today: string, summary: DaySummary | undefined): string {
   const classes = ["cal-day"];
+  const worst = summary ? worstEvent(summary.events) : null;
   if (date > today) classes.push("future");
   else if (!summary) classes.push("unlogged");
   else if (summary.status === "gap") classes.push("gap");
-  else if (summary.status === "routine_confirmed" && summary.skin_score === null) classes.push("confirmed");
-  else if (summary.skin_score !== null) classes.push(`score-${summary.skin_score}`);
+  else if (summary.status === "routine_confirmed") classes.push("confirmed");
+  else if (worst) classes.push(`ev-${worst}`);
   else classes.push("logged");
   if (date === today) classes.push("today");
   return classes.join(" ");
@@ -47,11 +47,10 @@ function cellClass(date: string, today: string, summary: DaySummary | undefined)
 function describe(summary: DaySummary | undefined): string {
   if (!summary) return "not logged";
   if (summary.status === "gap") return "skipped";
-  if (summary.status === "routine_confirmed" && summary.skin_score === null) return "routine confirmed";
-  if (summary.skin_score === null) {
-    return `logged, ${summary.total_breakouts} breakout${summary.total_breakouts === 1 ? "" : "s"}`;
-  }
-  return `${summary.skin_score} — ${RATING_LABELS[summary.skin_score as Rating]}`;
+  if (summary.status === "routine_confirmed") return "routine confirmed";
+  const breakouts = `${summary.total_breakouts} breakout${summary.total_breakouts === 1 ? "" : "s"}`;
+  if (summary.events.length === 0) return `logged, ${breakouts}`;
+  return `${summary.events.map((e) => DAY_EVENT_LABELS[e]).join(", ")}; ${breakouts}`;
 }
 
 export function TimelineScreen() {
@@ -142,9 +141,9 @@ export function TimelineScreen() {
         </div>
 
         <div className="legend">
-          {RATINGS.map((r) => (
-            <span key={r} style={{ ["--c" as string]: `var(--r${r})` }}>
-              {RATING_LABELS[r]}
+          {DAY_EVENTS.map((e) => (
+            <span key={e} style={{ ["--c" as string]: `var(--ev-${e})` }}>
+              {DAY_EVENT_LABELS[e]}
             </span>
           ))}
           <span className="legend-confirmed">Routine only</span>

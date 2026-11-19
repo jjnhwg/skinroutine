@@ -7,7 +7,7 @@ import { CheckInForm } from "./CheckInForm";
 import type { CheckIn } from "./CheckInForm";
 
 function Harness({ initial, carriedFrom }: { initial: Partial<CheckIn>; carriedFrom?: string }) {
-  const [value, setValue] = useState<CheckIn>({ skin_score: null, pins: [], ...initial });
+  const [value, setValue] = useState<CheckIn>({ events: [], pins: [], ...initial });
   return (
     <>
       <CheckInForm value={value} onChange={setValue} carriedFrom={carriedFrom} />
@@ -20,15 +20,27 @@ const current = (): CheckIn => JSON.parse(screen.getByTestId("value").textConten
 const CHIN = { x: 0.5, y: 0.82 };
 
 describe("CheckInForm", () => {
-  it("sets and unsets the optional skin score", async () => {
+  it("picks any mix of what happened, and unpicks on a second tap", async () => {
     const user = userEvent.setup();
     render(<Harness initial={{}} />);
 
-    await user.click(screen.getByRole("button", { name: "4 — Rough" }));
-    expect(current().skin_score).toBe(4);
+    await user.click(screen.getByRole("button", { name: "New pimple showed up" }));
+    await user.click(screen.getByRole("button", { name: "Healing up" }));
+    expect(current().events).toEqual(["new_spot", "healing"]);
 
-    await user.click(screen.getByRole("button", { name: "4 — Rough" }));
-    expect(current().skin_score).toBeNull();
+    await user.click(screen.getByRole("button", { name: "New pimple showed up" }));
+    expect(current().events).toEqual(["healing"]);
+  });
+
+  it("keeps \"Nothing new\" apart from the others", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={{ events: ["forming", "healing"] }} />);
+
+    await user.click(screen.getByRole("button", { name: "Nothing new" }));
+    expect(current().events).toEqual(["nothing_new"]);
+
+    await user.click(screen.getByRole("button", { name: "Something's forming" }));
+    expect(current().events).toEqual(["forming"]);
   });
 
   it("pins the picked kind exactly where the face is tapped", async () => {

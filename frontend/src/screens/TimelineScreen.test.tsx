@@ -21,15 +21,15 @@ function cell(date: string): HTMLElement {
 
 beforeEach(() => {
   vi.mocked(listDays).mockReset().mockResolvedValue([
-    { date: "2026-10-01", status: "logged", skin_score: 4, total_breakouts: 3, has_photos: true },
-    { date: "2026-10-02", status: "routine_confirmed", skin_score: null, total_breakouts: 0, has_photos: false },
-    { date: "2026-10-03", status: "gap", skin_score: null, total_breakouts: 0, has_photos: false },
-    { date: "2026-10-05", status: "logged", skin_score: null, total_breakouts: 2, has_photos: false },
+    { date: "2026-10-01", status: "logged", events: ["healing", "new_spot"], total_breakouts: 3, has_photos: true },
+    { date: "2026-10-02", status: "routine_confirmed", events: [], total_breakouts: 0, has_photos: false },
+    { date: "2026-10-03", status: "gap", events: [], total_breakouts: 0, has_photos: false },
+    { date: "2026-10-05", status: "logged", events: [], total_breakouts: 2, has_photos: false },
   ]);
   vi.mocked(getDay).mockReset().mockResolvedValue(
     day("2026-10-01", {
       status: "logged",
-      skin_score: 4,
+      events: ["new_spot"],
       stages: { ...NO_STAGES, chin: { ...NO_SPOTS, active: 3 } },
       total_breakouts: 3,
       notes: "Spot on chin",
@@ -58,10 +58,11 @@ describe("TimelineScreen", () => {
     await waitFor(() => expect(listDays).toHaveBeenCalledWith("2026-09-28", "2026-11-01"));
   });
 
-  it("colours each day by status and score", async () => {
+  it("colours each day by status and its worst event", async () => {
     renderWithApp(<TimelineScreen />);
-    await waitFor(() => expect(cell("2026-10-01")).toHaveClass("score-4"));
+    await waitFor(() => expect(cell("2026-10-01")).toHaveClass("ev-new_spot"));
 
+    expect(cell("2026-10-01")).toHaveAccessibleName(/Healing up, New pimple showed up; 3 breakouts/);
     expect(within(cell("2026-10-01")).getByTestId("photo-dot")).toBeInTheDocument();
     expect(cell("2026-10-02")).toHaveClass("confirmed");
     expect(cell("2026-10-03")).toHaveClass("gap");
@@ -77,13 +78,13 @@ describe("TimelineScreen", () => {
   it("opens a day's detail with everything logged", async () => {
     const user = userEvent.setup();
     renderWithApp(<TimelineScreen />);
-    await waitFor(() => expect(cell("2026-10-01")).toHaveClass("score-4"));
+    await waitFor(() => expect(cell("2026-10-01")).toHaveClass("ev-new_spot"));
 
     await user.click(cell("2026-10-01"));
 
     const sheet = await screen.findByRole("dialog");
     expect(getDay).toHaveBeenCalledWith("2026-10-01");
-    expect(await within(sheet).findByText("4 — Rough")).toBeInTheDocument();
+    expect(await within(sheet).findByText("New pimple showed up")).toBeInTheDocument();
     expect(within(sheet).getByText("3 active", { exact: false })).toHaveTextContent("Chin: 3 active");
     expect(within(sheet).getByText("Cleanser")).toBeInTheDocument();
     expect(within(sheet).getByText("Retinol")).toBeInTheDocument();
@@ -119,7 +120,7 @@ describe("Timeline photo comparison", () => {
   it("opens from a day with that day on the left", async () => {
     const user = userEvent.setup();
     renderWithApp(<TimelineScreen />);
-    await waitFor(() => expect(cell("2026-10-01")).toHaveClass("score-4"));
+    await waitFor(() => expect(cell("2026-10-01")).toHaveClass("ev-new_spot"));
     await user.click(cell("2026-10-01"));
 
     await user.click(await screen.findByRole("button", { name: "Compare with…" }));

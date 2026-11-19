@@ -23,7 +23,7 @@ const NO_PENDING: Record<Angle, string | null> = { front: null, left: null, righ
 /** The editable parts of a day, filled from what the server sent. */
 function checkInFrom(day: Day): CheckIn {
   return {
-    skin_score: day.skin_score,
+    events: day.events,
     pins: day.pins,
   };
 }
@@ -116,7 +116,7 @@ export function LogScreen({ date }: { date: string }) {
     setError("");
     try {
       const result = await saveDay(date, {
-        skin_score: checkIn.skin_score,
+        events: checkIn.events,
         pins: checkIn.pins,
         notes: notes.trim(),
         product_uses: uses,

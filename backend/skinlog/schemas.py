@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from skinlog import clock
-from skinlog.models import Condition, Product, ProductType
+from skinlog.models import Condition, DayEvent, Product, ProductType
 from skinlog.photos import link_expiry, link_secret, stamp_for
 from skinlog.services import trials
 
@@ -202,7 +202,10 @@ class DayIn(BaseModel):
     # Forbid unknown fields so a client still sending the old "zones" fails loudly.
     model_config = ConfigDict(extra="forbid")
 
+    # Retired: only saved when sent, so re-saving an old day keeps its score.
     skin_score: int | None = Field(None, ge=1, le=5)
+    # What happened today; any mix, except "nothing_new" goes alone.
+    events: list[DayEvent] = []
     # Exact spots on the face map. When sent, stages and conditions are filed from
     # them per zone; leave pins out to log counts per zone instead.
     pins: list[Pin] | None = Field(None, max_length=400)
@@ -218,6 +221,8 @@ class DayIn(BaseModel):
     def _pins_or_counts(self) -> "DayIn":
         if self.pins is not None and {"stages", "conditions"} & self.model_fields_set:
             raise ValueError("Send pins or stages and conditions, not both")
+        if DayEvent.NOTHING_NEW in self.events and len(set(self.events)) > 1:
+            raise ValueError("\"Nothing new\" can't be picked with other events")
         return self
 
 
@@ -244,6 +249,7 @@ class DayOut(BaseModel):
     date: date
     status: str
     skin_score: int | None
+    events: list[DayEvent]
     # Spots and conditions on the face map. Days logged as counts only get their
     # pins drawn around each zone's middle.
     pins: list[Pin]
@@ -273,6 +279,7 @@ class DaySummary(BaseModel):
     date: date
     status: str
     skin_score: int | None
+    events: list[DayEvent]
     total_breakouts: int
     has_photos: bool
 

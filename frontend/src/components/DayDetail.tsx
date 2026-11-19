@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { getDay } from "../api/days";
 import type { Angle, Day, Product, Tag, TimeOfDay, ZoneName } from "../api/types";
-import { CONDITION_LABELS, RATING_LABELS, ZONE_LABELS } from "../lib/constants";
-import type { Rating } from "../types";
+import { CONDITION_LABELS, DAY_EVENT_LABELS, ZONE_LABELS } from "../lib/constants";
 import { LONG_DATE, prettyDate } from "../lib/dates";
 import { spotSummary } from "../lib/stages";
 import { FaceMap } from "./FaceMap";
@@ -89,14 +88,12 @@ export function DayDetail({ date, products, tags, onClose, onCompare }: DayDetai
               {day.imported && (
                 <p className="muted">Imported from the old app — spots weren't recorded.</p>
               )}
-              {day.skin_score !== null && (
-                <div className="detail-row">
-                  <span className="dot" style={{ background: `var(--r${day.skin_score})` }} />
-                  <b>
-                    {day.skin_score} — {RATING_LABELS[day.skin_score as Rating]}
-                  </b>
+              {day.events.map((e) => (
+                <div key={e} className="detail-row">
+                  <span className="dot" style={{ background: `var(--ev-${e})` }} />
+                  <b>{DAY_EVENT_LABELS[e]}</b>
                 </div>
-              )}
+              ))}
               {!day.imported && day.status === "logged" && (
                 <p className="detail-line">
                   <b>{day.total_breakouts}</b> breakout{day.total_breakouts === 1 ? "" : "s"}

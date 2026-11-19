@@ -10,7 +10,6 @@ from skinlog.models import Tag, User
 DEFAULT_TAGS = [
     "Dirty pillowcase",
     "Ate unhealthy/greasy",
-    "No shower after gym",
     "Bad sleep",
     "Stressed",
     "Alcohol",

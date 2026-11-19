@@ -12,6 +12,7 @@ from skinlog.face import anchor_point, zone_of
 from skinlog.models import (
     Angle,
     Condition,
+    DayEvent,
     DayLog,
     DayStatus,
     DayTag,
@@ -151,6 +152,13 @@ def day_trials(db: Session, user: User, day: date) -> list[DayTrial]:
     return out
 
 
+def day_events(log: DayLog | None) -> list[DayEvent]:
+    """The stored "new_spot,forming" as a list; none when nothing's saved."""
+    if log is None or not log.events:
+        return []
+    return [DayEvent(e) for e in log.events.split(",")]
+
+
 def day_out(db: Session, user: User, day: date) -> DayOut:
     log = get_log(db, user, day)
     planned = routine.planned_for(routine.routine_items(db, user), day)
@@ -172,6 +180,7 @@ def day_out(db: Session, user: User, day: date) -> DayOut:
         date=day,
         status=log.status if log else "none",
         skin_score=log.skin_score if log else None,
+        events=day_events(log),
         pins=day_pins(log, source),
         stages=zone_stages(source),
         stages_from=source.date if source is not None and source is not log else None,
@@ -229,7 +238,10 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
         db.add(log)
     log.status = DayStatus.LOGGED
     log.imported = False
-    log.skin_score = body.skin_score
+    if "skin_score" in body.model_fields_set:
+        log.skin_score = body.skin_score
+    # dict.fromkeys drops repeats but keeps the order they were picked in.
+    log.events = ",".join(dict.fromkeys(body.events))
     log.notes = body.notes
     log.period = body.period
     # Clear first so replaced rows are deleted before their successors are inserted.
@@ -279,6 +291,7 @@ def list_days(db: Session, user: User, start: date, end: date) -> list[DaySummar
             date=log.date,
             status=log.status,
             skin_score=log.skin_score,
+            events=day_events(log),
             total_breakouts=breakouts(log),
             has_photos=bool(log.photos),
         )
