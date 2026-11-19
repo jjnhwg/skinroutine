@@ -1,5 +1,9 @@
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, Suspense, lazy, useEffect, useRef, useState } from "react";
+import { TunedPhoto, TuningProvider } from "../components/TunedPhoto";
 import { LONG_DATE, prettyDate } from "../lib/dates";
+
+/** The framing panel, only while developing; the built site never includes it. */
+const PhotoTuner = import.meta.env.DEV ? lazy(() => import("../components/PhotoTuner")) : null;
 
 /** The day each progress photo was taken, first to latest, as they play in the slider. */
 const TAKEN = [
@@ -19,22 +23,46 @@ interface Frame {
 /** Files in public/progress, numbered in play order. */
 const FRAMES: Frame[] = TAKEN.map((date, i) => ({ url: `/progress/${String(i + 1).padStart(2, "0")}.jpg`, date }));
 
+/** Photo numbers kept on disk but left out of the slider. 7 is Dec 3, 2024. */
+const LEFT_OUT = new Set([7]);
+
+/** The photos the slider plays through. */
+const SLIDER_FRAMES = FRAMES.filter((_, i) => !LEFT_OUT.has(i + 1));
+
+/** Shows HERO_PAIRS at the top of the page instead of the slider. Set to false to bring the slider back. */
+const SHOW_PAIRS_IN_HERO = true;
+
+/**
+ * A face photo on this page: an untouched photo from public/progress/original, framed by its slot's
+ * entry in src/lib/homePhotoFraming.json. Run the dev server and use "Tune photos" to change the framing.
+ */
+interface HomePhoto {
+  slot: string;
+  /** Number of the photo in public/progress/original (the same numbers as tools/photo-picker.html). */
+  photo: number;
+  date: string;
+}
+
+const originalUrl = (n: number) => `/progress/original/${String(n).padStart(2, "0")}.jpg`;
+
+/** Before/after pairs picked in tools/photo-picker.html. */
+const HERO_PAIRS: { before: HomePhoto; after: HomePhoto }[] = [
+  {
+    before: { slot: "hero-1-before", photo: 7, date: "2024-11-27" },
+    after: { slot: "hero-1-after", photo: 47, date: "2026-11-03" },
+  },
+  {
+    before: { slot: "hero-2-before", photo: 32, date: "2026-05-20" },
+    after: { slot: "hero-2-after", photo: 51, date: "2026-11-03" },
+  },
+];
+
 /** Thumbnail rows hold at most this many, split evenly. */
 const THUMBS_PER_ROW = 9;
 
 /** How see-through the photos beside the current one are, then the ones past those. */
 const SIDE_FADE = 0.4;
 const FAR_FADE = 0.15;
-
-const SYMPTOMS = [
-  "Pimples that keep coming back",
-  "Clogged pores and blackheads",
-  "Whiteheads",
-  "Red marks that stay after a pimple heals",
-  "Redness and irritation",
-  "Skin that's oily but still feels dry",
-  "Not knowing which product is causing what",
-];
 
 interface RoutineProduct {
   brand: string;
@@ -43,20 +71,13 @@ interface RoutineProduct {
   image?: string;
 }
 
-/** A photo framed by hand for one spot, shown whole rather than trimmed to fit. */
-interface FramedPhoto extends Frame {
-  width: number;
-  height: number;
-}
-
 interface Chapter {
   title: string;
   story: string;
-  /** A number is that photo in public/progress, as in the slider's "1 of 31". */
-  before: number | FramedPhoto;
-  after: number | FramedPhoto;
+  before: HomePhoto;
+  after: HomePhoto;
   /** Where things ended up, for a routine that carries on past its "after". */
-  now?: FramedPhoto;
+  now?: HomePhoto;
   routine: RoutineProduct[];
 }
 
@@ -65,8 +86,8 @@ const CHAPTERS: Chapter[] = [
   {
     title: "Calming my skin down",
     story: "This routine calmed my skin down. I stopped switching between so many products and chose three based on my skin type and concerns.",
-    before: { url: "/progress/framed/2024-11-23-from-06-1.jpg", date: "2024-11-23", width: 945, height: 784 },
-    after: { url: "/progress/framed/2025-06-30-from-24-1.jpg", date: "2025-06-30", width: 945, height: 784 },
+    before: { slot: "routine-1-before", photo: 6, date: "2024-11-23" },
+    after: { slot: "routine-1-after", photo: 24, date: "2025-06-30" },
     routine: [
       { brand: "La Roche-Posay", product: "Toleriane Hydrating Gentle Cleanser", image: "/products/la-roche-posay--toleriane-hydrating-gentle-cleanser.jpg" },
       { brand: "SKIN1004", product: "Madagascar Centella Ampoule", image: "/products/skin1004--madagascar-centella-ampoule.jpg" },
@@ -74,11 +95,11 @@ const CHAPTERS: Chapter[] = [
     ],
   },
   {
-    title: "Rushing into new products, then building my barrier back",
-    story: "I thought my skin barrier was healed, so I tried a bunch of new products and irritated my skin again. This time I knew how to heal it back. Now my main focus is building a stronger barrier, and this is my current routine.",
-    before: { url: "/progress/framed/2026-02-13-from-29-1.jpg", date: "2026-02-13", width: 945, height: 784 },
-    after: { url: "/progress/framed/2026-05-20-from-32-1.jpg", date: "2026-05-20", width: 945, height: 784 },
-    now: { url: "/progress/framed/2026-10-22-from-35-1.jpg", date: "2026-10-22", width: 945, height: 784 },
+    title: "Repairing my barrier",
+    story: "This is how I've been repairing my skin barrier. Now my main focus is building a stronger barrier, and this is my current routine.",
+    // Before: pair 3's left in the photo picker. After: pair 4's right.
+    before: { slot: "routine-2-before", photo: 20, date: "2025-04-14" },
+    after: { slot: "routine-2-after", photo: 29, date: "2026-02-13" },
     routine: [
       { brand: "107 Beauty", product: "Chaga Jelly Low pH Cleanser", image: "/products/107-beauty--chaga-jelly-low-ph-cleanser.jpg" },
       { brand: "107 Beauty", product: "Micro Drizzle Hydro Toner", image: "/products/107-beauty--micro-drizzle-hydro-toner.jpg" },
@@ -88,28 +109,23 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-const MISTAKES = [
-  { title: "Switching between too many products", body: "I kept switching between so many products. [What that did to your skin.]" },
-  { title: "[What ruined my barrier]", body: "[What you did, and how your skin reacted.]" },
-  { title: "[Another mistake]", body: "[What you'd do differently now.]" },
-];
-
-/** Screenshots of my log for two products, in date order. */
-const LOG_SCREENSHOTS = [
-  { src: "/proof/log-dr-althea.png", alt: "My notes from patch testing Dr. Althea 345 Relief Cream in May: itchy bumps on my right jaw, then redness, so I stopped using it." },
-  { src: "/proof/log-aestura.png", alt: "My notes from patch testing Aestura soothing cream in July: skin felt good with no breakouts, so it became my main moisturizer." },
-];
 /** Photo of every product I've used. */
 const PRODUCTS_PHOTO: string | null = "/proof/products.jpg";
 
-/** Why I started logging, and what it caught. */
-const LOG_STORY = [
-  "My first step in clearing up my skin was logging everything, because I kept switching between so many products that I couldn't tell what was helping and what was making it worse.",
-  "So I started writing down what I used and what my skin was doing.",
-  "That's how I caught Dr. Althea 345 Relief Cream: itchy bumps on my jaw, then redness, so I stopped using it (not saying it won't work for you, it just didn't work for my skin). Aestura's soothing cream left my skin feeling good with no breakouts, so it became my main moisturizer.",
+/** The two things that cleared my skin, shown right under the photos. */
+const WHAT_CLEARED = [
+  {
+    title: "Choosing the right products",
+    body: ["I stopped switching between so many products and chose a few based on my skin type and concerns."],
+  },
+  {
+    title: "Tracking my routine",
+    body: [
+      "This was the most important thing I did. Before I started, I kept switching products and had no idea what was helping and what was making it worse.",
+      "Breakouts can feel like something you can't control. Writing down what you use and what your skin does each day gives you something you can control. When a breakout shows up, you look back at your log instead of guessing, and that takes a lot of the stress away. Less stress is better for your skin, too.",
+    ],
+  },
 ];
-
-const NOTICED = "[How you noticed your skin clearing up: what changed first, and what in your log showed it.]";
 
 function PlayIcon() {
   return (
@@ -260,23 +276,42 @@ function PhotoSlider({ frames }: { frames: Frame[] }) {
   );
 }
 
-function ChapterPhoto({ label, photo }: { label: "Before" | "After" | "Now"; photo: number | FramedPhoto }) {
-  const framed = typeof photo === "number" ? null : photo;
-  const frame = framed ?? FRAMES[(photo as number) - 1];
-  const date = prettyDate(frame.date, LONG_DATE);
+function ChapterPhoto({ label, photo }: { label: "Before" | "After" | "Now"; photo: HomePhoto }) {
   return (
     <figure>
-      <img
-        src={frame.url}
-        alt={`${label}, ${date}`}
-        loading="lazy"
-        className={framed ? "framed" : undefined}
-        width={framed?.width}
-        height={framed?.height}
-      />
+      <TunedPhoto slot={photo.slot} src={originalUrl(photo.photo)} alt={label} />
       <span className={`hero-pill${label === "Before" ? "" : " now"}`}>{label}</span>
-      <figcaption className="muted">{date}</figcaption>
     </figure>
+  );
+}
+
+/** The hook: one before/after at a time, the time between them, and thumbnails to switch pairs. */
+function HeroCompare() {
+  const [index, setIndex] = useState(0);
+  const { before, after } = HERO_PAIRS[index];
+  return (
+    <div className="compare-card">
+      <div className="compare-photos">
+        {([["Before", before], ["After", after]] as const).map(([label, photo]) => (
+          <figure key={label}>
+            <TunedPhoto slot={photo.slot} src={originalUrl(photo.photo)} alt={label} lazy={false} />
+            <span className={`hero-pill${label === "Before" ? "" : " now"}`}>{label}</span>
+          </figure>
+        ))}
+      </div>
+      <div className="compare-foot">
+        {HERO_PAIRS.length > 1 && (
+          <div className="compare-pick" role="group" aria-label="Choose a before and after">
+            {HERO_PAIRS.map((pair, i) => (
+              <button key={pair.before.slot} type="button" aria-pressed={i === index} aria-label={`Before and after ${i + 1}`} onClick={() => setIndex(i)}>
+                <TunedPhoto slot={pair.before.slot} src={originalUrl(pair.before.photo)} alt="" interactive={false} lazy={false} />
+                <TunedPhoto slot={pair.after.slot} src={originalUrl(pair.after.photo)} alt="" interactive={false} lazy={false} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -286,90 +321,81 @@ function ProofPhoto({ src, alt, slot }: { src: string | null; alt: string; slot:
   return <img className="proof-photo" src={src} alt={alt} loading="lazy" />;
 }
 
-/** Landing page: my skin's progress, my log, what I was dealing with, each routine, every product I used, and my mistakes. */
+/** Landing page: my skin's progress, what cleared it, each routine, and every product I used. */
 export function HomeScreen({ signedIn = true }: { signedIn?: boolean }) {
-  const log = useRef<HTMLElement>(null);
+  const routines = useRef<HTMLElement>(null);
 
   return (
+    <TuningProvider>
     <div className="landing">
-      <section className="wrap hero">
+      {PhotoTuner && (
+        <Suspense fallback={null}>
+          <PhotoTuner />
+        </Suspense>
+      )}
+      <section className={`wrap hero${SHOW_PAIRS_IN_HERO ? " hero-compare" : ""}`}>
         <div className="hero-copy">
           <h2 className="display">
-            Drag to watch my skin <em>clear up.</em>
+            How my skin <em>cleared up.</em>
           </h2>
-          <p className="lead">Every photo is real, in whatever angle and light I had. Slide from the start to now, then see the log behind it.</p>
           <div className="row">
             <a className="btn primary" href="#/log">
               {signedIn ? "Start your own log" : "Sign up to start logging"}
             </a>
-            <button type="button" className="btn" onClick={() => log.current?.scrollIntoView({ behavior: "smooth" })}>
-              See my log
+            <button type="button" className="btn" onClick={() => routines.current?.scrollIntoView({ behavior: "smooth" })}>
+              See what I did
             </button>
           </div>
         </div>
-        <PhotoSlider frames={FRAMES} />
-      </section>
-
-      <section className="band" ref={log}>
-        <div className="wrap stack">
-          <div className="section-intro">
-            <span className="eyebrow">01 · My log</span>
-            <h2 className="display">I wrote down what I used and what I saw.</h2>
-          </div>
-          <div className="log-proof">
-            <div className="log-screenshots">
-              {LOG_SCREENSHOTS.map((shot) => (
-                <img key={shot.src} className="log-screenshot" src={shot.src} alt={shot.alt} loading="lazy" />
-              ))}
-            </div>
-            <div className="log-story">
-              {LOG_STORY.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
-          </div>
-          <div className="noticed">
-            <h3>How I noticed it clearing up</h3>
-            <p className="muted">{NOTICED}</p>
-          </div>
-        </div>
+        {SHOW_PAIRS_IN_HERO ? <HeroCompare /> : <PhotoSlider frames={SLIDER_FRAMES} />}
       </section>
 
       <section>
-        <div className="wrap split-row">
+        <div className="wrap stack">
           <div className="section-intro">
-            <span className="eyebrow">02 · My skin</span>
-            <h2 className="display">I was dealing with what most people with acne deal with.</h2>
+            <span className="eyebrow">01 · What cleared my skin</span>
+            <h2 className="display">Two things cleared my skin.</h2>
             <p className="muted">
-              If any of this sounds familiar, you don't need more products. You need a solid routine.
+              Besides drinking water, getting enough sleep and keeping stress down, these are the two things you should be doing.
             </p>
           </div>
-          <ul className="symptoms">
-            {SYMPTOMS.map((s) => (
-              <li key={s}>{s}</li>
+          <ol className="cleared">
+            {WHAT_CLEARED.map((w, i) => (
+              <li key={w.title}>
+                <span className="cleared-num" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <h3>{w.title}</h3>
+                {w.body.map((line) => (
+                  <p key={line} className="muted">
+                    {line}
+                  </p>
+                ))}
+              </li>
             ))}
-          </ul>
+          </ol>
         </div>
       </section>
 
-      <section className="band">
+      <section className="band" ref={routines}>
         <div className="wrap stack">
           <div className="section-intro">
-            <span className="eyebrow">03 · My routines</span>
+            <span className="eyebrow">02 · My routines</span>
             <h2 className="display">Two routines, and what each one did.</h2>
           </div>
           <ol className="chapters">
             {CHAPTERS.map((c, i) => (
               <li key={c.title} className="chapter">
-                <div className={`before-after${c.now ? " three" : ""}`}>
+                <div className="chapter-side before">
                   <ChapterPhoto label="Before" photo={c.before} />
-                  <ChapterPhoto label="After" photo={c.after} />
-                  {c.now && <ChapterPhoto label="Now" photo={c.now} />}
                 </div>
                 <div className="chapter-copy">
-                  <span className="eyebrow">Routine {i + 1}</span>
+                  <div className="chapter-meta">
+                    <span className="eyebrow">Routine {i + 1}</span>
+                  </div>
                   <h3 className="display">{c.title}</h3>
                   <p className="muted">{c.story}</p>
+                  <span className="used-label">What I used</span>
                   <ul className="routine-list">
                     {c.routine.map((r) => (
                       <li key={r.product}>
@@ -390,40 +416,23 @@ export function HomeScreen({ signedIn = true }: { signedIn?: boolean }) {
                     ))}
                   </ul>
                 </div>
+                <div className="chapter-side after">
+                  {/* One photo on the right: where the routine ended up. */}
+                  {c.now ? <ChapterPhoto label="Now" photo={c.now} /> : <ChapterPhoto label="After" photo={c.after} />}
+                </div>
               </li>
             ))}
           </ol>
-          <blockquote className="display">
-            Your skin is probably already telling you what's wrong. You just need a record to see it.
-          </blockquote>
         </div>
       </section>
 
       <section>
         <div className="wrap stack">
           <div className="section-intro">
-            <span className="eyebrow">04 · Every product I used</span>
-            <h2 className="display">I really did try all of this.</h2>
-            <p className="muted">Two years of testing products.</p>
+            <span className="eyebrow">03 · Every product I used</span>
+            <h2 className="display">I tried a lot.</h2>
           </div>
           <ProofPhoto src={PRODUCTS_PHOTO} alt="Every skincare product I've used" slot="[Photo of all your products]" />
-        </div>
-      </section>
-
-      <section>
-        <div className="wrap stack">
-          <div className="section-intro">
-            <span className="eyebrow">05 · My mistakes</span>
-            <h2 className="display">What I got wrong along the way.</h2>
-          </div>
-          <ol className="mistakes">
-            {MISTAKES.map((m) => (
-              <li key={m.title}>
-                <h3>{m.title}</h3>
-                <p className="muted">{m.body}</p>
-              </li>
-            ))}
-          </ol>
         </div>
       </section>
 
@@ -441,5 +450,6 @@ export function HomeScreen({ signedIn = true }: { signedIn?: boolean }) {
         </div>
       </section>
     </div>
+    </TuningProvider>
   );
 }

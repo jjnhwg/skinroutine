@@ -1,0 +1,10 @@
+{
+  "hero-1-before": { "x": 0.5, "y": 0.5, "zoom": 1, "rotate": 0 },
+  "hero-1-after": { "x": 0.5125, "y": 0.5, "zoom": 1, "rotate": 0 },
+  "hero-2-before": { "x": 0.625, "y": 0.5, "zoom": 1, "rotate": 0 },
+  "hero-2-after": { "x": 0.5, "y": 0.525, "zoom": 1, "rotate": 0 },
+  "routine-1-before": { "x": 0.4099, "y": 0.5374, "zoom": 2.0792, "rotate": 0 },
+  "routine-1-after": { "x": 0.3599, "y": 0.4965, "zoom": 1.4955, "rotate": 0 },
+  "routine-2-before": { "x": 0.5923, "y": 0.4879, "zoom": 3.3975, "rotate": 0 },
+  "routine-2-after": { "x": 0.6102, "y": 0.5118, "zoom": 2.7806, "rotate": 0 }
+}

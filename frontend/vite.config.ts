@@ -1,10 +1,26 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath } from 'node:url'
+import { photoCropper } from './tools/photoCropper.ts'
+import { homePhotoTuner } from './tools/homePhotoTuner.ts'
+
+const here = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Dev-only: /__crop/ crops the carousel photos, /__crop/compare compares two
+    photoCropper({
+      photosDir: here('./public/progress'),
+      archiveDir: here('../progress-photos-archive'),
+      pagePath: here('./tools/crop.html'),
+      comparePagePath: here('./tools/compare.html'),
+    }),
+    // Dev-only: the home page's "Tune photos" panel saves its framing here
+    homePhotoTuner({ dataPath: here('./src/lib/homePhotoFraming.json') }),
+  ],
   server: {
     // Forward /api requests to the FastAPI backend so fetch("/api/...") works during development
     proxy: {
