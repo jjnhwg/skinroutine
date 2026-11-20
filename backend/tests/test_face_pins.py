@@ -48,16 +48,16 @@ def test_pins_are_kept_and_counted_per_zone(client, frozen_now):
     pins = [
         pin(CHIN, "active"),
         pin((CHIN[0] + 0.02, CHIN[1]), "active"),
-        pin(LEFT_CHEEK, "brown_mark"),
-        pin(NOSE, "oily"),
-        pin((NOSE[0], NOSE[1] + 0.01), "oily"),
+        pin(LEFT_CHEEK, "healing"),
+        pin(NOSE, "red"),
+        pin((NOSE[0], NOSE[1] + 0.01), "red"),
     ]
 
     day = client.put("/api/days/2026-10-05", json={"pins": pins}).json()
 
     assert day["pins"] == pins
-    assert day["stages"] == full({"chin": {"active": 2}, "left_cheek": {"brown_mark": 1}})
-    assert day["conditions"]["nose"] == ["oily"]
+    assert day["stages"] == full({"chin": {"active": 2}, "left_cheek": {"healing": 1}})
+    assert day["conditions"]["nose"] == ["red"]
     assert day["total_breakouts"] == 2
 
 
@@ -70,7 +70,7 @@ def test_saving_again_replaces_the_pins(client, frozen_now):
 
 
 def test_spot_pins_carry_over_but_conditions_dont(client, frozen_now):
-    client.put("/api/days/2026-10-05", json={"pins": [pin(CHIN, "active"), pin(NOSE, "dry")]})
+    client.put("/api/days/2026-10-05", json={"pins": [pin(CHIN, "active"), pin(NOSE, "red")]})
 
     day = client.get("/api/days/2026-10-06").json()
 
@@ -81,7 +81,7 @@ def test_spot_pins_carry_over_but_conditions_dont(client, frozen_now):
 def test_count_only_days_are_drawn_round_each_zone(client, frozen_now):
     client.put(
         "/api/days/2026-10-05",
-        json={"stages": {"chin": {"active": 2}, "temples": {"clogged": 2}}, "conditions": {"forehead": ["dry"]}},
+        json={"stages": {"chin": {"active": 2}, "temples": {"clogged": 2}}, "conditions": {"forehead": ["red"]}},
     )
 
     pins = client.get("/api/days/2026-10-05").json()["pins"]
@@ -91,7 +91,7 @@ def test_count_only_days_are_drawn_round_each_zone(client, frozen_now):
         (Zone.TEMPLES, "clogged"),
         (Zone.CHIN, "active"),
         (Zone.CHIN, "active"),
-        (Zone.FOREHEAD, "dry"),
+        (Zone.FOREHEAD, "red"),
     ]
     # Two-sided zones put one pin on each side.
     assert pins[0]["x"] < 0.5 < pins[1]["x"]

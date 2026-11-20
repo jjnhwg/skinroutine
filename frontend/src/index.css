@@ -20,7 +20,7 @@
   --font-display: "Cormorant Garamond", Georgia, serif;
   --r1: #34a36b; --r2: #8cc063; --r3: #f0c64a; --r4: #f0924f; --r5: #e2554a;
   /* What happened today; the calendar colors a day by its worst one. */
-  --ev-new_spot: var(--r5); --ev-forming: var(--r4); --ev-healing: var(--r2); --ev-nothing_new: var(--r1);
+  --ev-new_spot: var(--r5); --ev-irritated: #d6608e; --ev-forming: var(--r4); --ev-nothing_new: var(--r1);
   --empty: #edf2f5;
   --warn-bg: #fff8e6; --warn-text: #7a5300; --warn-border: #f5dfa0;
   --good: #23875a; --bad: #c43d30;
@@ -177,11 +177,7 @@ button { font: inherit; cursor: pointer; }
 [data-kind=coming_up] { --pin: #e39a2d; }
 [data-kind=active] { --pin: #d8343a; }
 [data-kind=healing] { --pin: #8e63c9; }
-[data-kind=red_mark] { --pin: #ef8686; }
-[data-kind=brown_mark] { --pin: #8a5a3b; }
-[data-kind=dry] { --pin: #c9a24f; }
 [data-kind=red] { --pin: #e5484d; }
-[data-kind=oily] { --pin: #3f97bf; }
 .face-pin { cursor: pointer; }
 .face-pin:focus { outline: none; }
 .face-pin-dot { fill: var(--pin); stroke: #fff; stroke-width: 1.5; }
@@ -194,14 +190,20 @@ button { font: inherit; cursor: pointer; }
 .event-chip { display: inline-flex; align-items: center; gap: 6px; }
 .event-swatch { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1.5px #fff; }
 .event-chip[data-event=new_spot] .event-swatch { background: var(--ev-new_spot); }
+.event-chip[data-event=irritated] .event-swatch { background: var(--ev-irritated); }
 .event-chip[data-event=forming] .event-swatch { background: var(--ev-forming); }
-.event-chip[data-event=healing] .event-swatch { background: var(--ev-healing); }
 .event-chip[data-event=nothing_new] .event-swatch { background: var(--ev-nothing_new); }
 .pin-swatch { width: 10px; height: 10px; border-radius: 50%; background: var(--pin); box-shadow: 0 0 0 1.5px #fff; flex: none; }
 .pin-hint { margin: 0; font-size: 13px; }
 .pin-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; min-height: 28px; }
 .pin-remove { color: var(--bad); margin-top: 10px; }
 .zone-panel { border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-top: 8px; }
+/* Step-by-step: move a carried-over active pimple to Healing, then remove it once gone */
+.healing-guide { border: 1px solid var(--accent-ring); background: var(--accent-soft); border-radius: 14px; padding: 12px 14px; margin: 4px 0 12px; }
+.healing-guide-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.healing-guide h3 { margin: 0; font-size: 15px; }
+.healing-guide ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; line-height: 1.45; }
+.pin-tip { margin-bottom: 8px; }
 .zone-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .stepper { border: 1px solid var(--border); border-radius: 14px; padding: 8px 10px; }
 .stepper-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); }
@@ -232,7 +234,7 @@ button { font: inherit; cursor: pointer; }
 .cal-day.logged { background: #fff; border-color: var(--border-strong); }
 .cal-day.today.confirmed { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--r2); }
 .cal-day.ev-nothing_new { background: var(--ev-nothing_new); color: #fff; }
-.cal-day.ev-healing { background: var(--ev-healing); }
+.cal-day.ev-irritated { background: var(--ev-irritated); color: #fff; }
 .cal-day.ev-forming { background: var(--ev-forming); }
 .cal-day.ev-new_spot { background: var(--ev-new_spot); color: #fff; }
 .photo-dot { position: absolute; right: 4px; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--text); border: 1px solid #fff; }

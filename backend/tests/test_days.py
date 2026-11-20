@@ -7,13 +7,13 @@ from skinlog.models import DayLog, Product
 MONDAY = "2026-10-05"
 TUESDAY = "2026-10-06"
 ZONES = ["forehead", "temples", "nose", "left_cheek", "right_cheek", "chin", "jawline"]
-STAGES = ["clogged", "coming_up", "active", "healing", "red_mark", "brown_mark"]
+STAGES = ["clogged", "coming_up", "active", "healing"]
 NO_SPOTS = dict.fromkeys(STAGES, 0)
 # 6 active spots, plus spots at other stages that don't count as breakouts.
 SPOTS = {
     "forehead": {"active": 1, "clogged": 4},
-    "left_cheek": {"active": 2, "healing": 1, "brown_mark": 2},
-    "chin": {"active": 3, "red_mark": 1},
+    "left_cheek": {"active": 2, "healing": 3},
+    "chin": {"active": 3, "healing": 1},
 }
 
 
@@ -95,13 +95,13 @@ def test_editing_replaces_zones_and_uses(client, routine):
     client.put(
         f"/api/days/{MONDAY}",
         json=checkin(
-            stages={**SPOTS, "chin": {"red_mark": 1}},
+            stages={**SPOTS, "chin": {"healing": 1}},
             product_uses=[both[1], both[1]],
         ),
     )
 
     day = client.get(f"/api/days/{MONDAY}").json()
-    assert day["stages"]["chin"] == {**NO_SPOTS, "red_mark": 1}
+    assert day["stages"]["chin"] == {**NO_SPOTS, "healing": 1}
     assert day["total_breakouts"] == 3
     assert day["product_uses"] == [both[1]]
 
@@ -109,15 +109,15 @@ def test_editing_replaces_zones_and_uses(client, routine):
 def test_conditions_round_trip_and_replace(client, frozen_now):
     client.put(
         f"/api/days/{MONDAY}",
-        json=checkin(conditions={"chin": ["red", "dry", "red"], "forehead": ["oily"]}),
+        json=checkin(conditions={"chin": ["red", "red"], "forehead": ["red"]}),
     )
     day = client.get(f"/api/days/{MONDAY}").json()
-    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "chin": ["dry", "red"], "forehead": ["oily"]}
+    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "chin": ["red"], "forehead": ["red"]}
 
-    client.put(f"/api/days/{MONDAY}", json=checkin(conditions={"nose": ["dry"]}))
+    client.put(f"/api/days/{MONDAY}", json=checkin(conditions={"nose": ["red"]}))
 
     day = client.get(f"/api/days/{MONDAY}").json()
-    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "nose": ["dry"]}
+    assert day["conditions"] == {**dict.fromkeys(ZONES, []), "nose": ["red"]}
 
 
 def test_skin_score_is_optional(client, frozen_now):
@@ -137,16 +137,23 @@ def test_events_are_saved_in_the_order_picked(client, frozen_now):
     assert client.get(f"/api/days/{MONDAY}").json()["events"] == ["forming", "new_spot"]
 
 
+def test_irritated_can_be_picked_with_a_new_pimple(client, frozen_now):
+    body = checkin(events=["new_spot", "irritated"])
+
+    assert client.put(f"/api/days/{MONDAY}", json=body).status_code == 200
+    assert client.get(f"/api/days/{MONDAY}").json()["events"] == ["new_spot", "irritated"]
+
+
 def test_resaving_without_a_score_keeps_the_old_one(client, frozen_now):
     client.put(f"/api/days/{MONDAY}", json=checkin(skin_score=4))
-    body = checkin(events=["healing"])
+    body = checkin(events=["forming"])
     del body["skin_score"]
 
     client.put(f"/api/days/{MONDAY}", json=body)
 
     day = client.get(f"/api/days/{MONDAY}").json()
     assert day["skin_score"] == 4
-    assert day["events"] == ["healing"]
+    assert day["events"] == ["forming"]
 
 
 def test_same_product_morning_and_night(client, routine):
@@ -213,7 +220,10 @@ def test_saved_day_keeps_its_own_spots(client, frozen_now):
         {"events": ["exploded"]},
         {"events": ["nothing_new", "new_spot"]},
         {"conditions": {"chin": ["forming"]}},
-        {"conditions": {"ear": ["dry"]}},
+        {"conditions": {"ear": ["red"]}},
+        # Dry and oily were retired: only spots and red/irritated skin are logged.
+        {"conditions": {"chin": ["dry"]}},
+        {"stages": {"chin": {"red_mark": 1}}},
         {"product_uses": [{"product_id": 1, "time_of_day": "noon"}]},
     ],
 )
@@ -249,7 +259,7 @@ def test_put_upgrades_other_statuses_to_logged(client, db_session, frozen_now, s
 
 
 def test_range_returns_only_saved_days_in_range(client, frozen_now):
-    for day, events in [("2026-10-01", []), ("2026-10-03", ["new_spot"]), ("2026-10-08", ["healing"])]:
+    for day, events in [("2026-10-01", []), ("2026-10-03", ["new_spot"]), ("2026-10-08", ["forming"])]:
         client.put(f"/api/days/{day}", json=checkin(events=events))
 
     response = client.get("/api/days", params={"from": "2026-10-02", "to": "2026-10-08"})
@@ -257,7 +267,7 @@ def test_range_returns_only_saved_days_in_range(client, frozen_now):
     assert response.status_code == 200
     assert response.json() == [
         {"date": "2026-10-03", "status": "logged", "skin_score": 2, "events": ["new_spot"], "total_breakouts": 6, "has_photos": False},
-        {"date": "2026-10-08", "status": "logged", "skin_score": 2, "events": ["healing"], "total_breakouts": 6, "has_photos": False},
+        {"date": "2026-10-08", "status": "logged", "skin_score": 2, "events": ["forming"], "total_breakouts": 6, "has_photos": False},
     ]
 
 

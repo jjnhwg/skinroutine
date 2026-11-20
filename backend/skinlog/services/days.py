@@ -55,7 +55,7 @@ def get_log(db: Session, user: User, day: date) -> DayLog | None:
 
 
 def zone_stages(log: DayLog | None) -> ZoneStages:
-    """All seven zones and six stages; anything with no row (or no log) counts 0."""
+    """All seven zones and four stages; anything with no row (or no log) counts 0."""
     counts: dict[str, dict[str, int]] = {z.value: {} for z in Zone}
     for row in log.stages if log else []:
         counts[row.zone][row.stage] = row.count

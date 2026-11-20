@@ -71,7 +71,7 @@ export type Planned = Record<TimeOfDay, number[]>;
 export type ZoneName = "forehead" | "temples" | "nose" | "left_cheek" | "right_cheek" | "chin" | "jawline";
 
 /** Where a spot is in its life, from a clogged pore to the mark it leaves. */
-export type Stage = "clogged" | "coming_up" | "active" | "healing" | "red_mark" | "brown_mark";
+export type Stage = "clogged" | "coming_up" | "active" | "healing";
 
 /** Spots at each stage in one zone, 0–50. */
 export type StageCounts = Record<Stage, number>;
@@ -79,7 +79,7 @@ export type StageCounts = Record<Stage, number>;
 export type ZoneStages = Record<ZoneName, StageCounts>;
 
 /** Something going on in a zone besides spots. */
-export type Condition = "dry" | "red" | "oily";
+export type Condition = "red";
 
 /** Conditions marked per zone; an empty list means the zone was fine. */
 export type ZoneConditions = Record<ZoneName, Condition[]>;
@@ -116,7 +116,7 @@ export interface DayTrial {
 }
 
 /** What happened to the skin today; "nothing_new" is never picked with the others. */
-export type DayEvent = "new_spot" | "forming" | "healing" | "nothing_new";
+export type DayEvent = "new_spot" | "irritated" | "forming" | "nothing_new";
 
 export interface Day {
   date: string;

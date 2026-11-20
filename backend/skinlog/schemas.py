@@ -140,8 +140,6 @@ class StageCounts(BaseModel):
     coming_up: Count = 0
     active: Count = 0
     healing: Count = 0
-    red_mark: Count = 0
-    brown_mark: Count = 0
 
 
 class ZoneStages(BaseModel):
@@ -172,9 +170,7 @@ class ZoneConditions(BaseModel):
     jawline: list[Condition] = []
 
 
-PinKind = Literal[
-    "clogged", "coming_up", "active", "healing", "red_mark", "brown_mark", "dry", "red", "oily"
-]
+PinKind = Literal["clogged", "coming_up", "active", "healing", "red"]
 
 
 class Pin(BaseModel):

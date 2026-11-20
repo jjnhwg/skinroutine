@@ -98,30 +98,26 @@ class Zone(StrEnum):
 
 
 class Stage(StrEnum):
-    """Where a spot is in its life, from a clogged pore to the mark it leaves."""
+    """Where a spot is in its life, from a clogged pore until it's healed."""
 
     CLOGGED = "clogged"
     COMING_UP = "coming_up"  # under the skin, not yet a breakout
     ACTIVE = "active"  # the only stage counted as a breakout
-    HEALING = "healing"
-    RED_MARK = "red_mark"  # pink or red left behind (PIE)
-    BROWN_MARK = "brown_mark"  # brown left behind (PIH)
+    HEALING = "healing"  # going down, scabbed, or a flat mark left behind
 
 
 class Condition(StrEnum):
     """Something going on in a zone besides spots."""
 
-    DRY = "dry"
-    RED = "red"
-    OILY = "oily"
+    RED = "red"  # red or irritated
 
 
 class DayEvent(StrEnum):
     """What happened to the skin today, picked on the log in place of an overall score."""
 
     NEW_SPOT = "new_spot"
+    IRRITATED = "irritated"  # the skin feels red or irritated, with or without spots
     FORMING = "forming"
-    HEALING = "healing"
     NOTHING_NEW = "nothing_new"
 
 

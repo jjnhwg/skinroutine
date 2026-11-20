@@ -24,7 +24,7 @@ const RETINOL = product(2, "Retinol", { type: "treatment" });
 
 const SAVED = day("2026-10-05", {
   status: "logged",
-  events: ["forming", "healing"],
+  events: ["new_spot", "forming"],
   pins: [
     { x: 0.5, y: 0.82, kind: "active" },
     { x: 0.52, y: 0.8, kind: "red" },
@@ -56,10 +56,10 @@ describe("LogScreen", () => {
     renderWithApp(<LogScreen date="2026-10-05" />);
 
     expect(await screen.findByRole("button", { name: "Something's forming" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Healing up" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "New pimple showed up" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Nothing new" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Active pimple, pin 1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Red, pin 2" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Red / irritated area, pin 2" })).toBeInTheDocument();
     expect(screen.getByLabelText("Notes")).toHaveValue("Spot on chin");
     expect(screen.getByRole("button", { name: /Retinol/ })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByText(/Editing your saved entry/)).toBeInTheDocument();
@@ -76,19 +76,19 @@ describe("LogScreen", () => {
     await user.click(screen.getByRole("button", { name: /Retinol/ }));
     await user.click(screen.getByRole("button", { name: "Clogged pore" }));
     tapFace(100, 120);
-    await user.click(screen.getByRole("button", { name: "Oily" }));
+    await user.click(screen.getByRole("button", { name: "Red / irritated area" }));
     tapFace(100, 110);
     await user.type(screen.getByLabelText("Notes"), "!");
     await user.click(await screen.findByRole("button", { name: "Alcohol" }));
     await user.click(screen.getByRole("button", { name: "Update entry" }));
 
     expect(saveDay).toHaveBeenCalledWith("2026-10-05", {
-      events: ["forming", "healing"],
+      events: ["new_spot", "forming"],
       pins: [
         { x: 0.5, y: 0.82, kind: "active" },
         { x: 0.52, y: 0.8, kind: "red" },
         { x: 0.5, y: 120 / 260, kind: "clogged" },
-        { x: 0.5, y: 110 / 260, kind: "oily" },
+        { x: 0.5, y: 110 / 260, kind: "red" },
       ],
       notes: "Spot on chin!",
       product_uses: [

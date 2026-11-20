@@ -1,12 +1,12 @@
 import type { Condition, DayEvent, ProductType, Weekday, ZoneName } from "../api/types";
 
 /** What happened today, worst first: a day's calendar color comes from the first one it has. */
-export const DAY_EVENTS: DayEvent[] = ["new_spot", "forming", "healing", "nothing_new"];
+export const DAY_EVENTS: DayEvent[] = ["new_spot", "irritated", "forming", "nothing_new"];
 
 export const DAY_EVENT_LABELS: Record<DayEvent, string> = {
   new_spot: "New pimple showed up",
+  irritated: "Red / irritated",
   forming: "Something's forming",
-  healing: "Healing up",
   nothing_new: "Nothing new",
 };
 
@@ -24,12 +24,10 @@ export const ZONE_LABELS: Record<ZoneName, string> = {
   jawline: "Jawline",
 };
 
-export const CONDITIONS: Condition[] = ["dry", "red", "oily"];
+export const CONDITIONS: Condition[] = ["red"];
 
 export const CONDITION_LABELS: Record<Condition, string> = {
-  dry: "Dry",
-  red: "Red",
-  oily: "Oily",
+  red: "Red / irritated area",
 };
 
 export const AVATAR_COLORS = ["#e8927c", "#7fb3a3", "#9aa7d6", "#d9a45b", "#b58fc7", "#6fa8c9"];

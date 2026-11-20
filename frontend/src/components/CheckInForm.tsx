@@ -18,8 +18,32 @@ interface CheckInFormProps {
   carriedFrom?: string | null;
 }
 
+// Remembered per browser so the healing guide only shows until it's dismissed.
+const GUIDE_KEY = "skinlog.healingGuideDismissed";
+const guideDismissed = () => {
+  try {
+    return localStorage.getItem(GUIDE_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+/** What to tell someone about the pin they just tapped, if anything. */
+const PIN_TIPS: Partial<Record<PinKind, string>> = {
+  active: "Going down, flatter or scabbed? Tap \u201c→ Healing\u201d.",
+  healing: "Completely gone? Remove this pin.",
+};
+
+/** The picker's order: the three things you mark most, side by side, then the in-between stages. */
+const PICKER_KINDS: PinKind[] = [
+  "clogged",
+  "active",
+  ...CONDITIONS,
+  ...STAGES.filter((s) => s !== "clogged" && s !== "active"),
+];
+
 const hint = (kind: PinKind) =>
-  isCondition(kind) ? `Mark where your skin feels ${kind}.` : STAGE_LABELS[kind].hint;
+  isCondition(kind) ? "Mark where your skin is red, stinging or irritated." : STAGE_LABELS[kind].hint;
 
 /**
  * Pick what you're marking, then tap the face exactly where it is. Tap a pin to move
@@ -28,6 +52,7 @@ const hint = (kind: PinKind) =>
 export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) {
   const [kind, setKind] = useState<PinKind>("active");
   const [selected, setSelected] = useState<number | null>(null);
+  const [guideHidden, setGuideHidden] = useState(guideDismissed);
   const pins = value.pins;
   const chosen = selected !== null ? pins[selected] : undefined;
 
@@ -47,6 +72,16 @@ export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) 
     setSelected(null);
   };
   const summary = pinSummary(pins);
+  // Only worth explaining when yesterday's active pimples were carried into today.
+  const showGuide = !guideHidden && !!carriedFrom && pins.some((p) => p.kind === "active");
+  const hideGuide = () => {
+    setGuideHidden(true);
+    try {
+      localStorage.setItem(GUIDE_KEY, "1");
+    } catch {
+      // Private mode or blocked storage: it just shows again next time.
+    }
+  };
 
   // "Nothing new" and the others rule each other out; tapping a picked one unpicks it.
   const toggleEvent = (event: DayEvent) => {
@@ -81,12 +116,29 @@ export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) 
           : "Pick what you're marking, then tap exactly where it is. Leave the rest alone."}
       </p>
 
+      {showGuide && (
+        <section className="healing-guide" aria-labelledby="healing-guide-h">
+          <div className="healing-guide-head">
+            <h3 id="healing-guide-h">Is a pimple healing?</h3>
+            <button type="button" className="link-btn" onClick={hideGuide}>
+              Got it
+            </button>
+          </div>
+          <ol>
+            <li>Tap its <b>Active pimple</b> pin on the face below.</li>
+            <li>
+              Tap <b>→ Healing</b> once it's going down, flatter or scabbed.
+            </li>
+            <li>
+              When it's completely gone, tap the pin again and <b>Remove this pin</b>.
+            </li>
+          </ol>
+        </section>
+      )}
+
       <div className="pin-kinds">
-        <div className="chips" role="group" aria-label="Spots">
-          {STAGES.map(kindChip)}
-        </div>
-        <div className="chips" role="group" aria-label="Skin feels">
-          {CONDITIONS.map(kindChip)}
+        <div className="chips" role="group" aria-label="What you're marking">
+          {PICKER_KINDS.map(kindChip)}
         </div>
         <p className="muted pin-hint">
           <b>{PIN_LABELS[kind]}:</b> {hint(kind)}
@@ -128,6 +180,7 @@ export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) 
               Done
             </button>
           </div>
+          {PIN_TIPS[chosen.kind] && <p className="muted pin-hint pin-tip">{PIN_TIPS[chosen.kind]}</p>}
           {!isCondition(chosen.kind) && NEXT_STAGES[chosen.kind].length > 0 && (
             <div className="stage-moves" style={{ justifyContent: "flex-start", marginBottom: 10 }}>
               {NEXT_STAGES[chosen.kind].map((to) => (

@@ -25,16 +25,16 @@ describe("CheckInForm", () => {
     render(<Harness initial={{}} />);
 
     await user.click(screen.getByRole("button", { name: "New pimple showed up" }));
-    await user.click(screen.getByRole("button", { name: "Healing up" }));
-    expect(current().events).toEqual(["new_spot", "healing"]);
+    await user.click(screen.getByRole("button", { name: "Something's forming" }));
+    expect(current().events).toEqual(["new_spot", "forming"]);
 
     await user.click(screen.getByRole("button", { name: "New pimple showed up" }));
-    expect(current().events).toEqual(["healing"]);
+    expect(current().events).toEqual(["forming"]);
   });
 
   it("keeps \"Nothing new\" apart from the others", async () => {
     const user = userEvent.setup();
-    render(<Harness initial={{ events: ["forming", "healing"] }} />);
+    render(<Harness initial={{ events: ["new_spot", "forming"] }} />);
 
     await user.click(screen.getByRole("button", { name: "Nothing new" }));
     expect(current().events).toEqual(["nothing_new"]);
@@ -50,14 +50,14 @@ describe("CheckInForm", () => {
     // Active is picked to start with.
     expect(screen.getByRole("button", { name: "Active pimple" })).toHaveAttribute("aria-pressed", "true");
     tapFace(50, 130);
-    await user.click(screen.getByRole("button", { name: "Dry" }));
+    await user.click(screen.getByRole("button", { name: "Red / irritated area" }));
     tapFace(150, 65);
 
     expect(current().pins).toEqual([
       { x: 0.25, y: 0.5, kind: "active" },
-      { x: 0.75, y: 0.25, kind: "dry" },
+      { x: 0.75, y: 0.25, kind: "red" },
     ]);
-    expect(screen.getByText("1 active · dry (1)")).toBeInTheDocument();
+    expect(screen.getByText("1 active · red / irritated area (1)")).toBeInTheDocument();
   });
 
   it("moves a tapped pin on to its next stage", async () => {
@@ -65,26 +65,21 @@ describe("CheckInForm", () => {
     render(<Harness initial={{ pins: [{ ...CHIN, kind: "active" }] }} />);
 
     await user.click(screen.getByRole("button", { name: "Active pimple, pin 1" }));
-    expect(screen.queryByRole("button", { name: "→ Brown mark" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "→ Coming up" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "→ Healing" }));
     expect(current().pins).toEqual([{ ...CHIN, kind: "healing" }]);
 
-    // A healing spot can leave either kind of mark.
-    await user.click(screen.getByRole("button", { name: "→ Brown mark" }));
-    expect(current().pins).toEqual([{ ...CHIN, kind: "brown_mark" }]);
-    expect(screen.getByRole("button", { name: "Brown mark, pin 1" })).toHaveAttribute("aria-pressed", "true");
+    // Healing is the last stage: nothing to move it on to.
+    expect(screen.getByRole("button", { name: "Healing, pin 1" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: /^→/ })).not.toBeInTheDocument();
   });
 
-  it("changes a condition pin only to another condition", async () => {
+  it("doesn't offer spot stages for a red / irritated pin", async () => {
     const user = userEvent.setup();
-    render(<Harness initial={{ pins: [{ ...CHIN, kind: "dry" }] }} />);
+    render(<Harness initial={{ pins: [{ ...CHIN, kind: "red" }] }} />);
 
-    await user.click(screen.getByRole("button", { name: "Dry, pin 1" }));
-    const changeTo = screen.getByRole("group", { name: "Change to" });
-    expect(changeTo).toHaveTextContent("DryRedOily");
-    await user.click(screen.getAllByRole("button", { name: "Oily" })[1]);
-
-    expect(current().pins).toEqual([{ ...CHIN, kind: "oily" }]);
+    await user.click(screen.getByRole("button", { name: "Red / irritated area, pin 1" }));
+    expect(screen.getByRole("group", { name: "Change to" })).toHaveTextContent(/^Red \/ irritated area$/);
   });
 
   it("removes a pin, and clears them all", async () => {
@@ -124,5 +119,28 @@ describe("CheckInForm", () => {
     render(<Harness initial={{}} carriedFrom="2026-10-05" />);
 
     expect(screen.getByText(/Started from your spots on/)).toBeInTheDocument();
+  });
+
+  it("guides moving a carried-over active pimple to healing, until dismissed", async () => {
+    const user = userEvent.setup();
+    const active = { pins: [{ ...CHIN, kind: "active" as const }] };
+    const { unmount } = render(<Harness initial={active} carriedFrom="2026-10-05" />);
+
+    expect(screen.getByRole("heading", { name: "Is a pimple healing?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Active pimple, pin 1" }));
+    expect(screen.getByText(/Going down, flatter or scabbed\?/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Got it" }));
+    expect(screen.queryByRole("heading", { name: "Is a pimple healing?" })).not.toBeInTheDocument();
+
+    // Stays dismissed next time.
+    unmount();
+    render(<Harness initial={active} carriedFrom="2026-10-05" />);
+    expect(screen.queryByRole("heading", { name: "Is a pimple healing?" })).not.toBeInTheDocument();
+  });
+
+  it("skips the healing guide when nothing active was carried over", () => {
+    render(<Harness initial={{ pins: [{ ...CHIN, kind: "active" }] }} />);
+    expect(screen.queryByRole("heading", { name: "Is a pimple healing?" })).not.toBeInTheDocument();
   });
 });

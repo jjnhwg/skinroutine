@@ -21,7 +21,7 @@ function cell(date: string): HTMLElement {
 
 beforeEach(() => {
   vi.mocked(listDays).mockReset().mockResolvedValue([
-    { date: "2026-10-01", status: "logged", events: ["healing", "new_spot"], total_breakouts: 3, has_photos: true },
+    { date: "2026-10-01", status: "logged", events: ["forming", "new_spot"], total_breakouts: 3, has_photos: true },
     { date: "2026-10-02", status: "routine_confirmed", events: [], total_breakouts: 0, has_photos: false },
     { date: "2026-10-03", status: "gap", events: [], total_breakouts: 0, has_photos: false },
     { date: "2026-10-05", status: "logged", events: [], total_breakouts: 2, has_photos: false },
@@ -62,7 +62,7 @@ describe("TimelineScreen", () => {
     renderWithApp(<TimelineScreen />);
     await waitFor(() => expect(cell("2026-10-01")).toHaveClass("ev-new_spot"));
 
-    expect(cell("2026-10-01")).toHaveAccessibleName(/Healing up, New pimple showed up; 3 breakouts/);
+    expect(cell("2026-10-01")).toHaveAccessibleName(/Something's forming, New pimple showed up; 3 breakouts/);
     expect(within(cell("2026-10-01")).getByTestId("photo-dot")).toBeInTheDocument();
     expect(cell("2026-10-02")).toHaveClass("confirmed");
     expect(cell("2026-10-03")).toHaveClass("gap");
