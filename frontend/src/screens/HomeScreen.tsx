@@ -109,9 +109,6 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-/** A short clip of my skin today, made from src/assets/IMG_1301.MOV (H.264, so every browser plays it), and its first frame. */
-const NOW_VIDEO = { src: "/proof/skin-now.mp4", poster: "/proof/skin-now.jpg" };
-
 /** Photo of every product I've used. */
 const PRODUCTS_PHOTO: string | null = "/proof/products.jpg";
 
@@ -290,7 +287,8 @@ function ChapterPhoto({ label, photo }: { label: "Before" | "After" | "Now"; pho
 
 /** The hook: one before/after at a time, the time between them, and thumbnails to switch pairs. */
 function HeroCompare() {
-  const [index, setIndex] = useState(0);
+  // Opens on the last pair (the right-hand thumbnail); the thumbnail on the left switches to the first.
+  const [index, setIndex] = useState(HERO_PAIRS.length - 1);
   const { before, after } = HERO_PAIRS[index];
   return (
     <div className="compare-card">
@@ -466,28 +464,7 @@ export function HomeScreen({ signedIn = true }: { signedIn?: boolean }) {
       <section>
         <div className="wrap stack">
           <div className="section-intro">
-            <span className="eyebrow">03 · My skin now</span>
-            <h2 className="display">This is what my skin looks like now.</h2>
-          </div>
-          {/* muted + playsInline let it play by itself on phones; it loops like a live photo. */}
-          <video
-            className="proof-photo"
-            src={NOW_VIDEO.src}
-            poster={NOW_VIDEO.poster}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            aria-label="Video of my skin now"
-          />
-        </div>
-      </section>
-
-      <section className="band">
-        <div className="wrap stack">
-          <div className="section-intro">
-            <span className="eyebrow">04 · Every product I used</span>
+            <span className="eyebrow">03 · Every product I used</span>
             <h2 className="display">I tried a lot.</h2>
           </div>
           <ProofPhoto src={PRODUCTS_PHOTO} alt="Every skincare product I've used" slot="[Photo of all your products]" />

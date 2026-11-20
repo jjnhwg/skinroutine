@@ -367,7 +367,8 @@ main.tab-home { max-width: none; padding: 0; }
 .landing .section-intro p { margin: 0; font-size: 16px; line-height: 1.65; }
 .landing h3 { margin: 0; font-size: 20px; font-weight: 600; }
 
-.hero { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; }
+/* wrap-reverse: side by side on wide screens; once they stack, the photos (right side) come first. */
+.hero { display: flex; flex-wrap: wrap-reverse; gap: 40px; align-items: center; }
 .hero-copy { flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .hero .display { font-size: 46px; line-height: 1.02; }
 .slider { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }

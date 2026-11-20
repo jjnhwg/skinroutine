@@ -23,3 +23,6 @@ backend/*.db
 backend/*.db.*
 backend/*.db-*
 backend/data/
+
+# Original footage for the home clip; too big for the repo
+frontend/src/assets/*.MOV
