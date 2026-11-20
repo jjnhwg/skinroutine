@@ -18,8 +18,8 @@ import { SettingsScreen } from "./screens/SettingsScreen";
 import { SignUpScreen } from "./screens/SignUpScreen";
 import { TimelinePreview, TimelineScreen } from "./screens/TimelineScreen";
 
-/** Tabs anyone can open. Signed out, Timeline is an empty preview; the guide and everything else need an account. */
-const PUBLIC_TABS: Tab[] = ["home", "timeline"];
+/** Tabs anyone can open. Signed out, Timeline is an empty preview and Product recommendations blurs its products; everything else needs an account. */
+const PUBLIC_TABS: Tab[] = ["home", "timeline", "guide"];
 
 /** The log for `date`, or for today, which comes from the signed-in user's settings. */
 function LogRoute({ date }: { date: string | null }) {
@@ -44,7 +44,7 @@ function Screens({ tab, date, login, signedIn }: Route & { signedIn: boolean }) 
       {tab === "insights" && <InsightsScreen />}
       {tab === "products" && <ProductsScreen />}
       {tab === "settings" && <SettingsScreen />}
-      {tab === "guide" && <GuideScreen />}
+      {tab === "guide" && <GuideScreen signedIn={signedIn} />}
       {tab === "log" && <LogRoute date={date} />}
     </main>
   );
@@ -92,7 +92,7 @@ export default function App() {
           <MissedDaysPrompt />
         </SettingsProvider>
       ) : (
-        // Signed out: Home, the empty Timeline preview and the sign-up pitch; none of them call /api.
+        // Signed out: Home, the empty Timeline preview, Product recommendations and the sign-up pitch; none of them call /api.
         <Screens {...route} signedIn={false} />
       )}
       {/* Shown to everyone, signed in or not: it's a "coming soon" teaser. */}

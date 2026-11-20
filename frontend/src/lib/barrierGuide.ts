@@ -5,8 +5,8 @@ export type Need = "oily" | "dehyd" | "red" | "dry" | "acne";
 
 /**
  * Barrier ingredients grouped by the job they do. The guide explains each job once, in its
- * ingredient grid, and every product card sorts its ingredients under these same jobs,
- * so a card reads "Calms: Centella" instead of re-explaining centella each time.
+ * ingredient grid, and every product card shows a chip for each job its ingredients do,
+ * so a card reads "Calms" instead of re-explaining centella each time.
  */
 export const INGREDIENT_GROUPS = [
   {
@@ -39,7 +39,7 @@ export interface GuideProduct {
   name: string;
   /** How many independent creators recommended it. */
   creators: number;
-  /** Key barrier ingredients, shown as chips. What each does is explained once in INGREDIENT_GROUPS. */
+  /** Key barrier ingredients; the card shows the jobs they do as chips. What each does is explained once in INGREDIENT_GROUPS. */
   has?: Ingredient[];
   /** Only what's specific to this product; generic ingredient benefits belong in INGREDIENT_GROUPS. */
   why: string;
@@ -50,6 +50,11 @@ export interface GuideProduct {
   unconfirmed?: boolean;
   /** Which skin types it suits, in a sentence or two. */
   bestFor?: string;
+}
+
+/** "Most skin types, especially oily skin. Very reactive skin should…" → just "Most skin types, especially oily skin." */
+export function skinTypeOnly(bestFor: string): string {
+  return bestFor.split(/(?<=\.)\s/)[0];
 }
 
 const slug = (s: string) =>
@@ -76,8 +81,6 @@ export interface GuideStep {
   later?: boolean;
   /** Shown in place of cards while this step's products haven't been added yet. */
   comingSoon?: string;
-  /** Sort each product's ingredients by job ("Calms: …") instead of a plain list. */
-  byJob?: boolean;
   /** Shown as cards. */
   picks: GuideProduct[];
   /** Shown in the "more options" list. */
@@ -125,7 +128,6 @@ export const GUIDE_STEPS: GuideStep[] = [
     when: "Morning and night",
     why: "With a damaged barrier, skin can’t hold on to water, so it loses moisture all day and feels tight even when it looks oily. That’s why the goal of toner while healing is hydration and calming, not exfoliating or “clearing pores”. Skip toners with acids (AHA, BHA, PHA), alcohol or fragrance, which strip and sting already-weak skin. Pick a plain hydrating toner (hyaluronic acid, beta-glucan, panthenol, centella) and pat on a few thin layers: several light coats soak in better than one heavy one, and they give your serum a damp base to sink into.",
     later: true,
-    byJob: true,
     note: "Skip toner at first, especially if your skin feels heavy or breaks out easily. Stacking layers of toner can be too much and leave skin congested. Add it once your routine is settled and your skin is calm, so you can tell whether it actually helps.",
     picks: [
       { ...P("", ["dehyd"], "107 Beauty", "Micro Drizzle Hydro Toner", 1, "", "v11 1:50 · v19 0:21 · v24 0:41 @sunnyfromsunnybread"), has: ["Hyaluronic acid", "Glycerin", "Panthenol"], bestFor: "Most skin types, especially dehydrated, dry or sensitive skin." },
@@ -142,7 +144,6 @@ export const GUIDE_STEPS: GuideStep[] = [
     does: "Each serum has one job, so pick it for the reason your skin needs it: calming red, irritated skin (centella, madecassoside), strengthening the barrier (ceramides, panthenol), or hydrating (beta-glucan, hyaluronic acid). Choose the one that matches what your skin needs most right now. Skip retinol, vitamin C and acids while healing.",
     why: "Serums are where most “active” products live, but a damaged barrier isn’t the time for actives. Retinol, vitamin C and exfoliating acids all work by pushing skin to turn over or by being slightly irritating, and broken skin can’t take that: it ends up redder, drier and more reactive. While healing, a serum has three jobs only: hydrate (beta-glucan, hyaluronic acid), repair (ceramides, panthenol, PDRN) and calm (centella, madecassoside). One or two gentle serums are plenty; layering lots of products means more chances to irritate. Bring actives back slowly, one at a time, once skin stops stinging and stays calm for a few weeks.",
     later: true,
-    byJob: true,
     note: "Skip serums at first. Get your cleanser, moisturizer and sunscreen working, then add one serum and watch your skin for about 3 weeks before changing anything else.",
     picks: [
       { ...P("", ["dehyd", "red"], "IUNIK", "Beta-Glucan Serum", 3, "", "v01 0:24 @tiffkimmm · v40 1:14 @charinecheungg · v46 1:30 @jordynwoodruff"), has: ["Beta-glucan", "Glycerin"], bestFor: "All skin types, especially dry, dehydrated or sensitive skin." },

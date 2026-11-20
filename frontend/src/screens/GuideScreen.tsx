@@ -1,30 +1,5 @@
-import { useState } from "react";
-import { GUIDE_STEPS, INGREDIENT_GROUPS, productImage, type GuideProduct } from "../lib/barrierGuide";
-
-/** A product's ingredients sorted by what they do, e.g. "Calms: Centella, Panthenol". */
-function IngredientJobs({ p, byJob }: { p: GuideProduct; byJob?: boolean }) {
-  const has: readonly string[] = p.has ?? [];
-  if (!byJob) {
-    return has.length > 0 ? (
-      <span className="pick-jobs">
-        <b>Key ingredients:</b> {has.join(", ")}
-      </span>
-    ) : null;
-  }
-  const rows = INGREDIENT_GROUPS.map((g) => ({ ...g, found: g.items.filter((i) => has.includes(i)) })).filter(
-    (g) => g.found.length > 0,
-  );
-  if (rows.length === 0) return null;
-  return (
-    <ul className="pick-jobs" aria-label="Key ingredients">
-      {rows.map((g) => (
-        <li key={g.job}>
-          <b>{g.job}:</b> {g.found.join(", ")}
-        </li>
-      ))}
-    </ul>
-  );
-}
+import { useState, type ReactNode } from "react";
+import { GUIDE_STEPS, INGREDIENT_GROUPS, productImage, skinTypeOnly, type GuideProduct } from "../lib/barrierGuide";
 
 /** The product's photo, or its brand's initial until a photo is added. */
 function ProductPhoto({ p, small }: { p: GuideProduct; small?: boolean }) {
@@ -44,8 +19,65 @@ function ProductPhoto({ p, small }: { p: GuideProduct; small?: boolean }) {
   );
 }
 
-/** Barrier repair routine: each step's creator-recommended options. */
-export function GuideScreen() {
+/** One recommended product's card: photo, name, and who it suits. */
+function PickCard({ p }: { p: GuideProduct }) {
+  return (
+    <article className="pick">
+      {p.label && <div className="pick-label">{p.label}</div>}
+      <ProductPhoto p={p} />
+      <div className="pick-body">
+        <div>
+          <span className="brand">{p.brand}</span>
+          <span className="name">{p.name}</span>
+        </div>
+        {p.bestFor && (
+          <span>
+            <b>Best skin type: </b>
+            {skinTypeOnly(p.bestFor)}
+          </span>
+        )}
+        {p.why && <span className="muted">{p.why}</span>}
+        {p.unconfirmed && (
+          <div className="pick-foot">
+            <div className="row">
+              <span className="badge unc">Name unconfirmed</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Shown over a step's products while signed out: the cards underneath are blurred
+ * and can't be read, clicked or tabbed into, and these two links lead to the sign-up card.
+ */
+function LockedPicks({ children, more }: { children: ReactNode; more: number }) {
+  return (
+    <div className="guide-locked">
+      {/* inert: no clicks or keyboard focus. aria-hidden: screen readers skip what sighted people can't read. */}
+      <div className="guide-locked-blur" inert aria-hidden="true">
+        {children}
+      </div>
+      <div className="guide-lock">
+        <b>Log in to see the products{more > 0 ? ` (and ${more} more options)` : ""}</b>
+        <div className="row">
+          {/* #/log shows the sign-up card while signed out; #/login shows the log-in form. */}
+          <a className="btn primary small" href="#/log">
+            Sign up free
+          </a>
+          <a className="btn small" href="#/login">
+            Log in
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Barrier repair routine: each step's creator-recommended options. Signed out, the steps show but the products are blurred. */
+export function GuideScreen({ signedIn }: { signedIn: boolean }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   return (
@@ -104,8 +136,7 @@ export function GuideScreen() {
         <section className="guide-base" aria-labelledby="guide-ingredients-h">
           <b id="guide-ingredients-h">What ingredients are good for your skin barrier?</b>
           <span>
-            You’ll see these again and again in this guide, on purpose. Each product lists its ingredients under these same
-            jobs, so you can see why they’re in there.
+            You’ll find these again and again in the products below, on purpose.
           </span>
           <ul className="guide-ingredients">
             {INGREDIENT_GROUPS.map(({ title, items, what }) => (
@@ -200,42 +231,18 @@ export function GuideScreen() {
               </div>
             )}
 
-            <div className="guide-picks">
-              {s.picks.map((p) => (
-                <article key={p.name} className="pick">
-                  {p.label && <div className="pick-label">{p.label}</div>}
-                  <ProductPhoto p={p} />
-                  <div className="pick-body">
-                    <div>
-                      <span className="brand">{p.brand}</span>
-                      <span className="name">{p.name}</span>
-                    </div>
-                    {p.bestFor && (
-                      <span>
-                        <b>Best skin type: </b>
-                        {p.bestFor}
-                      </span>
-                    )}
-                    <IngredientJobs p={p} byJob={s.byJob} />
-                    {p.why && (
-                      <span>
-                        <b>Also: </b>
-                        {p.why}
-                      </span>
-                    )}
-                    {p.unconfirmed && (
-                      <div className="pick-foot">
-                        <div className="row">
-                          <span className="badge unc">Name unconfirmed</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
+            {signedIn ? (
+              <div className="guide-picks">{s.picks.map((p) => <PickCard key={p.name} p={p} />)}</div>
+            ) : (
+              s.picks.length > 0 && (
+                <LockedPicks more={s.rest.length}>
+                  <div className="guide-picks">{s.picks.map((p) => <PickCard key={p.name} p={p} />)}</div>
+                </LockedPicks>
+              )
+            )}
 
-            {s.rest.length > 0 && (
+            {/* The extra options stay hidden until signed in; the lock above counts them. */}
+            {signedIn && s.rest.length > 0 && (
               <div className="guide-more">
                 <button type="button" aria-expanded={isOpen} onClick={() => setOpen({ ...open, [s.id]: !isOpen })}>
                   <span>
@@ -255,7 +262,6 @@ export function GuideScreen() {
                           <span className="name">
                             {p.brand} {p.name}
                           </span>
-                          <IngredientJobs p={p} byJob={s.byJob} />
                           {p.why && <span>{p.why}</span>}
                         </div>
                         {p.unconfirmed && (

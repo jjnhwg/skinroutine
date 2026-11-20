@@ -9,7 +9,7 @@ export const TAB_LABELS: Record<Tab, string> = {
   insights: "Insights",
   products: "Products",
   settings: "Settings",
-  guide: "Guide",
+  guide: "Product recommendations",
 };
 
 const TABS = Object.keys(TAB_LABELS) as Tab[];
