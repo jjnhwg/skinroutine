@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { navigate } from "./router";
+import { navigate, parse } from "./router";
 
 afterEach(() => {
   location.hash = "";
@@ -15,5 +15,12 @@ describe("navigate", () => {
 
     navigate("#/settings");
     expect(location.hash).toBe("#/settings");
+  });
+});
+
+describe("parse", () => {
+  it("reads #/login as the Log tab with the log-in form", () => {
+    expect(parse("#/login")).toEqual({ tab: "log", date: null, login: true });
+    expect(parse("#/log/2026-10-05")).toEqual({ tab: "log", date: "2026-10-05", login: false });
   });
 });

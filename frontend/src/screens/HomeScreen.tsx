@@ -43,10 +43,10 @@ interface HomePhoto {
   date: string;
 }
 
-const originalUrl = (n: number) => `/progress/original/${String(n).padStart(2, "0")}.jpg`;
+export const originalUrl = (n: number) => `/progress/original/${String(n).padStart(2, "0")}.jpg`;
 
-/** Before/after pairs picked in tools/photo-picker.html. */
-const HERO_PAIRS: { before: HomePhoto; after: HomePhoto }[] = [
+/** Before/after pairs picked in tools/photo-picker.html. The sign-up screen shows the first one too. */
+export const HERO_PAIRS: { before: HomePhoto; after: HomePhoto }[] = [
   {
     before: { slot: "hero-1-before", photo: 7, date: "2024-11-27" },
     after: { slot: "hero-1-after", photo: 47, date: "2026-11-03" },
@@ -324,6 +324,58 @@ function ProofPhoto({ src, alt, slot }: { src: string | null; alt: string; slot:
   return <img className="proof-photo" src={src} alt={alt} loading="lazy" />;
 }
 
+/** The products in one routine, each with its photo, brand and name. */
+function RoutineList({ routine }: { routine: RoutineProduct[] }) {
+  return (
+    <ul className="routine-list">
+      {routine.map((r) => (
+        <li key={r.product}>
+          {r.image ? (
+            <span className="product-photo small">
+              <img src={r.image} alt="" loading="lazy" />
+            </span>
+          ) : (
+            <span className="product-photo small empty" aria-hidden="true">
+              ?
+            </span>
+          )}
+          <span>
+            <span className="brand">{r.brand}</span>
+            <b>{r.product}</b>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * What signed-out visitors see instead of the product list: the same list blurred, with a lock and
+ * a sign-up button on top. The blur is only a teaser: the names are still in the page's code.
+ */
+function LockedRoutine({ routine }: { routine: RoutineProduct[] }) {
+  return (
+    <div className="routine-locked">
+      {/* inert: nobody can tab into or select the blurred rows; screen readers skip them too. */}
+      <div className="routine-locked-blur" inert>
+        <RoutineList routine={routine} />
+      </div>
+      <div className="routine-lock">
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="11" width="16" height="10" rx="2" />
+          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
+        <p>
+          Sign up to see the {routine.length} products I used
+        </p>
+        <a className="btn primary" href="#/log">
+          Sign up free
+        </a>
+      </div>
+    </div>
+  );
+}
+
 /** Landing page: my skin's progress, what cleared it, each routine, and every product I used. */
 export function HomeScreen({ signedIn = true }: { signedIn?: boolean }) {
   const routines = useRef<HTMLElement>(null);
@@ -399,25 +451,7 @@ export function HomeScreen({ signedIn = true }: { signedIn?: boolean }) {
                   <h3 className="display">{c.title}</h3>
                   <p className="muted">{c.story}</p>
                   <span className="used-label">What I used</span>
-                  <ul className="routine-list">
-                    {c.routine.map((r) => (
-                      <li key={r.product}>
-                        {r.image ? (
-                          <span className="product-photo small">
-                            <img src={r.image} alt="" loading="lazy" />
-                          </span>
-                        ) : (
-                          <span className="product-photo small empty" aria-hidden="true">
-                            ?
-                          </span>
-                        )}
-                        <span>
-                          <span className="brand">{r.brand}</span>
-                          <b>{r.product}</b>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  {signedIn ? <RoutineList routine={c.routine} /> : <LockedRoutine routine={c.routine} />}
                 </div>
                 <div className="chapter-side after">
                   {/* One photo on the right: where the routine ended up. */}

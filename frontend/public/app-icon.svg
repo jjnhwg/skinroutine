@@ -1,12 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f3a08c"/>
-      <stop offset="1" stop-color="#d4674f"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#g)"/>
-  <g transform="translate(256 262) scale(12) translate(-12 -12)">
-    <path d="M12 2.5c3.5 4.2 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.8 6-11z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24">
+  <!-- Full-bleed square: phones round the corners themselves. The face is kept
+       inside the middle 66% so Android's "maskable" circle crop never cuts it. -->
+  <rect width="24" height="24" fill="#2a6f97"/>
+  <g transform="translate(12 12) scale(.62) translate(-13.7 -11.3)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="12" rx="7" ry="9" stroke-width="2.1"/>
+    <path d="M8.4 10.8q1.3 1.2 2.6 0M13 10.8q1.3 1.2 2.6 0M10.4 15q1.6 1.2 3.2 0" stroke-width="1.7"/>
+    <path d="M19.6 1.6c.5 2.3.5 2.3 2.8 2.8-2.3.5-2.3.5-2.8 2.8-.5-2.3-.5-2.3-2.8-2.8 2.3-.5 2.3-.5 2.8-2.8z" fill="#fff" stroke="none"/>
   </g>
 </svg>

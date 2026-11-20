@@ -9,6 +9,7 @@ import { CameraIcon, ChevronLeftIcon, ChevronRightIcon } from "../components/Ico
 import { PhotoCompare } from "../components/PhotoCompare";
 import { DAY_EVENT_LABELS, DAY_EVENTS, WEEKDAYS, worstEvent } from "../lib/constants";
 import { addDays, fmt, prettyDate } from "../lib/dates";
+import { navigate } from "../lib/router";
 
 /** "YYYY-MM" of a YYYY-MM-DD date. */
 const monthOf = (date: string) => date.slice(0, 7);
@@ -53,6 +54,116 @@ function describe(summary: DaySummary | undefined): string {
   return `${summary.events.map((e) => DAY_EVENT_LABELS[e]).join(", ")}; ${breakouts}`;
 }
 
+interface MonthCalendarProps {
+  /** "YYYY-MM" being shown. */
+  month: string;
+  onMonth: (month: string) => void;
+  today: string;
+  /** Logged days by date; empty for the signed-out preview. */
+  summaries: Record<string, DaySummary>;
+  onOpen: (date: string) => void;
+}
+
+/** The month grid with its arrows and legend. Shows whatever days it's given. */
+function MonthCalendar({ month, onMonth, today, summaries, onOpen }: MonthCalendarProps) {
+  const grid = useMemo(() => gridFor(month), [month]);
+  const title = prettyDate(`${month}-01`, { month: "long", year: "numeric" });
+  return (
+    <div className="card">
+      <div className="datebar" style={{ marginBottom: 12 }}>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="Previous month"
+          onClick={() => onMonth(shiftMonth(month, -1))}
+        >
+          <ChevronLeftIcon />
+        </button>
+        <div className="date-label">
+          <strong>{title}</strong>
+        </div>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="Next month"
+          disabled={month >= monthOf(today)}
+          onClick={() => onMonth(shiftMonth(month, 1))}
+        >
+          <ChevronRightIcon />
+        </button>
+      </div>
+
+      <div className="calendar">
+        {WEEKDAYS.map(({ day, short }) => (
+          <span key={day} className="dow" aria-hidden="true">
+            {short}
+          </span>
+        ))}
+        {grid.map((date) => {
+          const summary = summaries[date];
+          const outside = monthOf(date) !== month;
+          return (
+            <button
+              key={date}
+              type="button"
+              data-date={date}
+              className={cellClass(date, today, summary) + (outside ? " outside" : "")}
+              disabled={date > today}
+              aria-label={`${prettyDate(date)}: ${describe(summary)}`}
+              onClick={() => onOpen(date)}
+            >
+              {Number(date.slice(8))}
+              {summary?.has_photos && <span className="photo-dot" data-testid="photo-dot" />}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="legend">
+        {DAY_EVENTS.map((e) => (
+          <span key={e} style={{ ["--c" as string]: `var(--ev-${e})` }}>
+            {DAY_EVENT_LABELS[e]}
+          </span>
+        ))}
+        <span className="legend-confirmed">Routine only</span>
+        <span className="legend-hatched">Not logged</span>
+      </div>
+    </div>
+  );
+}
+
+/** The browser's own date, for visitors who aren't signed in (there are no settings to ask). */
+function localToday(): string {
+  const now = new Date();
+  return fmt(now.getFullYear(), now.getMonth() + 1, now.getDate());
+}
+
+/**
+ * Timeline for visitors who aren't signed in: an empty calendar and a nudge to sign up.
+ * Calls no API. Tapping a day goes to the log, which shows them the sign-up form.
+ */
+export function TimelinePreview() {
+  const today = localToday();
+  const [month, setMonth] = useState(monthOf(today));
+  return (
+    <>
+      <h2 className="page-title">Timeline</h2>
+      <p className="page-sub">Every day you log shows up here, colored by what happened to your skin.</p>
+
+      <div className="card">
+        <p style={{ marginTop: 0 }}>
+          <b>Your calendar is empty.</b> Sign up and log your first day to start filling it in.
+        </p>
+        <a className="btn primary" href="#/log">
+          Sign up to start logging
+        </a>
+      </div>
+
+      <MonthCalendar month={month} onMonth={setMonth} today={today} summaries={{}} onOpen={() => navigate("log")} />
+    </>
+  );
+}
+
 export function TimelineScreen() {
   const { today } = useSettings();
   const { products } = useProducts();
@@ -77,8 +188,6 @@ export function TimelineScreen() {
     };
   }, [grid]);
 
-  const title = prettyDate(`${month}-01`, { month: "long", year: "numeric" });
-
   return (
     <>
       <h2 className="page-title">Timeline</h2>
@@ -88,68 +197,8 @@ export function TimelineScreen() {
         <CameraIcon size={18} /> Compare photos
       </button>
 
-      <div className="card">
-        <div className="datebar" style={{ marginBottom: 12 }}>
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="Previous month"
-            onClick={() => setMonth(shiftMonth(month, -1))}
-          >
-            <ChevronLeftIcon />
-          </button>
-          <div className="date-label">
-            <strong>{title}</strong>
-          </div>
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="Next month"
-            disabled={month >= monthOf(today)}
-            onClick={() => setMonth(shiftMonth(month, 1))}
-          >
-            <ChevronRightIcon />
-          </button>
-        </div>
-
-        {error && <div className="warn">{error}</div>}
-
-        <div className="calendar">
-          {WEEKDAYS.map(({ day, short }) => (
-            <span key={day} className="dow" aria-hidden="true">
-              {short}
-            </span>
-          ))}
-          {grid.map((date) => {
-            const summary = summaries[date];
-            const outside = monthOf(date) !== month;
-            return (
-              <button
-                key={date}
-                type="button"
-                data-date={date}
-                className={cellClass(date, today, summary) + (outside ? " outside" : "")}
-                disabled={date > today}
-                aria-label={`${prettyDate(date)}: ${describe(summary)}`}
-                onClick={() => setOpen(date)}
-              >
-                {Number(date.slice(8))}
-                {summary?.has_photos && <span className="photo-dot" data-testid="photo-dot" />}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="legend">
-          {DAY_EVENTS.map((e) => (
-            <span key={e} style={{ ["--c" as string]: `var(--ev-${e})` }}>
-              {DAY_EVENT_LABELS[e]}
-            </span>
-          ))}
-          <span className="legend-confirmed">Routine only</span>
-          <span className="legend-hatched">Not logged</span>
-        </div>
-      </div>
+      {error && <div className="warn">{error}</div>}
+      <MonthCalendar month={month} onMonth={setMonth} today={today} summaries={summaries} onOpen={setOpen} />
 
       {open && (
         <DayDetail

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDay, getPhotoDays, listDays } from "../api/days";
@@ -6,7 +6,7 @@ import { listProducts } from "../api/products";
 import { listTags } from "../api/tags";
 import { day, NO_SPOTS, NO_STAGES, product } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
-import { TimelineScreen } from "./TimelineScreen";
+import { TimelinePreview, TimelineScreen } from "./TimelineScreen";
 
 vi.mock("../api/settings");
 vi.mock("../api/days");
@@ -127,5 +127,22 @@ describe("Timeline photo comparison", () => {
 
     expect(await screen.findByLabelText("Before date")).toHaveValue("2026-10-01");
     expect(screen.queryByRole("dialog", { name: /Thursday/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("TimelinePreview (signed out)", () => {
+  it("shows an empty calendar and a sign-up nudge without calling the API", async () => {
+    const user = userEvent.setup();
+    // Plain render: no settings or sign-in, like a visitor who isn't signed in.
+    render(<TimelinePreview />);
+
+    expect(screen.getByText(/Your calendar is empty/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign up to start logging" })).toHaveAttribute("href", "#/log");
+    expect(document.querySelectorAll(".cal-day.unlogged").length).toBeGreaterThan(0);
+    expect(listDays).not.toHaveBeenCalled();
+
+    // Tapping a day goes to the log, which shows the sign-up form.
+    await user.click(document.querySelector<HTMLElement>(".cal-day:not(:disabled)")!);
+    expect(location.hash).toBe("#/log");
   });
 });

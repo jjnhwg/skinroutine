@@ -14,9 +14,14 @@ const base = {
   "aria-hidden": true,
 };
 
-export const DropletIcon = ({ size = 18 }: IconProps) => (
-  <svg {...base} width={size} height={size} strokeWidth={2.2}>
-    <path d="M12 2.5c3.5 4.2 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 2.5-6.8 6-11z" />
+/** The app's logo: a calm face (closed eyes, small smile) with a sparkle. */
+export const FaceIcon = ({ size = 22 }: IconProps) => (
+  <svg {...base} width={size} height={size}>
+    <ellipse cx="12" cy="12" rx="7" ry="9" strokeWidth={2.1} />
+    {/* Closed eyes, then the smile. */}
+    <path d="M8.4 10.8q1.3 1.2 2.6 0M13 10.8q1.3 1.2 2.6 0M10.4 15q1.6 1.2 3.2 0" strokeWidth={1.7} />
+    {/* Four-point sparkle, filled rather than outlined. */}
+    <path d="M19.6 1.6c.5 2.3.5 2.3 2.8 2.8-2.3.5-2.3.5-2.8 2.8-.5-2.3-.5-2.3-2.8-2.8 2.3-.5 2.3-.5 2.8-2.8z" fill="currentColor" stroke="none" />
   </svg>
 );
 
@@ -151,5 +156,26 @@ export const TubeIcon = ({ size = 24 }: IconProps) => (
   <svg {...base} width={size} height={size} strokeWidth={1.9}>
     <path d="M7 3h10l-1.5 13h-7z" />
     <path d="M9.5 16h5v3h-5zM10.5 19h3v2h-3z" />
+  </svg>
+);
+
+/** Two filled sparkles: the "Ask about your skin" assistant. Filled, so it reads at small sizes on the accent button. */
+export const SparkleIcon = ({ size = 24 }: IconProps) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+    <path d="M10 2.5c.5 3.9 2.6 6 6.5 6.5-3.9.5-6 2.6-6.5 6.5-.5-3.9-2.6-6-6.5-6.5 3.9-.5 6-2.6 6.5-6.5z" />
+    <path d="M18 13.5c.3 2.2 1.3 3.2 3.5 3.5-2.2.3-3.2 1.3-3.5 3.5-.3-2.2-1.3-3.2-3.5-3.5 2.2-.3 3.2-1.3 3.5-3.5z" />
+  </svg>
+);
+
+/** A paper-plane arrow for the chat's send button. */
+export const SendIcon = ({ size = 18 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={2.2}>
+    <path d="M5 12h13M13 6l6 6-6 6" />
+  </svg>
+);
+
+export const CloseIcon = ({ size = 18 }: IconProps) => (
+  <svg {...base} width={size} height={size} strokeWidth={2.2}>
+    <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );

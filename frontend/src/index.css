@@ -56,8 +56,7 @@ header.top::before {
 header.top .inner { max-width: 640px; margin: 0 auto; padding: 16px 16px 12px; display: flex; align-items: center; gap: 10px; }
 header.top .home { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; min-width: 0; }
 .logo { width: 36px; height: 36px; border-radius: 999px; background: var(--accent-soft); display: grid; place-items: center; color: var(--accent); flex: none; }
-header.top h1 { font-size: 17px; margin: 0; letter-spacing: -.01em; font-weight: 600; }
-header.top p { margin: 0; color: var(--text-muted); font-size: 13px; }
+header.top h1 { font-size: 13px; line-height: 1; margin: 0; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: var(--accent); white-space: nowrap; }
 
 /* layout */
 main { max-width: 640px; margin: 0 auto; padding: 4px 16px 24px; }
@@ -86,7 +85,7 @@ input[type=text], input[type=date], input[type=email], input[type=password], inp
   padding: 12px 14px;
   transition: border-color .15s, background .15s;
 }
-input[type=text]:focus, input[type=date]:focus, input[type=email]:focus, input[type=time]:focus, input[type=number]:focus, textarea:focus, select:focus {
+input[type=text]:focus, input[type=date]:focus, input[type=email]:focus, input[type=password]:focus, input[type=time]:focus, input[type=number]:focus, textarea:focus, select:focus {
   outline: none;
   background: var(--surface);
   border-color: var(--accent);
@@ -457,6 +456,16 @@ main.tab-home { max-width: none; padding: 0; }
 .routine-list li > span:last-child { display: flex; flex-direction: column; min-width: 0; }
 .routine-list .brand { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
 .routine-list b { font-size: 14px; font-weight: 600; line-height: 1.3; }
+/* Signed out: the product list sits blurred under a lock. */
+.routine-locked { position: relative; border-radius: 16px; overflow: hidden; }
+.routine-locked-blur { filter: blur(6px); user-select: none; pointer-events: none; }
+.routine-lock {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 16px; text-align: center; color: var(--text);
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+}
+.routine-lock svg { color: var(--accent); }
+.routine-lock p { margin: 0; font-size: 15px; font-weight: 600; }
 .landing blockquote { margin: 0; padding: 28px 30px; background: var(--accent-soft); border-radius: 26px; font-size: 26px; line-height: 1.4; }
 
 .proof-photo { width: 100%; height: auto; display: block; border-radius: 20px; border: 1px solid var(--border); background: var(--surface-3); }
@@ -543,7 +552,7 @@ nav.tabs a[aria-current=page] { color: var(--accent); }
   nav.tabs .inner { max-width: none; margin: 0; gap: 4px; }
   /* The tabs take the free space, so the account button sits right after them. */
   nav.tabs { margin-left: auto; }
-  .account { margin-left: 0; }
+  .account, .login-btn { margin-left: 0; }
   nav.tabs a { flex: none; flex-direction: row; gap: 8px; padding: 9px 16px; border-radius: 999px; font-size: 14px; color: var(--text); }
   nav.tabs a svg { width: 18px; height: 18px; color: var(--text-muted); }
   nav.tabs a:hover { background: var(--surface-2); }
@@ -710,13 +719,19 @@ main:has(> .signup) { max-width: 1060px; }
 .perk-num { width: 30px; height: 30px; flex: none; border-radius: 999px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-size: 18px; font-weight: 600; }
 .signup-proof { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; max-width: 440px; }
 .signup-proof figure { position: relative; margin: 0; }
-.signup-proof img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; border-radius: 20px; background: var(--surface-3); }
+/* Square, like the home page's pair, so each photo's saved framing crops it the same way. */
+.signup-proof .tuned-photo { width: 100%; aspect-ratio: 1; border-radius: 20px; background: var(--surface-3); }
 .signup-proof .hero-pill { top: 10px; left: 10px; }
 .signup-card { flex: 1 1 340px; max-width: 420px; margin: 0; padding: 30px 28px; }
 .signup-card h2 { font-size: 22px; margin: 0 0 4px; }
 .signup-card form > .muted { margin: 0 0 6px; }
 .signup-card input { width: 100%; }
 .signup-card .btn { width: 100%; margin-top: 18px; }
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 48px; }
+.password-toggle { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; border: none; border-radius: 10px; background: none; color: var(--text-muted); cursor: pointer; }
+.password-toggle:hover, .password-toggle[aria-pressed=true] { color: var(--accent); }
+.password-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .signup-card .hint { margin: 6px 0 0; color: var(--text-muted); font-size: 13px; }
 .signup-sent { text-align: center; padding: 12px 0; }
 .auth-switch { margin: 16px 0 0; text-align: center; font-size: 14px; color: var(--text-muted); }
@@ -736,6 +751,8 @@ main:has(> .signup) { max-width: 1060px; }
 .auth-error { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--bad); font-size: 14px; }
 /* Account button at the right end of the header, with its drop-down menu */
 .account { position: relative; margin-left: auto; flex: none; }
+/* Signed out, "Log in" takes the account button's spot. */
+.login-btn { margin-left: auto; flex: none; }
 .account-btn { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--accent-ring); background: var(--accent-soft); color: var(--accent); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; display: grid; place-items: center; }
 .account-btn:hover, .account-btn[aria-expanded=true] { background: var(--accent-ring); }
 .account-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: max-content; max-width: min(300px, calc(100vw - 32px)); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
@@ -759,3 +776,59 @@ main:has(> .signup) { max-width: 1060px; }
 .tuner .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .tuner button:not(.btn) { font: inherit; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; }
 .tuner button:disabled { opacity: .45; cursor: default; }
+
+/* "Ask about your skin" teaser (ChatTeaser.tsx): a button bottom-right that opens a "coming soon" chat panel.
+   On phones it sits above the bottom tab bar; on the log page, above the Save bar too. */
+.chat-teaser { position: fixed; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 15; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.chat-teaser.raised { bottom: calc(148px + env(safe-area-inset-bottom)); }
+
+/* the launcher: a round sparkle button on phones, a pill with a label on wide screens */
+.chat-fab { height: 54px; min-width: 54px; padding: 0 15px; border-radius: 999px; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font: inherit; font-size: 15px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #3b88b5, var(--accent-hover)); box-shadow: 0 8px 24px rgba(29, 83, 117, .32), inset 0 1px 0 rgba(255, 255, 255, .2); transition: transform .15s, box-shadow .15s; }
+.chat-fab:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(29, 83, 117, .38), inset 0 1px 0 rgba(255, 255, 255, .2); }
+.chat-fab:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 3px; }
+.chat-fab-label { display: none; }
+
+/* the panel */
+.chat-panel { width: min(360px, calc(100vw - 32px)); max-height: min(560px, calc(100vh - 200px)); display: flex; flex-direction: column; overflow: hidden; border-radius: 22px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 24px 60px rgba(20, 40, 58, .18); font-size: 14px; animation: chat-in .18s ease-out; transform-origin: bottom right; }
+@keyframes chat-in { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+@media (prefers-reduced-motion: reduce) { .chat-panel { animation: none; } }
+
+.chat-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 14px 16px; color: #fff; background: linear-gradient(135deg, #3b88b5, var(--accent-hover)); }
+.chat-avatar { flex: none; width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; background: rgba(255, 255, 255, .2); }
+.chat-head-text { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.chat-head h2 { margin: 0; font-size: 16px; line-height: 1.2; color: inherit; }
+.chat-soon { align-self: flex-start; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .22); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+.chat-close { flex: none; width: 32px; height: 32px; border-radius: 999px; border: none; display: grid; place-items: center; color: inherit; background: none; cursor: pointer; }
+.chat-close:hover { background: rgba(255, 255, 255, .18); }
+
+.chat-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
+.chat-bubble { margin: 0; max-width: 88%; padding: 10px 14px; border-radius: 18px 18px 18px 6px; background: var(--surface); border: 1px solid var(--border); line-height: 1.5; }
+.chat-try { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.chat-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-chips li { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--accent-ring); background: var(--accent-soft); color: var(--accent-hover); font-size: 13px; font-weight: 600; line-height: 1.3; }
+
+.chat-compose { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 12px; border-top: 1px solid var(--border); }
+.chat-compose input { flex: 1; min-width: 0; margin: 0; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); font: inherit; font-size: 14px; }
+.chat-compose input:disabled { cursor: not-allowed; }
+.chat-send { flex: none; width: 40px; height: 40px; border-radius: 999px; border: none; display: grid; place-items: center; color: #fff; background: var(--accent); opacity: .4; cursor: not-allowed; }
+
+@media (min-width: 900px) {
+  .chat-teaser { right: 32px; bottom: 32px; }
+  /* the log page's Save button is bottom-right on wide screens, so make room for it */
+  .chat-teaser.raised { bottom: 96px; }
+  .chat-fab { padding: 0 20px 0 16px; }
+  .chat-fab-label { display: inline; }
+}
+
+/* Easter egg: tap the chat avatar 3 times for a thumbs-up (ChatTeaser.tsx) */
+.chat-avatar { border: none; color: inherit; cursor: pointer; transition: transform .1s; }
+.chat-avatar:active { transform: scale(.9); }
+.chat-cheer { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 6px; }
+.chat-thumb { font-size: 56px; line-height: 1; animation: chat-thumb-pop .6s cubic-bezier(.3, 1.6, .5, 1); transform-origin: bottom left; }
+.chat-cheer .chat-bubble { animation: chat-in .25s .15s ease-out both; }
+@keyframes chat-thumb-pop {
+  0% { opacity: 0; transform: scale(.2) rotate(-30deg); }
+  60% { opacity: 1; transform: scale(1.15) rotate(8deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@media (prefers-reduced-motion: reduce) { .chat-thumb, .chat-cheer .chat-bubble { animation: none; } }

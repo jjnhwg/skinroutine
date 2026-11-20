@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { SettingsProvider } from "./api/SettingsProvider";
 import { useSettings } from "./api/useSettings";
 import { AccountMenu } from "./components/AccountMenu";
-import { DropletIcon } from "./components/Icons";
+import { ChatTeaser } from "./components/ChatTeaser";
+import { FaceIcon } from "./components/Icons";
 import { MissedDaysPrompt } from "./components/MissedDaysPrompt";
 import { TabBar } from "./components/TabBar";
 import { ToastProvider } from "./components/Toast";
@@ -15,10 +16,10 @@ import { LogScreen } from "./screens/LogScreen";
 import { ProductsScreen } from "./screens/ProductsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { SignUpScreen } from "./screens/SignUpScreen";
-import { TimelineScreen } from "./screens/TimelineScreen";
+import { TimelinePreview, TimelineScreen } from "./screens/TimelineScreen";
 
-/** Tabs anyone can read: the landing page is the advertisement. The guide and everything else need an account. */
-const PUBLIC_TABS: Tab[] = ["home"];
+/** Tabs anyone can open. Signed out, Timeline is an empty preview; the guide and everything else need an account. */
+const PUBLIC_TABS: Tab[] = ["home", "timeline"];
 
 /** The log for `date`, or for today, which comes from the signed-in user's settings. */
 function LogRoute({ date }: { date: string | null }) {
@@ -26,19 +27,20 @@ function LogRoute({ date }: { date: string | null }) {
   return <LogScreen date={date ?? today} />;
 }
 
-function Screens({ tab, date, signedIn }: Route & { signedIn: boolean }) {
+function Screens({ tab, date, login, signedIn }: Route & { signedIn: boolean }) {
   // The gate: a logging tab shows the sign-up pitch until someone is signed in.
   if (!signedIn && !PUBLIC_TABS.includes(tab)) {
     return (
       <main id="app" className="tab-signup" tabIndex={-1}>
-        <SignUpScreen />
+        {/* key: going from #/log to #/login (or back) starts the card on the right form. */}
+        <SignUpScreen key={String(login)} initialMode={login ? "login" : "signup"} />
       </main>
     );
   }
   return (
     <main id="app" className={`tab-${tab}`} tabIndex={-1}>
       {tab === "home" && <HomeScreen signedIn={signedIn} />}
-      {tab === "timeline" && <TimelineScreen />}
+      {tab === "timeline" && (signedIn ? <TimelineScreen /> : <TimelinePreview />)}
       {tab === "insights" && <InsightsScreen />}
       {tab === "products" && <ProductsScreen />}
       {tab === "settings" && <SettingsScreen />}
@@ -53,7 +55,7 @@ export default function App() {
   const session = useSession();
 
   useEffect(() => {
-    document.title = `${TAB_LABELS[route.tab]} · Skin Test Log`;
+    document.title = `${TAB_LABELS[route.tab]} · Skinjourney`;
   }, [route.tab]);
 
   // Still checking (reading localStorage, or a link in the URL): a blink, not a flash of the sign-up form.
@@ -65,16 +67,21 @@ export default function App() {
         <div className="inner">
           <a className="home" href="#/">
             <div className="logo" aria-hidden="true">
-              <DropletIcon />
+              <FaceIcon />
             </div>
-            <div>
-              <h1>Skin Test Log</h1>
-              <p>Track your routine, log your skin, see what helps.</p>
-            </div>
+            <h1>
+              Skinjourney
+            </h1>
           </a>
           {/* A bottom tab bar on phones, links in the header on wider screens. */}
           <TabBar current={route.tab} />
-          {session && <AccountMenu email={session.user.email ?? ""} />}
+          {session ? (
+            <AccountMenu email={session.user.email ?? ""} />
+          ) : (
+            <a className="btn small login-btn" href="#/login">
+              Log in
+            </a>
+          )}
         </div>
       </header>
       {session ? (
@@ -85,9 +92,11 @@ export default function App() {
           <MissedDaysPrompt />
         </SettingsProvider>
       ) : (
-        // Signed out: only Home and the sign-up pitch, neither of which calls /api.
+        // Signed out: Home, the empty Timeline preview and the sign-up pitch; none of them call /api.
         <Screens {...route} signedIn={false} />
       )}
+      {/* Shown to everyone, signed in or not: it's a "coming soon" teaser. */}
+      <ChatTeaser raised={route.tab === "log" && !!session} />
     </ToastProvider>
   );
 }

@@ -18,13 +18,16 @@ export interface Route {
   tab: Tab;
   /** Second path segment, when it is a YYYY-MM-DD date. */
   date: string | null;
+  /** #/login: the log-in form instead of sign-up. Opens on the Log tab, so that's where you land once in. */
+  login: boolean;
 }
 
-function parse(hash: string): Route {
+export function parse(hash: string): Route {
   const parts = (hash.replace(/^#\/?/, "") || "home").split("/");
+  if (parts[0] === "login") return { tab: "log", date: null, login: true };
   const tab = (TABS as string[]).includes(parts[0]) ? (parts[0] as Tab) : "home";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(parts[1] ?? "") ? parts[1] : null;
-  return { tab, date };
+  return { tab, date, login: false };
 }
 
 /** Current route, kept in sync with the URL hash. */

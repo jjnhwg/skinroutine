@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
+import { TunedPhoto } from "../components/TunedPhoto";
 import { supabase } from "../lib/supabase";
+import { HERO_PAIRS, originalUrl } from "./HomeScreen";
 
 /**
  * "Sign up to start logging": what shows in place of any logging tab while
@@ -23,6 +25,7 @@ const PERKS = [
 export function SignUpScreen({ initialMode = "signup" }: { initialMode?: Mode }) {
   // Which form the card shows. The forms flip it with the link under their button.
   const [mode, setMode] = useState<Mode>(initialMode);
+  const { before, after } = HERO_PAIRS[0];
 
   return (
     <div className="signup">
@@ -45,13 +48,14 @@ export function SignUpScreen({ initialMode = "signup" }: { initialMode?: Mode })
           ))}
         </ol>
 
-        <div className="signup-proof" aria-label="My skin on day one and now">
+        {/* The home page's first before/after, framed the same way (src/lib/homePhotoFraming.json). */}
+        <div className="signup-proof" aria-label="My skin before and now">
           <figure>
-            <img src="/progress/01.jpg" alt="My skin on the first day I logged" />
-            <span className="hero-pill">Day 1</span>
+            <TunedPhoto slot={before.slot} src={originalUrl(before.photo)} alt="My skin before" interactive={false} lazy={false} />
+            <span className="hero-pill">Before</span>
           </figure>
           <figure>
-            <img src="/progress/31.jpg" alt="My skin now, after two years of logging" />
+            <TunedPhoto slot={after.slot} src={originalUrl(after.photo)} alt="My skin now" interactive={false} lazy={false} />
             <span className="hero-pill now">Now</span>
           </figure>
         </div>
@@ -234,22 +238,52 @@ function PasswordField(props: {
   value: string;
   onChange: (v: string) => void;
 }) {
+  // Off by default; the eye button flips the field between dots and plain text.
+  const [visible, setVisible] = useState(false);
+
   return (
     <>
       <label className="field" htmlFor={props.id}>
         Password
       </label>
-      <input
-        type="password"
-        id={props.id}
-        autoComplete={props.autoComplete}
-        // Only a new password has rules to meet; on log in, let Supabase judge it.
-        minLength={props.autoComplete === "new-password" ? 8 : undefined}
-        required
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value)}
-      />
+      <div className="password-wrap">
+        <input
+          type={visible ? "text" : "password"}
+          id={props.id}
+          autoComplete={props.autoComplete}
+          // Only a new password has rules to meet; on log in, let Supabase judge it.
+          minLength={props.autoComplete === "new-password" ? 8 : undefined}
+          required
+          // Stop the browser from autocorrecting or capitalizing it while it's shown as text.
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          value={props.value}
+          onChange={(e) => props.onChange(e.target.value)}
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
+          aria-controls={props.id}
+          onClick={() => setVisible((v) => !v)}
+        >
+          <EyeIcon crossed={visible} />
+        </button>
+      </div>
     </>
+  );
+}
+
+/** An open eye ("show"), or a crossed-out one ("hide") while the password is visible. */
+function EyeIcon({ crossed }: { crossed: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      {crossed && <line x1="3" y1="3" x2="21" y2="21" />}
+    </svg>
   );
 }
 
