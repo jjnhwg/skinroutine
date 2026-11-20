@@ -295,3 +295,19 @@ class WeatherDay(Base):
     date: Mapped[date] = mapped_column(Date, primary_key=True)
     temp_max_c: Mapped[float | None]
     humidity_pct: Mapped[float | None]
+
+
+class BugReport(Base):
+    """Something that went wrong, in the user's words, plus where they were when it did."""
+
+    __tablename__ = "bug_reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    message: Mapped[str] = mapped_column(Text)
+    # The page they were on ("#/log/2026-11-19") and their browser, to help reproduce it.
+    page: Mapped[str] = mapped_column(String(200), default="")
+    user_agent: Mapped[str] = mapped_column(String(400), default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )

@@ -486,3 +486,11 @@ class Recap(BaseModel):
     week: RecapWeek
     previous: RecapWeek
     sentence: str
+
+
+class BugReportCreate(BaseModel):
+    """What the "Report a bug" form sends. The page and browser are filled in by the app."""
+
+    message: Annotated[str, AfterValidator(_not_blank), Field(max_length=4000)]
+    page: str = Field("", max_length=200)
+    user_agent: str = Field("", max_length=400)

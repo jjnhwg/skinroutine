@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { BugReportSheet } from "./BugReportSheet";
 
-/** Top-right account button: the email's first letter, opening a menu with the email and Sign out. */
+/** Top-right account button: the email's first letter, opening a menu with the email, Report a bug and Sign out. */
 export function AccountMenu({ email }: { email: string }) {
   const [open, setOpen] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   // Close on a click anywhere else, or on Escape.
@@ -41,11 +43,22 @@ export function AccountMenu({ email }: { email: string }) {
             Signed in as
           </div>
           <div className="account-email">{email}</div>
+          <button
+            type="button"
+            className="btn ghost small"
+            onClick={() => {
+              setOpen(false);
+              setReporting(true);
+            }}
+          >
+            Report a bug
+          </button>
           <button type="button" className="btn ghost small" onClick={() => supabase.auth.signOut()}>
             Sign out
           </button>
         </div>
       )}
+      {reporting && <BugReportSheet onClose={() => setReporting(false)} />}
     </div>
   );
 }

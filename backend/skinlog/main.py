@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from skinlog.routers import (
     backfill,
+    bug_reports,
     catalog,
     days,
     files,
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     app.include_router(trials.router, prefix="/api")
     app.include_router(insights.router, prefix="/api")
     app.include_router(backfill.router, prefix="/api")
+    app.include_router(bug_reports.router, prefix="/api")
     return app
 
 
