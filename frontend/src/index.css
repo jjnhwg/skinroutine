@@ -318,7 +318,8 @@ button { font: inherit; cursor: pointer; }
 .day-chips .toggle { min-height: 32px; padding: 4px 10px; font-size: 13px; }
 .day-chips .day-chip { width: 32px; padding: 4px 0; }
 .routine-list { list-style: none; margin: 0; padding: 0; }
-.routine-row { padding: 10px 0; border-top: 1px solid var(--border); }
+/* .routine-list li (home page) makes rows flex; editor rows stack name above day chips */
+.routine-list .routine-row { display: block; padding: 10px 0; border-top: 1px solid var(--border); }
 .routine-row:first-child { border-top: none; }
 .routine-row .top { display: flex; align-items: center; gap: 10px; }
 .routine-row .top b { flex: 1; min-width: 0; font-size: 15px; }
@@ -436,6 +437,12 @@ main.tab-home { max-width: none; padding: 0; }
 .chapter-side .tuned-photo { width: 100%; aspect-ratio: 4 / 5; border-radius: 20px; background: var(--surface-3); }
 .chapter-side .hero-pill { top: 12px; left: 12px; }
 .chapter-side figcaption { margin-top: 8px; font-size: 13px; text-align: center; }
+/* Phones: the photos are small, so Before/After/Now sit under the photo instead of covering the face. */
+@media (max-width: 720px) {
+  .compare-photos figure, .chapter-side figure { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .compare-photos .hero-pill, .chapter-side .hero-pill { position: static; padding: 4px 12px; font-size: 12px; }
+  .compare-photos .hero-pill:not(.now), .chapter-side .hero-pill:not(.now) { background: var(--surface-2); }
+}
 /* Routine titles stay smaller than section headings, even on wide screens. */
 .landing .chapter-copy .display { font-size: 32px; line-height: 1.1; }
 .chapter-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
@@ -659,6 +666,16 @@ details.guide-base[open] > span, details.guide-fold[open] > span { display: bloc
 .pick-foot .row { gap: 6px; }
 .guide .badge { font-size: 11px; font-weight: 800; border-radius: 999px; padding: 2px 8px; }
 .guide .badge.unc { color: #3e4c58; background: #eef0f2; }
+/* phones: two picks side by side instead of one long column */
+@media (max-width: 560px) {
+  .guide-picks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pick { max-width: none; border-radius: 16px; }
+  .pick-label { padding: 6px 10px; font-size: 12px; }
+  .pick .product-photo img { padding: 6px; }
+  .pick-body { padding: 10px; gap: 6px; font-size: 12px; line-height: 1.4; }
+  .pick .name { font-size: 14px; }
+  .pick .brand { font-size: 10px; }
+}
 
 .guide-more { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
 .guide-more > button { width: 100%; min-height: 56px; background: transparent; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 12px; padding: 14px 20px; font: inherit; font-size: 15px; font-weight: 800; color: var(--text); text-align: center; }
