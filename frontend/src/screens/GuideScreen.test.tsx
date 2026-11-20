@@ -117,11 +117,13 @@ describe("GuideScreen", () => {
     }
     const cicaplast = step("Barrier cream or balm").getByText("Cicaplast Baume B5").closest("article")!;
     expect(within(cicaplast as HTMLElement).getByText("Key ingredients:").parentElement).toHaveTextContent(
-      "Key ingredients: Panthenol, Centella, Shea butter",
+      "Key ingredients: Panthenol, Centella",
     );
     expect(within(cicaplast as HTMLElement).queryByText(/Seals in:/)).not.toBeInTheDocument();
     const serum = step("Serum").getByText("Beta-Glucan Serum").closest("article")!;
     expect(within(serum as HTMLElement).getByRole("list", { name: "Key ingredients" })).toHaveTextContent("Hydrates:");
-    expect(screen.getByText("Seal water in")).toBeInTheDocument();
+    expect(screen.getByText("Repair the barrier")).toBeInTheDocument();
+    // Only ingredients on the listed products get a grid entry; no sealing balms are listed.
+    expect(screen.queryByText("Seal water in")).not.toBeInTheDocument();
   });
 });

@@ -27,12 +27,6 @@ export const INGREDIENT_GROUPS = [
     what: "Ceramides, cholesterol and squalane are the fats in the mortar, so they fill the gaps.",
     items: ["Ceramides", "Cholesterol", "Squalane"],
   },
-  {
-    job: "Seals in",
-    title: "Seal water in",
-    what: "They leave a film on skin, like a lid on a pot, so the water underneath can’t escape.",
-    items: ["Shea butter", "Mineral oil", "Beeswax"],
-  },
 ] as const;
 
 export type Ingredient = (typeof INGREDIENT_GROUPS)[number]["items"][number];
@@ -195,8 +189,8 @@ export const GUIDE_STEPS: GuideStep[] = [
     why: "Your barrier is like a brick wall: skin cells are the bricks, and fats (ceramides, cholesterol and fatty acids) are the mortar that keeps water in. When the barrier is damaged, the mortar has gaps, and a light moisturizer alone often can’t keep water from escaping through them. A barrier cream or balm is the heavy top layer. It uses occlusives (petrolatum, dimethicone, shea butter) that leave a film on the skin, a bit like a lid on a pot, so the water from your toner, serum and moisturizer can’t evaporate. Many also add the same fats your barrier is missing, plus panthenol to calm it. With that layer on, skin stays hydrated long enough to rebuild its own barrier, and it does most of that repair overnight, which is why this step goes last, at night. It only seals in what’s under it, so put it on over your hydrating layers, not on dry skin.",
     note: "These products are really heavy and can clog your pores, so only use this if your skin barrier is really damaged.",
     picks: [
-      { ...P("", ["red"], "La Roche-Posay", "Cicaplast Baume B5", 4, "5% panthenol is a lot, and its centella is madecassoside, the most calming part of the plant.", "v35 1:19 @charinecheungg · v43 0:37 @donatsuyang · v05 0:42 @skinfiltrator · v10 4:16"), has: ["Panthenol", "Centella", "Shea butter"], bestFor: "Dry or sensitive skin. If you’re oily, use it only on dry or raw patches." },
-      { ...P("", ["dry"], "Avène", "Cicalfate+ Restorative Protective Cream", 2, "", "v43 0:20 @donatsuyang · v46 1:47 @jordynwoodruff"), has: ["Glycerin", "Mineral oil", "Beeswax"], bestFor: "Dry or damaged skin. It may be too rich for oily or clog-prone skin." },
+      { ...P("", ["red"], "La Roche-Posay", "Cicaplast Baume B5", 4, "5% panthenol is a lot, and its centella is madecassoside, the most calming part of the plant.", "v35 1:19 @charinecheungg · v43 0:37 @donatsuyang · v05 0:42 @skinfiltrator · v10 4:16"), has: ["Panthenol", "Centella"], bestFor: "Dry or sensitive skin. If you’re oily, use it only on dry or raw patches." },
+      { ...P("", ["dry"], "Avène", "Cicalfate+ Restorative Protective Cream", 2, "", "v43 0:20 @donatsuyang · v46 1:47 @jordynwoodruff"), has: ["Glycerin"], bestFor: "Dry or damaged skin. It may be too rich for oily or clog-prone skin." },
     ],
     rest: [
     ],
