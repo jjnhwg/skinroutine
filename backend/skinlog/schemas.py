@@ -181,6 +181,14 @@ class Pin(BaseModel):
     x: float = Field(ge=0, le=1)
     y: float = Field(ge=0, le=1)
     kind: PinKind
+    # "Not from my products": analysis leaves this spot out. Spots only.
+    unrelated: bool = False
+
+    @model_validator(mode="after")
+    def _spots_only(self) -> "Pin":
+        if self.unrelated and self.kind == "red":
+            raise ValueError("Only spots can be marked as not from your products")
+        return self
 
 
 class ProductUseIO(BaseModel):

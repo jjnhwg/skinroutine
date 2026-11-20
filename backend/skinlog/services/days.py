@@ -86,7 +86,7 @@ def carry_over_from(db: Session, user: User, day: date) -> DayLog | None:
 def log_pins(log: DayLog) -> list[Pin]:
     """The day's pins; a day logged as counts only gets them drawn round each zone's middle."""
     if log.pins:
-        return [Pin(x=p.x, y=p.y, kind=p.kind) for p in log.pins]
+        return [Pin(x=p.x, y=p.y, kind=p.kind, unrelated=p.unrelated) for p in log.pins]
     drawn: Counter[Zone] = Counter()
     out = []
     stage_order = list(Stage)
@@ -255,7 +255,7 @@ def save_day(db: Session, user: User, day: date, body: DayIn) -> DayOut:
         stages, conditions = _file_pins(body.pins)
         log.stages.extend(stages)
         log.conditions.extend(conditions)
-        log.pins.extend(FacePin(x=p.x, y=p.y, kind=p.kind) for p in body.pins)
+        log.pins.extend(FacePin(x=p.x, y=p.y, kind=p.kind, unrelated=p.unrelated) for p in body.pins)
     else:
         log.stages.extend(
             ZoneStage(zone=zone, stage=stage, count=count)

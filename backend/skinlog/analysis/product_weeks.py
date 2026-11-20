@@ -11,6 +11,8 @@ What a day had:
   a new pimple when active spots went up, something forming when "coming up" spots
   went up, and red/irritated when any zone was marked red. The first logged day has
   nothing to compare with, so only red can count on it.
+- Spots marked "not from my products" never count. If "New spot" or "Something
+  forming" was picked but the day's only new ones are marked, it's dropped.
 """
 
 from datetime import date, timedelta
@@ -31,14 +33,22 @@ def day_signs(records: list[DayRecord]) -> dict[date, set[str]]:
     for r in records:
         if not r.is_outcome:
             continue
+        # Read off the face map; counts already leave out spots marked unrelated.
+        more_active = r.total_breakouts > previous.total_breakouts if previous else r.total_breakouts > 0
+        more_forming = r.forming > previous.forming if previous else r.forming > 0
         if r.events:
             found = set(r.events) & set(SIGNS)
+            if r.unrelated:
+                if not more_active:
+                    found.discard("new_spot")
+                if not more_forming:
+                    found.discard("forming")
         else:
             found = set()
             if previous is not None:
-                if r.total_breakouts > previous.total_breakouts:
+                if more_active:
                     found.add("new_spot")
-                if r.forming > previous.forming:
+                if more_forming:
                     found.add("forming")
             if r.red:
                 found.add("irritated")

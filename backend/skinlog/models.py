@@ -198,6 +198,9 @@ class FacePin(Base):
     x: Mapped[float]
     y: Mapped[float]
     kind: Mapped[str] = mapped_column(String(20))
+    # The person says this spot isn't from their products (stress, period, picking…),
+    # so analysis leaves it out. Only ever set on spots, not conditions.
+    unrelated: Mapped[bool] = mapped_column(default=False, server_default=false())
 
 
 class ProductUse(Base):

@@ -6,7 +6,11 @@ Definitions (prompt_plan.md, "Analysis definitions"):
   weather on any day it was recorded (it happened whether or not the day was logged).
 - Breakout event: an outcome day whose total is higher than the previous calendar
   day's; if the previous day isn't an outcome day, any total of 1 or more counts.
+- Spots marked "not from my products" are left out of every count here, so they
+  never count against a product.
 """
+
+from collections import Counter
 
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -15,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from skinlog import weather
+from skinlog.face import zone_of
 from skinlog.models import Condition, DayLog, DayStatus, Stage, User, WeatherDay
 from skinlog.schemas import file_url
 
@@ -35,6 +40,7 @@ class DayRecord:
     events: list[str] = field(default_factory=list)
     forming: int = 0  # "coming up" spots, all zones
     red: bool = False  # any zone marked red or irritated
+    unrelated: int = 0  # spots marked "not from my products", all stages
 
     @property
     def is_outcome(self) -> bool:
@@ -52,6 +58,7 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
             selectinload(DayLog.uses),
             selectinload(DayLog.tags),
             selectinload(DayLog.photos),
+            selectinload(DayLog.pins),
         )
     )
     by_date = {log.date: log for log in logs}
@@ -68,7 +75,13 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
         if log is None:
             records.append(DayRecord(date=day, status="none", weather=weather_by_date.get(day, set())))
             continue
-        active = {s.zone: s.count for s in log.stages if s.stage == Stage.ACTIVE and s.count}
+        # Stages are per-zone counts of every pin; take the unrelated pins back out.
+        unrelated = Counter((zone_of(p.x, p.y), p.kind) for p in log.pins if p.unrelated)
+        active = {
+            s.zone: n
+            for s in log.stages
+            if s.stage == Stage.ACTIVE and (n := s.count - unrelated[s.zone, Stage.ACTIVE]) > 0
+        }
         exposed = log.status in (DayStatus.LOGGED, DayStatus.ROUTINE_CONFIRMED)
         records.append(
             DayRecord(
@@ -83,8 +96,11 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
                 weather=weather_by_date.get(day, set()),
                 period=log.period,
                 events=log.events.split(",") if log.events else [],
-                forming=sum(s.count for s in log.stages if s.stage == Stage.COMING_UP),
+                forming=sum(
+                    s.count - unrelated[s.zone, Stage.COMING_UP] for s in log.stages if s.stage == Stage.COMING_UP
+                ),
                 red=any(c.condition == Condition.RED for c in log.conditions),
+                unrelated=sum(unrelated.values()),
             )
         )
     return records

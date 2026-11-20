@@ -14,8 +14,8 @@ NOSE = (100 / 200, 120 / 260)
 FOREHEAD = (100 / 200, 50 / 260)
 
 
-def pin(at: tuple[float, float], kind: str) -> dict:
-    return {"x": at[0], "y": at[1], "kind": kind}
+def pin(at: tuple[float, float], kind: str, unrelated: bool = False) -> dict:
+    return {"x": at[0], "y": at[1], "kind": kind, "unrelated": unrelated}
 
 
 @pytest.mark.parametrize(
@@ -115,3 +115,39 @@ def test_bad_pins_are_422(client, frozen_now, body):
 def test_too_many_of_one_kind_in_one_zone_is_422(client, frozen_now):
     body = {"pins": [pin(FOREHEAD, "clogged")] * 51}
     assert client.put("/api/days/2026-10-05", json=body).status_code == 422
+
+
+def test_a_spot_marked_not_from_products_is_kept_and_carries_over(client, frozen_now):
+    pins = [pin(CHIN, "active"), pin(FOREHEAD, "active", unrelated=True)]
+
+    saved = client.put("/api/days/2026-10-05", json={"pins": pins}).json()
+    next_day = client.get("/api/days/2026-10-06").json()
+
+    assert [p["unrelated"] for p in saved["pins"]] == [False, True]
+    # Still a spot on your face: the day's own counts include it.
+    assert saved["total_breakouts"] == 2
+    assert [p["unrelated"] for p in next_day["pins"]] == [False, True]
+
+
+def test_only_spots_can_be_marked_not_from_products(client, frozen_now):
+    body = {"pins": [pin(NOSE, "red", unrelated=True)]}
+
+    assert client.put("/api/days/2026-10-05", json=body).status_code == 422
+
+
+def test_insights_leave_out_spots_not_from_products(client, frozen_now):
+    client.post("/api/products", json={"name": "Retinal", "type": "treatment", "started_on": "2026-10-01"})
+    client.put("/api/days/2026-10-01", json={"pins": [pin(CHIN, "active")]})
+    # A new pimple, marked as stress, and "New spot" picked: none of it is the product's.
+    client.put(
+        "/api/days/2026-10-02",
+        json={
+            "events": ["new_spot"],
+            "pins": [pin(CHIN, "active"), pin(FOREHEAD, "active", unrelated=True)],
+        },
+    )
+
+    [product] = client.get("/api/insights/products").json()["products"]
+    week_1 = next(r for r in product["rows"] if r["label"] == "Week 1")
+
+    assert (week_1["logged_days"], week_1["new_spot"]) == (2, 0)
