@@ -15,6 +15,7 @@ from statistics import mean
 
 from skinlog.analysis.confidence import confidence
 from skinlog.analysis.dataset import DayRecord
+from skinlog.analysis.product_weeks import SIGNS, day_signs
 from skinlog.models import Trial
 from skinlog.services.trials import PURGE_LENGTH_DAYS, planned_end
 
@@ -34,13 +35,16 @@ def _avg(values: list[int | None]) -> float | None:
 
 
 def window(records: list[DayRecord], start: date, end: date) -> dict:
+    """Averages for the label, plus how many logged days had each sign (what the screen shows)."""
     days = [r for r in records if start <= r.date <= end and r.is_outcome]
+    signs = day_signs(records)
     return {
         "start": start,
         "end": end,
         "outcome_days": len(days),
         "total_breakouts": sum(r.total_breakouts for r in days),
         "avg_breakouts": _avg([r.total_breakouts for r in days]),
+        **{sign: sum(1 for r in days if sign in signs[r.date]) for sign in SIGNS},
     }
 
 
@@ -68,7 +72,7 @@ def purge_note(before: dict, during: dict, by_week: list[dict], label: str | Non
             and early_avg - last["avg_breakouts"] >= THRESHOLD
         ):
             return (
-                f"Breakouts went up in weeks 1–2 but dropped in week {last['week']}. "
+                f"New spots went up in weeks 1–2 but dropped in week {last['week']}. "
                 "This can be purging; consider continuing a few more weeks."
             )
     covered = (during["end"] - during["start"]).days + 1

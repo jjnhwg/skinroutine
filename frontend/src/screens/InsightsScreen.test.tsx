@@ -81,7 +81,8 @@ beforeEach(() => {
   vi.mocked(getSuspects).mockReset().mockResolvedValue(READY);
   vi.mocked(getRecap).mockReset().mockResolvedValue(RECAP);
   vi.mocked(getBackfillDates).mockReset().mockResolvedValue([]);
-  vi.mocked(listTrials).mockReset().mockResolvedValue([]);
+  // Retinal is on trial; Old Acid isn't.
+  vi.mocked(listTrials).mockReset().mockResolvedValue([trial(4, product(7, "Retinal"))]);
 });
 
 describe("InsightsScreen", () => {
@@ -105,19 +106,19 @@ describe("InsightsScreen", () => {
     expect(within(card).getByRole("row", { name: /Before you started/ })).toHaveTextContent("Nothing logged");
   });
 
-  it("shows the weeks after a product was stopped", async () => {
+  it("only shows products on a running trial", async () => {
     renderWithApp(<InsightsScreen />);
 
-    const card = (await screen.findByRole("heading", { name: "Old Acid" })).closest(".card") as HTMLElement;
-    expect(within(card).getByText("Started Sep 1 · stopped Sep 15")).toBeInTheDocument();
-    expect(within(card).getByRole("row", { name: /Week 1 after stopping/ })).toBeInTheDocument();
+    await screen.findByRole("heading", { name: "Retinal" });
+    expect(screen.queryByRole("heading", { name: "Old Acid" })).not.toBeInTheDocument();
   });
 
-  it("points to Products when there are none", async () => {
-    vi.mocked(getProductWeeks).mockResolvedValue([]);
+  it("points to Products when nothing is on trial", async () => {
+    vi.mocked(listTrials).mockResolvedValue([]);
     renderWithApp(<InsightsScreen />);
 
     expect(await screen.findByRole("link", { name: "Products" })).toHaveAttribute("href", "#/products");
+    expect(screen.queryByRole("heading", { name: "Retinal" })).not.toBeInTheDocument();
   });
 
   it("only says 'cause' in the footnote", async () => {

@@ -343,6 +343,10 @@ class Window(BaseModel):
     outcome_days: int
     total_breakouts: int
     avg_breakouts: float | None
+    # Logged days with each sign (same rules as the Insights weeks).
+    new_spot: int = 0
+    forming: int = 0
+    irritated: int = 0
 
 
 class VerdictPhoto(BaseModel):

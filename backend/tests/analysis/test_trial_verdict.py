@@ -157,7 +157,7 @@ def test_purging_then_dropping_gets_a_note():
 
     assert v["label"] == "worse"
     assert v["purge_note"] == (
-        "Breakouts went up in weeks 1–2 but dropped in week 3. "
+        "New spots went up in weeks 1–2 but dropped in week 3. "
         "This can be purging; consider continuing a few more weeks."
     )
 
@@ -177,3 +177,17 @@ def test_worse_after_six_weeks_has_no_note():
 
     assert v["label"] == "worse"
     assert v["purge_note"] is None
+
+
+def test_window_counts_days_with_each_sign():
+    from dataclasses import replace
+
+    from skinlog.analysis.trial_verdict import window as win
+
+    records = [
+        replace(record(O(1)), events=["new_spot", "irritated"]),
+        replace(record(O(2)), events=["forming"]),
+        replace(record(O(3)), events=["nothing_new"]),
+    ]
+    w = win(records, date(2026, 10, 1), date(2026, 10, 3))
+    assert (w["new_spot"], w["forming"], w["irritated"], w["outcome_days"]) == (1, 1, 1, 3)

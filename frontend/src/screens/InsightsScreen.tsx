@@ -13,7 +13,8 @@ export function InsightsScreen() {
   const [failed, setFailed] = useState(false);
   // Only for the cycle card and the "fill in the last 2 weeks" offer.
   const [data, setData] = useState<Suspects | null>(null);
-  const [trials, setTrials] = useState<Trial[]>([]);
+  // Running trials only. null until loaded, so the product cards wait for it.
+  const [trials, setTrials] = useState<Trial[] | null>(null);
   const [viewing, setViewing] = useState<Trial | null>(null);
   const [openDays, setOpenDays] = useState(0);
   const [backfilling, setBackfilling] = useState(false);
@@ -37,22 +38,26 @@ export function InsightsScreen() {
       .catch(() => {});
     listTrials()
       .then((loaded) => live && setTrials(loaded.filter((t) => t.status === "active")))
-      .catch(() => {});
+      .catch(() => live && setTrials([]));
     return () => {
       live = false;
     };
   }, []);
 
+  // Only products on a running trial get a week-by-week card.
+  const onTrial = new Set((trials ?? []).map((t) => t.product.id));
+  const shown = products && trials ? products.filter((p) => onTrial.has(p.product_id)) : null;
+
   return (
     <>
       <h2 className="page-title">Insights</h2>
       <p className="page-sub">
-        What showed up while you were using each product, week by week.
+        What showed up while you were trialing each product, week by week.
       </p>
 
       <RecapCard />
 
-      {trials.length > 0 && (
+      {trials && trials.length > 0 && (
         <div className="card">
           <h2>Running trials</h2>
           <ul className="detail-list" style={{ listStyle: "none", padding: 0 }}>
@@ -104,18 +109,18 @@ export function InsightsScreen() {
       )}
 
       {failed && <div className="warn">Couldn't load insights — is the server running?</div>}
-      {!products && !failed && <p className="muted">Loading…</p>}
-      {products?.length === 0 && (
+      {!shown && !failed && <p className="muted">Loading…</p>}
+      {shown?.length === 0 && (
         <div className="card">
           <p className="muted" style={{ margin: 0 }}>
-            Add the products you use on the <a href="#/products">Products</a> tab, and this will show what
-            showed up each week you used them.
+            Start a trial on the <a href="#/products">Products</a> tab, and this will show what showed up
+            each week you used it.
           </p>
         </div>
       )}
-      {products?.map((p) => <ProductWeeksCard key={p.product_id} product={p} />)}
+      {shown?.map((p) => <ProductWeeksCard key={p.product_id} product={p} />)}
 
-      {products && products.length > 0 && (
+      {shown && shown.length > 0 && (
         <p className="muted" style={{ fontSize: 13 }}>
           Each number is how many logged days had it. A day counts what you picked under Overall; if you
           picked nothing, it's read from the face map: more active spots than your last log is a new
