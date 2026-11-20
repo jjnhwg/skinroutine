@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo Picker</title>
+<style>
+  :root { --bg: #f6f4f1; --card: #fff; --text: #1d1b19; --muted: #6f6a64; --border: #e2ddd6; --accent: #c2410c; --before: #2563eb; --after: #c2410c; --bad: #b91c1c; --good: #15803d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.4 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  header { padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-bottom: 1px solid var(--border); background: var(--card); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; }
+  .muted { color: var(--muted); }
+  button { font: inherit; cursor: pointer; border: 1.5px solid var(--border); background: var(--card); color: var(--text); border-radius: 999px; padding: 6px 14px; }
+  button[aria-pressed=true] { background: var(--text); color: #fff; border-color: var(--text); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .4; cursor: default; }
+  main { display: grid; grid-template-columns: 1fr 320px; gap: 20px; padding: 20px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  /* A box that shows a photo, or the edited part of one, centered inside it. */
+  .fit { container-type: size; position: relative; overflow: hidden; display: grid; place-items: center; }
+  /* cqw/cqh = the .fit box's own width/height, so the whole photo always fits inside it. */
+  .plain.contain { max-width: 100cqw; max-height: 100cqh; }
+  .plain.cover { width: 100%; height: 100%; object-fit: cover; }
+  /* An edited photo: .crop is the visible window, .bb is the whole photo after rotating, the img sits rotated in its middle. */
+  .crop { position: relative; overflow: hidden; background: #2a2724; }
+  .crop.cover { position: absolute; left: 50%; top: 50%; translate: -50% -50%; }
+  .bb { position: absolute; }
+  .bb img, .stage img { position: absolute; left: 50%; top: 50%; max-width: none !important; max-height: none !important; }
+
+  /* The two big photos */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .slot { background: var(--card); border: 3px solid var(--border); border-radius: 16px; padding: 10px; cursor: pointer; }
+  .slot.active.before { border-color: var(--before); }
+  .slot.active.after { border-color: var(--after); }
+  .slot-head { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-bottom: 8px; font-weight: 600; }
+  /* Boxes 3 and 4, added on the right of Left and Right. */
+  .slot.active.s3, .slot.active.s4 { border-color: #7c3aed; }
+  .slot.s3 .tag, .slot.s4 .tag { color: #7c3aed; }
+  .thumb.is-shown { border-color: #7c3aed; }
+  .slot-head .close-slot { padding: 3px 9px; }
+  #add-slot { border-color: #7c3aed; color: #7c3aed; }
+  .slot-head .muted { flex: 1; font-weight: 400; }
+  .slot-head button { padding: 3px 12px; font-size: 13px; }
+  .slot.before .tag { color: var(--before); }
+  .slot.after .tag { color: var(--after); }
+  .frame { height: 52vh; border-radius: 10px; background: #ddd8d0; }
+  .frame > * { transition: transform .15s; }
+  .frame .empty { color: var(--muted); padding: 20px; text-align: center; }
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+  .gap { font-weight: 600; }
+
+  /* Every photo */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 8px; }
+  .thumb { position: relative; padding: 0; border-radius: 10px; overflow: hidden; border: 2px solid transparent; background: #ddd8d0; aspect-ratio: 3/4; }
+  .thumb .fit { position: absolute; inset: 0; }
+  .thumb .label { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; padding: 2px 4px; text-align: left; }
+  .thumb.is-before { border-color: var(--before); }
+  .thumb.is-after { border-color: var(--after); }
+  .thumb .badges { position: absolute; top: 4px; right: 4px; display: flex; gap: 3px; }
+  .badge { color: #fff; border-radius: 999px; height: 20px; min-width: 20px; padding: 0 5px; font-size: 11px; display: grid; place-items: center; }
+  .badge.used { background: #16a34a; }
+  .badge.edited { background: #1d1b19; }
+
+  /* The bad and good sets */
+  aside { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; align-self: start; position: sticky; top: 80px; }
+  aside h2 { font-size: 15px; margin: 0 0 10px; }
+  aside h2.good-h { margin-top: 18px; }
+  .bad-h, .slot-head .add-bad { color: var(--bad); }
+  .good-h, .slot-head .add-good { color: var(--good); }
+  .item { display: grid; grid-template-columns: 56px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid var(--border); }
+  .item .fit { width: 56px; height: 70px; border-radius: 6px; background: #ddd8d0; }
+  .item .meta { font-size: 12px; }
+  .item .row { display: flex; gap: 4px; margin-top: 4px; }
+  .item .row button { padding: 2px 8px; font-size: 12px; }
+  .badge.bad { background: var(--bad); }
+  .badge.pair { background: #7c3aed; }
+  /* Saved pairs: before and after thumbnails side by side. */
+  .pair-h { color: #7c3aed; }
+  .pair-item { padding: 8px 0; border-top: 1px solid var(--border); }
+  .pair-item .thumbs { display: flex; gap: 4px; margin-bottom: 4px; }
+  .pair-item .fit { width: 52px; height: 65px; border-radius: 6px; background: #ddd8d0; }
+  #pair { border-color: #7c3aed; color: #7c3aed; }
+  #pair[aria-pressed=true] { background: #7c3aed; color: #fff; }
+  .badge.good { background: var(--good); }
+
+  /* Preview of the two sets */
+  .pv { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin: 8px 0 18px; }
+  .pv > div > b { font-size: 15px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; margin-top: 8px; }
+  .tile { position: relative; aspect-ratio: 4/5; border-radius: 8px; overflow: hidden; background: #ddd8d0; }
+  .tile .fit { position: absolute; inset: 0; }
+  /* Preview tiles: click to look at it big, ✕ to take it out of the set. */
+  .tile { padding: 0; border: 2px solid transparent; cursor: pointer; }
+  .tile.showing { border-color: var(--text); }
+  .tile .num { position: absolute; left: 4px; bottom: 4px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; padding: 0 5px; border-radius: 4px; }
+  .tile .x { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: 12px; line-height: 22px; }
+  .tile .x:hover { background: var(--bad); }
+  .empty-note { background: var(--card); border: 1px dashed var(--border); border-radius: 16px; padding: 14px; margin: 8px 0 18px; }
+  textarea { width: 100%; height: 180px; font: 12px ui-monospace, monospace; margin-top: 8px; border-radius: 8px; border: 1px solid var(--border); padding: 6px; }
+
+  /* Viewer window: the same page opened with ?viewer, showing only the big photos the main window picks. */
+  .viewer-only, .with-viewer { display: none !important; }
+  body.viewer .viewer-only:not([hidden]) { display: block !important; }
+  body.has-viewer .with-viewer { display: inline-flex !important; gap: 6px; align-items: center; }
+  body.viewer header, body.viewer aside, body.viewer .tools, body.viewer #grid-sec { display: none; }
+  body.viewer main { grid-template-columns: 1fr; padding: 12px; }
+  body.viewer .slot { pointer-events: none; }
+  body.viewer .slot-head button, body.viewer .tile .x { display: none; }
+  body.viewer .frame { height: calc(100vh - 80px); }
+  body.viewer .pv .tiles { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  body.viewer[data-tab=compare] #preview-sec, body.viewer[data-tab=sets] .compare { display: none; }
+  #viewer-empty { color: var(--muted); padding: 40px; text-align: center; font-size: 16px; }
+  /* Main window while the viewer is open: small boxes, so the photos to click sit higher up. */
+  body.has-viewer .frame { height: 22vh; }
+  #open-viewer[aria-pressed=true] { background: var(--text); color: #fff; }
+
+  /* Edit (rotate + crop) pop-up */
+  .modal { position: fixed; inset: 0; background: rgba(20,18,16,.85); z-index: 20; display: grid; place-items: center; padding: 16px; }
+  .modal[hidden] { display: none; }
+  .modal-card { background: var(--card); border-radius: 16px; padding: 14px 16px; max-width: 96vw; }
+  .modal-card .tools { margin: 0 0 10px; }
+  .modal-card .tools:last-child { margin: 12px 0 0; justify-content: flex-end; }
+  .modal-card input[type=range] { width: 200px; vertical-align: middle; }
+  .stage { position: relative; margin: 0 auto; overflow: hidden; touch-action: none; user-select: none; background: #2a2724; }
+  .stage img { -webkit-user-drag: none; pointer-events: none; }
+  #box { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); cursor: move; }
+  #box::before, #box::after { content: ""; position: absolute; border: 0 solid rgba(255,255,255,.45); pointer-events: none; }
+  #box::before { left: 33.33%; right: 33.33%; top: 0; bottom: 0; border-left-width: 1px; border-right-width: 1px; }
+  #box::after { top: 33.33%; bottom: 33.33%; left: 0; right: 0; border-top-width: 1px; border-bottom-width: 1px; }
+  .h { position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 3px; z-index: 1; }
+  .h.nw { left: -2px; top: -2px; cursor: nwse-resize; }
+  .h.ne { right: -2px; top: -2px; cursor: nesw-resize; }
+  .h.sw { left: -2px; bottom: -2px; cursor: nesw-resize; }
+  .h.se { right: -2px; bottom: -2px; cursor: nwse-resize; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Photo Picker</h1>
+  <span class="muted">Click a box to outline it, then click photos to look at them big in that box. + Add photo puts up to 4 side by side. Then press + Bad or + Good to add it to a set.</span>
+  <button id="open-viewer" aria-pressed="false" title="A second window for your other monitor that shows the photos big">Open viewer window</button>
+</header>
+
+<main>
+  <section>
+    <div class="compare" id="compare"></div>
+
+    <div class="tools">
+      <button id="view-close" aria-pressed="true">Slider close-ups</button>
+      <button id="view-full" aria-pressed="false">Original</button>
+      <label>Zoom <input id="zoom" type="range" min="1" max="3" step="0.1" value="1"></label>
+      <button id="add-slot" title="Add another photo box on the right, up to 4">+ Add photo</button>
+      <button id="swap">Swap</button>
+      <button id="pair" aria-pressed="false" title="Save the photos in the boxes, left to right, as a pair or group">Save pair</button>
+      <span class="gap" id="gap"></span>
+      <span class="with-viewer" id="viewer-tabs"><span class="muted">Viewer shows:</span>
+        <button data-tab="compare">Big photos</button><button data-tab="sets">Bad &amp; Good sets</button>
+      </span>
+    </div>
+    <div class="viewer-only" id="viewer-empty" hidden>Nothing to show yet. Pick photos in the main window.</div>
+
+    <div id="preview-sec">
+    <strong>Preview</strong> <span class="muted">(roughly how the two sets would sit on the page · click a photo to look at it big, ✕ to take it out)</span>
+    <div id="preview"></div>
+    </div>
+
+    <div id="grid-sec">
+    <strong>All photos</strong> <span class="muted">(numbers match the files in progress/original · ✎ edited · B in bad set · G in good set · P in a pair or group · purple outline = box 3 or 4)</span>
+    <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <aside>
+    <h2 class="bad-h">Bad photos (before)</h2>
+    <div id="bad-list" class="set-list"></div>
+    <h2 class="good-h">Good photos (after)</h2>
+    <div id="good-list" class="set-list"></div>
+    <h2 class="pair-h" style="margin-top:18px">Good pairs &amp; groups (first = before)</h2>
+    <div id="pair-list" class="set-list"></div>
+    <button id="copy" disabled style="margin-top:10px">Copy list for Claude</button>
+    <textarea id="out" readonly placeholder="Your list appears here to paste into Claude."></textarea>
+  </aside>
+</main>
+
+<div class="modal" id="editor" hidden>
+  <div class="modal-card">
+    <div class="tools">
+      <strong id="edit-title"></strong>
+      <span class="muted">Rotate:</span>
+      <button id="rot-left" title="Turn left 90°">⟲ 90°</button>
+      <button id="rot-right" title="Turn right 90°">⟳ 90°</button>
+      <label class="muted">Straighten <input id="tilt" type="range" min="-45" max="45" step="0.5" value="0"> <b id="tilt-val">0°</b></label>
+      <button id="tilt-reset">Level</button>
+    </div>
+    <div class="tools">
+      <span class="muted">Crop shape:</span>
+      <span id="ratios"></span>
+      <button id="crop-match">Same shape as the other photo</button>
+    </div>
+    <div class="stage" id="stage">
+      <img id="stage-img" alt="">
+      <div id="box"><span class="h nw" data-h="nw"></span><span class="h ne" data-h="ne"></span><span class="h sw" data-h="sw"></span><span class="h se" data-h="se"></span></div>
+    </div>
+    <div class="tools">
+      <span class="muted" style="margin-right:auto">Drag the box to move it, drag a corner to resize.</span>
+      <button id="edit-remove">Undo all edits</button>
+      <button id="edit-cancel">Cancel</button>
+      <button class="primary" id="edit-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // The day each original photo was taken, 01 onward. 36–38 are FaceTime screenshots, dated the day they were added.
+  // 39–60 are the Nov 2026 batch (Downloads/newphotos).
+  const DATES = [
+    "2024-09-20", "2024-09-20", "2024-10-17", "2024-10-17", "2024-11-23", "2024-11-23", "2024-11-27",
+    "2024-12-01", "2024-12-01", "2024-12-03", "2024-12-21", "2024-12-21", "2024-12-26", "2025-03-21",
+    "2025-03-22", "2025-04-03", "2025-04-05", "2025-04-08", "2025-04-14", "2025-04-14", "2025-05-02",
+    "2025-05-25", "2025-05-25", "2025-06-30", "2025-06-30", "2025-07-12", "2025-10-15", "2025-10-15",
+    "2026-02-13", "2026-03-18", "2026-04-06", "2026-05-20", "2026-06-24", "2026-08-03", "2026-10-22",
+    "2026-11-17", "2026-11-17", "2026-11-17",
+    "2026-11-02", "2026-11-03", "2026-11-03", "2026-11-03", "2026-11-03", "2026-11-03", "2026-11-03",
+    "2026-11-03", "2026-11-03", "2026-11-03", "2026-11-03", "2026-11-03", "2026-11-03", "2026-11-03",
+    "2026-11-03", "2026-11-14", "2026-11-14", "2026-11-14", "2026-11-14", "2026-11-17", "2026-11-17",
+    "2026-11-17",
+  ];
+
+  // The slider's close-up for original n, if one exists. Originals 4, 5, 6, 14 and 36 onward don't have one.
+  function closeUpNumber(n) {
+    if (n <= 3) return n;
+    if (n >= 7 && n <= 13) return n - 3;
+    if (n >= 15 && n <= 35) return n - 4;
+    return null;
+  }
+
+  const pad = (n) => String(n).padStart(2, "0");
+  const DIR = "../frontend/public/progress/";
+  const PHOTOS = DATES.map((date, i) => {
+    const n = i + 1;
+    const c = closeUpNumber(n);
+    return { n, date, full: `${DIR}original/${pad(n)}.jpg`, close: c ? `${DIR}${pad(c)}.jpg` : null };
+  });
+  // Photos taken out of the picker. They keep their numbers so every other photo keeps its number too.
+  const REMOVED = new Set([40, 41, 42]);
+
+  const nice = (d) => new Date(d + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  function monthsApart(a, b) {
+    const days = Math.round((new Date(b) - new Date(a)) / 86400000);
+    if (Math.abs(days) < 45) return `${days} days apart`;
+    return `${(days / 30.44).toFixed(1)} months apart`;
+  }
+
+  /**
+   * Everything the page shows comes from this one object.
+   * crops: { [photo number]: { rot, W, H, x, y, w, h } }
+   *   rot  = degrees turned clockwise
+   *   W, H = the original photo's size in pixels
+   *   x, y, w, h = the crop box, as fractions of the photo *after* rotating (its rotated bounding box)
+   */
+  // bad / good = photo numbers in each set, in the order they'll show.
+  const state = Object.assign({ before: null, after: null, s3: null, s4: null, count: 2, active: "before", view: "full", crops: {}, bad: [], good: [], pairs: [] }, load());
+  delete state.draft; // from the old separate Group box
+  if (state.viewerTab === "group") state.viewerTab = "compare"; // that viewer tab is gone too
+  // pairs = saved pairs and groups, 2–4 photo numbers each, in order.
+  // The big boxes, left to right: Left and Right always, then up to two more. count = how many show.
+  const SLOTS = ["before", "after", "s3", "s4"];
+  const LABEL = { before: "Left", after: "Right", s3: "3rd", s4: "4th" };
+  const slots = () => SLOTS.slice(0, state.count);
+  const shown = () => slots().map((s) => state[s]).filter(Boolean); // filled boxes, left to right
+  if (!slots().includes(state.active)) state.active = "before";
+  // Drop removed photos from anything saved earlier.
+  for (const s of SLOTS) if (REMOVED.has(state[s])) state[s] = null;
+  for (const k of ["bad", "good"]) state[k] = state[k].filter((n) => !REMOVED.has(n));
+  state.pairs = state.pairs.map((g) => g.filter((n) => !REMOVED.has(n))).filter((g) => g.length >= 2);
+  for (const n of REMOVED) delete state.crops[n];
+  const GROUP_MAX = 4;
+  // Opened with ?viewer: a display-only window that mirrors the main one.
+  const VIEWER = new URLSearchParams(location.search).has("viewer");
+  if (VIEWER) { document.body.classList.add("viewer"); document.title = "Photo Viewer"; }
+  if (!state.viewerTab) state.viewerTab = "compare";
+  const SET_SHORT = { bad: "Bad", good: "Good" };
+  const SET_NAME = { bad: "Bad photos (before)", good: "Good photos (after)" };
+
+  /** "Sep 20, 2024 – Dec 26, 2024" for a set's earliest and latest photo. */
+  function dateRange(nums) {
+    if (!nums.length) return "";
+    const dates = nums.map((n) => byN(n).date).sort();
+    const first = nice(dates[0]), last = nice(dates[dates.length - 1]);
+    return first === last ? first : `${first} – ${last}`;
+  }
+  let zoom = 1;
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem("photo-picker")) || {}; } catch { return {}; }
+  }
+  function save() {
+    if (VIEWER) return; // only the main window saves, so the viewer never overwrites your picks
+    try { localStorage.setItem("photo-picker", JSON.stringify(state)); } catch {}
+  }
+
+  const byN = (n) => PHOTOS[n - 1];
+  /** Where the Left/Right pair sits in the saved pairs, or -1. */
+  const sameGroup = (g, h) => g.length === h.length && g.every((n, i) => n === h[i]);
+  const groupIndex = (g) => state.pairs.findIndex((h) => sameGroup(g, h));
+  const inPair = (n) => state.pairs.some((pr) => pr.includes(n));
+  const other = (slot) => (slot === "before" ? "after" : "before");
+
+  /** Size of the box a W×H photo needs once turned `rot` degrees. */
+  function rotatedSize(W, H, rot) {
+    const t = (rot * Math.PI) / 180, c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+    return { Wr: W * c + H * s, Hr: W * s + H * c };
+  }
+
+  /** A saved edit, with crops saved before rotation existed filled in (they only had x, y, w, h and ar). */
+  function editOf(n) {
+    const e = state.crops[n];
+    if (!e) return null;
+    if (e.W) return e;
+    return { ...e, rot: 0, W: (e.ar * e.h) / e.w, H: 1 };
+  }
+
+  /** The original photo as an <img>, turned e.rot° and centered in its rotated bounding box (Wr×Hr). */
+  function rotatedImg(src, e, Wr, Hr) {
+    return `<img src="${src}" alt="" style="width:${(e.W / Wr) * 100}%; height:${(e.H / Hr) * 100}%; transform: translate(-50%, -50%) rotate(${e.rot}deg)">`;
+  }
+
+  /**
+   * HTML for one photo inside a .fit box. Your edit if you made one, in either view, so editing
+   * one photo leaves the rest alone. Otherwise the original, or the slider's close-up in close-up view.
+   * "contain" shows it whole, "cover" fills the box.
+   */
+  function photoHTML(p, mode, style = "") {
+    const e = editOf(p.n);
+    if (!e) {
+      const src = (state.view === "close" && p.close) || p.full;
+      return `<img class="plain ${mode}" src="${src}" alt="" style="${style}">`;
+    }
+    const { Wr, Hr } = rotatedSize(e.W, e.H, e.rot);
+    const ar = (e.w * Wr) / (e.h * Hr); // the crop's width ÷ height
+    const width = mode === "contain" ? `min(100cqw, calc(100cqh * ${ar}))` : `max(100cqw, calc(100cqh * ${ar}))`;
+    // .bb is the whole rotated photo, made bigger and shifted so only the crop shows through the window.
+    return `<div class="crop ${mode}" style="width:${width}; aspect-ratio:${ar}; ${style}">
+      <div class="bb" style="width:${100 / e.w}%; height:${100 / e.h}%; left:${(-e.x / e.w) * 100}%; top:${(-e.y / e.h) * 100}%">
+        ${rotatedImg(p.full, e, Wr, Hr)}
+      </div>
+    </div>`;
+  }
+
+  function render() {
+    // The big boxes, side by side, one column each.
+    const compare = document.getElementById("compare");
+    compare.style.gridTemplateColumns = `repeat(${state.count}, 1fr)`;
+    compare.innerHTML = slots().map((slot) => {
+      const p = state[slot] && byN(state[slot]);
+      const setBtn = (k) => `<button class="add-${k}" data-add="${k}" ${p ? "" : "disabled"}>${p && state[k].includes(p.n) ? "✓" : "+"} ${SET_SHORT[k]}</button>`;
+      return `<div class="slot ${slot}${state.active === slot ? " active" : ""}" data-slot="${slot}">
+        <div class="slot-head">
+          <span class="tag">${LABEL[slot]}</span>
+          <span class="muted">${p ? `#${pad(p.n)} · ${nice(p.date)}${state.crops[p.n] ? " · edited" : ""}` : ""}</span>
+          <button data-edit ${p ? "" : "disabled"}>Rotate / crop</button>${setBtn("bad")}${setBtn("good")}
+          ${slot === "s3" || slot === "s4" ? `<button class="close-slot" data-close-slot title="Remove this box" aria-label="Remove this box">✕</button>` : ""}
+        </div>
+        <div class="frame fit">${p ? photoHTML(p, "contain", `transform: scale(${zoom})`) : `<div class="empty">Click here, then pick a photo below</div>`}</div>
+      </div>`;
+    }).join("");
+    document.getElementById("add-slot").disabled = state.count >= SLOTS.length;
+
+    // First to last filled box: how far apart, and whether that pair/group is saved.
+    const g = shown(), ok = g.length >= 2 && new Set(g).size === g.length;
+    document.getElementById("gap").textContent = g.length >= 2 ? `${monthsApart(byN(g[0]).date, byN(g[g.length - 1]).date)}${g.length > 2 ? ", first to last" : ""}` : "";
+    const pairBtn = document.getElementById("pair"), saved = ok && groupIndex(g) >= 0;
+    pairBtn.disabled = !ok;
+    pairBtn.setAttribute("aria-pressed", String(saved));
+    pairBtn.textContent = saved ? "✓ Saved" : g.length > 2 ? `Save group of ${g.length}` : "Save pair";
+    document.getElementById("view-close").setAttribute("aria-pressed", state.view === "close");
+    document.getElementById("view-full").setAttribute("aria-pressed", state.view === "full");
+
+    document.getElementById("grid").innerHTML = PHOTOS.filter((p) => !REMOVED.has(p.n)).map((p) => `
+      <button class="thumb${state.before === p.n ? " is-before" : ""}${state.after === p.n ? " is-after" : ""}${slots().slice(2).some((s) => state[s] === p.n) ? " is-shown" : ""}" data-n="${p.n}">
+        <div class="fit">${photoHTML(p, "cover")}</div>
+        <span class="badges">${state.crops[p.n] ? `<span class="badge edited">✎</span>` : ""}${state.bad.includes(p.n) ? `<span class="badge bad">B</span>` : ""}${state.good.includes(p.n) ? `<span class="badge good">G</span>` : ""}${inPair(p.n) ? `<span class="badge pair">P</span>` : ""}</span>
+        <span class="label">#${pad(p.n)} · ${nice(p.date)}</span>
+      </button>`).join("");
+
+    // The two sets on the right, each photo with View / move up / remove.
+    for (const k of ["bad", "good"]) {
+      document.getElementById(`${k}-list`).innerHTML = state[k].length
+        ? state[k].map((n, i) => `
+          <div class="item">
+            <div class="fit">${photoHTML(byN(n), "cover")}</div>
+            <div class="meta">
+              <b>#${pad(n)}</b> <span class="muted">${nice(byN(n).date)}</span>
+              <div class="row">
+                <button data-set="${k}" data-act="view" data-i="${i}">View</button>
+                <button data-set="${k}" data-act="up" data-i="${i}" ${i === 0 ? "disabled" : ""}>↑</button>
+                <button data-set="${k}" data-act="remove" data-i="${i}">Remove</button>
+              </div>
+            </div>
+          </div>`).join("")
+        : `<p class="muted">None yet.</p>`;
+    }
+
+    // Saved pairs and groups, each with View / move up / remove.
+    document.getElementById("pair-list").innerHTML = state.pairs.length
+      ? state.pairs.map((g, i) => `
+        <div class="pair-item">
+          <div class="thumbs">${g.map((n) => `<div class="fit">${photoHTML(byN(n), "cover")}</div>`).join("")}</div>
+          <div class="meta">
+            <b>${g.map((n) => `#${pad(n)}`).join(" → ")}</b> <span class="muted">${monthsApart(byN(g[0]).date, byN(g[g.length - 1]).date)}</span>
+            <div class="row">
+              <button data-pair="view" data-i="${i}">View</button>
+              <button data-pair="up" data-i="${i}" ${i === 0 ? "disabled" : ""}>↑</button>
+              <button data-pair="remove" data-i="${i}">Remove</button>
+            </div>
+          </div>
+        </div>`).join("")
+      : `<p class="muted">None yet. Fill 2–4 boxes and press Save pair / Save group.</p>`;
+
+    // Both sets side by side, in matching 4:5 tiles, labeled with their date range.
+    const showing = shown();
+    const tiles = (k) => state[k].map((n, i) => `
+      <div class="tile${showing.includes(n) ? " showing" : ""}" data-set="${k}" data-i="${i}" title="Look at #${pad(n)} big">
+        <div class="fit">${photoHTML(byN(n), "cover")}</div>
+        <span class="num">#${pad(n)}</span>
+        <button class="x" data-remove title="Take #${pad(n)} out of this set" aria-label="Take #${pad(n)} out of this set">✕</button>
+      </div>`).join("");
+    document.getElementById("preview").innerHTML = state.bad.length || state.good.length
+      ? `<div class="pv">
+          <div><b class="bad-h">Before</b> <span class="muted">${dateRange(state.bad)}</span><div class="tiles">${tiles("bad")}</div></div>
+          <div><b class="good-h">After</b> <span class="muted">${dateRange(state.good)}</span><div class="tiles">${tiles("good")}</div></div>
+        </div>`
+      : `<p class="muted empty-note">Add photos to the Bad and Good sets to see them here side by side.</p>`;
+
+    document.getElementById("copy").disabled = !state.bad.length && !state.good.length && !state.pairs.length;
+    document.getElementById("out").value = exportText();
+    document.querySelectorAll("#viewer-tabs [data-tab]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tab === state.viewerTab)));
+    if (VIEWER) {
+      document.body.dataset.tab = state.viewerTab;
+      const empty = { compare: !shown().length, sets: !state.bad.length && !state.good.length }[state.viewerTab];
+      document.getElementById("viewer-empty").hidden = !empty;
+    }
+    save();
+    sendToViewer();
+  }
+
+  /** The list to paste into Claude: both sets in order, then the edit for every edited photo in them. */
+  function exportText() {
+    if (!state.bad.length && !state.good.length && !state.pairs.length) return "";
+    const lines = [`Shown as: ${state.view === "close" ? "slider close-ups" : "originals"}, plus my edits`];
+    for (const k of ["bad", "good"]) {
+      lines.push("", `${SET_NAME[k]}:`);
+      state[k].forEach((n, i) => lines.push(`  ${i + 1}. original ${pad(n)} (${nice(byN(n).date)})`));
+    }
+    if (state.pairs.length) {
+      lines.push("", "Good pairs & groups (in order, first = before):");
+      state.pairs.forEach((g, i) => lines.push(`  ${i + 1}. ${g.map((n) => `original ${pad(n)} (${nice(byN(n).date)})`).join(" → ")}`));
+    }
+    const edited = [...new Set([...state.bad, ...state.good, ...state.pairs.flat()])].filter((n) => state.crops[n]).sort((a, b) => a - b);
+    if (edited.length) {
+      lines.push("", "Edits: rotate clockwise by rot°, then crop. x/y/w/h are fractions of the rotated photo's bounding box, from its top-left:");
+      for (const n of edited) {
+        const e = editOf(n);
+        lines.push(`original ${pad(n)}: rot=${e.rot} x=${e.x.toFixed(4)} y=${e.y.toFixed(4)} w=${e.w.toFixed(4)} h=${e.h.toFixed(4)}`);
+      }
+    }
+    return lines.join("\n");
+  }
+
+  // The big boxes: Rotate / crop, + Bad / + Good, ✕ on boxes 3–4, or a click anywhere else outlines the box.
+  document.getElementById("compare").addEventListener("click", (e) => {
+    const el = e.target.closest("[data-slot]");
+    if (!el) return;
+    const slot = el.dataset.slot, n = state[slot], b = e.target.closest("button");
+    if (b?.hasAttribute("data-edit")) return openEditor(slot);
+    if (b?.dataset.add && n) {
+      // Add to a set (taking it out of the other one). Press again to take it out.
+      const k = b.dataset.add, o = k === "bad" ? "good" : "bad";
+      if (state[k].includes(n)) state[k] = state[k].filter((x) => x !== n);
+      else { state[k].push(n); state[o] = state[o].filter((x) => x !== n); }
+    } else if (b?.hasAttribute("data-close-slot")) {
+      // Close this box; the boxes to its right slide over.
+      const values = slots().map((s) => state[s]);
+      values.splice(SLOTS.indexOf(slot), 1);
+      state.count -= 1;
+      SLOTS.forEach((s, i) => { state[s] = values[i] ?? null; });
+      if (!slots().includes(state.active)) state.active = slots()[state.count - 1];
+    } else if (!b) {
+      state.active = slot;
+    }
+    render();
+  });
+
+  // + Add photo: a new empty box on the right, outlined so the next photo you click goes there.
+  document.getElementById("add-slot").onclick = () => {
+    if (state.count >= SLOTS.length) return;
+    state.count += 1;
+    const slot = SLOTS[state.count - 1];
+    state[slot] = null;
+    state.active = slot;
+    render();
+  };
+
+  // Click a photo to fill the outlined box. The box stays picked until you click the other one.
+  document.getElementById("grid").addEventListener("click", (e) => {
+    const t = e.target.closest(".thumb");
+    if (!t) return;
+    state[state.active] = Number(t.dataset.n);
+    render();
+  });
+
+  document.getElementById("view-close").onclick = () => { state.view = "close"; render(); };
+  document.getElementById("view-full").onclick = () => { state.view = "full"; render(); };
+  document.getElementById("zoom").oninput = (e) => { zoom = Number(e.target.value); render(); };
+  document.getElementById("swap").onclick = () => { [state.before, state.after] = [state.after, state.before]; render(); };
+
+  // Preview tiles: click one to show it in the outlined box, or ✕ to take it out of its set.
+  document.getElementById("preview").addEventListener("click", (e) => {
+    const tile = e.target.closest(".tile");
+    if (!tile) return;
+    const list = state[tile.dataset.set], i = Number(tile.dataset.i);
+    if (e.target.closest("[data-remove]")) list.splice(i, 1);
+    else state[state.active] = list[i];
+    render();
+  });
+
+  // Save pair / group: the filled boxes, left to right. Press again to take it back out.
+  document.getElementById("pair").onclick = () => {
+    const g = shown(), i = groupIndex(g);
+    if (i >= 0) state.pairs.splice(i, 1);
+    else state.pairs.push(g);
+    render();
+  };
+
+  // ---- Viewer window ----
+  // The main window sends its state to the viewer after every change; the viewer just draws it.
+  let viewerWin = null;
+  function sendToViewer() {
+    if (VIEWER || !viewerWin || viewerWin.closed) return;
+    viewerWin.postMessage({ type: "picker-state", state: JSON.parse(JSON.stringify(state)), zoom }, "*");
+  }
+  function setViewerOpen(open) {
+    document.body.classList.toggle("has-viewer", open);
+    const b = document.getElementById("open-viewer");
+    b.setAttribute("aria-pressed", String(open));
+    b.textContent = open ? "Viewer open ✓" : "Open viewer window";
+  }
+  window.addEventListener("message", (e) => {
+    if (VIEWER && e.data?.type === "picker-state") {
+      Object.assign(state, e.data.state);
+      zoom = e.data.zoom;
+      render();
+    }
+    // The viewer says hello when it opens, and every few seconds, so it reconnects if this page reloads.
+    if (!VIEWER && e.data?.type === "viewer-ready") {
+      viewerWin = e.source;
+      setViewerOpen(true);
+      sendToViewer();
+    }
+  });
+  if (VIEWER) {
+    const hello = () => window.opener && !window.opener.closed && window.opener.postMessage({ type: "viewer-ready" }, "*");
+    hello();
+    setInterval(hello, 2000);
+  } else {
+    document.getElementById("open-viewer").onclick = () => {
+      if (viewerWin && !viewerWin.closed) return viewerWin.focus();
+      viewerWin = window.open(location.href.split(/[?#]/)[0] + "?viewer", "photo-viewer", "popup,width=1400,height=900");
+    };
+    setInterval(() => { if (viewerWin && viewerWin.closed) { viewerWin = null; setViewerOpen(false); } }, 1000);
+    document.getElementById("viewer-tabs").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-tab]");
+      if (b) { state.viewerTab = b.dataset.tab; render(); }
+    });
+  }
+
+  // View / ↑ / Remove in the pairs list.
+  document.getElementById("pair-list").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-pair]");
+    if (!b) return;
+    e.stopPropagation(); // not also a click in the set lists
+    const i = Number(b.dataset.i);
+    if (b.dataset.pair === "remove") state.pairs.splice(i, 1);
+    if (b.dataset.pair === "up") [state.pairs[i - 1], state.pairs[i]] = [state.pairs[i], state.pairs[i - 1]];
+    if (b.dataset.pair === "view") {
+      // Opens the pair or group in the big boxes, one box per photo.
+      const g = state.pairs[i];
+      state.count = g.length;
+      SLOTS.forEach((s, k) => { state[s] = g[k] ?? null; });
+      if (!slots().includes(state.active)) state.active = "before";
+    }
+    render();
+  });
+
+  // View / ↑ / Remove in the set lists.
+  document.querySelector("aside").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-act]");
+    if (!b) return;
+    const list = state[b.dataset.set], i = Number(b.dataset.i);
+    if (b.dataset.act === "remove") list.splice(i, 1);
+    if (b.dataset.act === "up") [list[i - 1], list[i]] = [list[i], list[i - 1]];
+    if (b.dataset.act === "view") state[state.active] = list[i];
+    render();
+  });
+
+  document.getElementById("copy").onclick = async () => {
+    const out = document.getElementById("out");
+    try { await navigator.clipboard.writeText(out.value); }
+    catch { out.select(); document.execCommand("copy"); }
+    document.getElementById("copy").textContent = "Copied ✓";
+    setTimeout(() => (document.getElementById("copy").textContent = "Copy list for Claude"), 1500);
+  };
+
+  // ---- Rotate / crop pop-up ----
+  // ed = the edit in progress: which photo, its real size, the 90° turns and fine tilt,
+  // the crop box (fractions of the rotated photo), and the locked crop shape.
+  let ed = null;
+  const RATIOS = [["Free", null], ["1:1", 1], ["4:5", 4 / 5], ["3:4", 3 / 4]];
+  const editor = document.getElementById("editor");
+  const stage = document.getElementById("stage");
+  const box = document.getElementById("box");
+  const stageImg = document.getElementById("stage-img");
+  const tiltInput = document.getElementById("tilt");
+  const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+  const MIN = 0.05;
+  const rotOf = () => ed.quarter * 90 + ed.tilt;
+
+  function openEditor(slot) {
+    const n = state[slot];
+    if (!n) return;
+    const saved = editOf(n);
+    const rot = saved ? saved.rot : 0;
+    // Split the saved angle back into whole 90° turns plus a small tilt.
+    const quarter = Math.round(rot / 90);
+    ed = {
+      n, slot, W: 1, H: 1, quarter: ((quarter % 4) + 4) % 4, tilt: rot - quarter * 90, ratio: null,
+      rect: saved ? { x: saved.x, y: saved.y, w: saved.w, h: saved.h } : { x: 0, y: 0, w: 1, h: 1 },
+    };
+    tiltInput.value = ed.tilt;
+    document.getElementById("edit-title").textContent = `#${pad(n)}`;
+    document.getElementById("edit-remove").disabled = !saved;
+    document.getElementById("crop-match").disabled = !editOf(state[other(slot)]);
+    stageImg.onload = () => { ed.W = stageImg.naturalWidth; ed.H = stageImg.naturalHeight; layout(); };
+    stageImg.src = byN(n).full;
+    // Reopening the same photo may not fire onload again, so read its size now if it's already there.
+    if (stageImg.complete && stageImg.naturalWidth) stageImg.onload();
+    editor.hidden = false;
+    drawRatios();
+    layout();
+  }
+
+  function closeEditor() { editor.hidden = true; ed = null; }
+
+  /** Size the stage to the rotated photo (fitting the screen), turn the photo, and redraw the crop box. */
+  function layout() {
+    const rot = rotOf();
+    const { Wr, Hr } = rotatedSize(ed.W, ed.H, rot);
+    ed.Wr = Wr; ed.Hr = Hr;
+    const maxW = Math.min(window.innerWidth * 0.88, 1100), maxH = window.innerHeight * 0.62;
+    const scale = Math.min(maxW / Wr, maxH / Hr);
+    stage.style.width = `${Wr * scale}px`;
+    stage.style.height = `${Hr * scale}px`;
+    Object.assign(stageImg.style, {
+      width: `${(ed.W / Wr) * 100}%`, height: `${(ed.H / Hr) * 100}%`,
+      transform: `translate(-50%, -50%) rotate(${rot}deg)`,
+    });
+    document.getElementById("tilt-val").textContent = `${ed.tilt}°`;
+    if (ed.ratio) fitRatio();
+    drawBox();
+  }
+
+  function drawBox() {
+    const r = ed.rect;
+    Object.assign(box.style, { left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%` });
+  }
+
+  function drawRatios() {
+    document.getElementById("ratios").innerHTML = RATIOS.map(([label, r], i) =>
+      `<button data-r="${i}" aria-pressed="${ed.ratio === r}">${label}</button>`).join(" ");
+  }
+
+  // Height (as a fraction of the rotated photo) that gives width w the locked shape.
+  const hFor = (w) => (w * ed.Wr) / (ed.Hr * ed.ratio);
+
+  // Reshape the box around its center to match the locked shape, staying inside the photo.
+  function fitRatio() {
+    const rc = ed.rect, cx = rc.x + rc.w / 2, cy = rc.y + rc.h / 2;
+    let w = rc.w, h = hFor(w);
+    if (h > 1) { h = 1; w = (h * ed.Hr * ed.ratio) / ed.Wr; }
+    if (w > 1) { w = 1; h = hFor(w); }
+    ed.rect = { w, h, x: clamp(cx - w / 2, 0, 1 - w), y: clamp(cy - h / 2, 0, 1 - h) };
+  }
+
+  function setRatio(r) {
+    ed.ratio = r;
+    if (r) fitRatio();
+    drawRatios();
+    drawBox();
+  }
+
+  document.getElementById("ratios").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-r]");
+    if (b) setRatio(RATIOS[Number(b.dataset.r)][1]);
+  });
+
+  document.getElementById("crop-match").onclick = () => {
+    const o = editOf(state[other(ed.slot)]);
+    const { Wr, Hr } = rotatedSize(o.W, o.H, o.rot);
+    setRatio((o.w * Wr) / (o.h * Hr));
+  };
+
+  // Turning 90° swaps the photo's width and height, so the old crop box no longer means the same spot: start it fresh.
+  function turn(by) {
+    ed.quarter = (ed.quarter + by + 4) % 4;
+    ed.rect = { x: 0, y: 0, w: 1, h: 1 };
+    layout();
+  }
+  document.getElementById("rot-left").onclick = () => turn(-1);
+  document.getElementById("rot-right").onclick = () => turn(1);
+  tiltInput.oninput = () => { ed.tilt = Number(tiltInput.value); layout(); };
+  document.getElementById("tilt-reset").onclick = () => { ed.tilt = 0; tiltInput.value = 0; layout(); };
+
+  // Dragging: inside the box moves it; a corner resizes it, keeping the opposite corner still.
+  let drag = null;
+  box.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    box.setPointerCapture(e.pointerId);
+    drag = { handle: e.target.dataset.h || "move", sx: e.clientX, sy: e.clientY, start: { ...ed.rect }, size: stage.getBoundingClientRect() };
+  });
+
+  box.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const dx = (e.clientX - drag.sx) / drag.size.width;
+    const dy = (e.clientY - drag.sy) / drag.size.height;
+    const s = drag.start;
+
+    if (drag.handle === "move") {
+      ed.rect = { ...s, x: clamp(s.x + dx, 0, 1 - s.w), y: clamp(s.y + dy, 0, 1 - s.h) };
+      return drawBox();
+    }
+
+    const left = drag.handle.includes("w"), top = drag.handle.includes("n");
+    // How big the box may get before the moving corner hits the photo's edge.
+    const maxW = left ? s.x + s.w : 1 - s.x;
+    const maxH = top ? s.y + s.h : 1 - s.y;
+    let w = clamp(left ? s.w - dx : s.w + dx, MIN, maxW);
+    let h = clamp(top ? s.h - dy : s.h + dy, MIN, maxH);
+    if (ed.ratio) {
+      w = Math.min(w, (maxH * ed.Hr * ed.ratio) / ed.Wr);
+      h = hFor(w);
+    }
+    ed.rect = { w, h, x: left ? s.x + s.w - w : s.x, y: top ? s.y + s.h - h : s.y };
+    drawBox();
+  });
+
+  box.addEventListener("pointerup", () => { drag = null; });
+  box.addEventListener("pointercancel", () => { drag = null; });
+
+  document.getElementById("edit-save").onclick = () => {
+    const r = ed.rect, round = (v) => Math.round(v * 10000) / 10000;
+    state.crops[ed.n] = { rot: rotOf(), W: ed.W, H: ed.H, x: round(r.x), y: round(r.y), w: round(r.w), h: round(r.h) };
+    closeEditor();
+    render();
+  };
+  document.getElementById("edit-remove").onclick = () => { delete state.crops[ed.n]; closeEditor(); render(); };
+  document.getElementById("edit-cancel").onclick = closeEditor;
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && ed) closeEditor(); });
+  window.addEventListener("resize", () => { if (ed) layout(); });
+
+  render();
+</script>
+</body>
+</html>
