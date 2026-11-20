@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from skinlog import weather
-from skinlog.models import DayLog, DayStatus, Stage, User, WeatherDay
+from skinlog.models import Condition, DayLog, DayStatus, Stage, User, WeatherDay
 from skinlog.schemas import file_url
 
 
@@ -31,6 +31,10 @@ class DayRecord:
     photos: dict[str, str] = field(default_factory=dict)  # angle -> URL
     weather: set[int] = field(default_factory=set)  # weather factor ids, see weather.py
     period: bool = False
+    # What was picked under "Overall" that day, e.g. ["new_spot", "irritated"]; [] for none.
+    events: list[str] = field(default_factory=list)
+    forming: int = 0  # "coming up" spots, all zones
+    red: bool = False  # any zone marked red or irritated
 
     @property
     def is_outcome(self) -> bool:
@@ -44,6 +48,7 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
         .where(DayLog.user_id == user.id, DayLog.date >= start, DayLog.date <= end)
         .options(
             selectinload(DayLog.stages),
+            selectinload(DayLog.conditions),
             selectinload(DayLog.uses),
             selectinload(DayLog.tags),
             selectinload(DayLog.photos),
@@ -77,6 +82,9 @@ def build_dataset(db: Session, user: User, start: date, end: date) -> list[DayRe
                 photos={p.angle: file_url(p.path) for p in log.photos},
                 weather=weather_by_date.get(day, set()),
                 period=log.period,
+                events=log.events.split(",") if log.events else [],
+                forming=sum(s.count for s in log.stages if s.stage == Stage.COMING_UP),
+                red=any(c.condition == Condition.RED for c in log.conditions),
             )
         )
     return records

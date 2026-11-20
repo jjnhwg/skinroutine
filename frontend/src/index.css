@@ -291,21 +291,20 @@ button { font: inherit; cursor: pointer; }
 /* insights */
 .progress { height: 10px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
 .progress span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-.suspects { list-style: none; margin: 0; padding: 0; }
-.suspects li { border-top: 1px solid var(--border); }
-.suspects li:first-child { border-top: none; }
-.suspect { all: unset; display: block; width: 100%; box-sizing: border-box; padding: 12px 0; font-size: 15px; line-height: 1.45; cursor: pointer; }
-.suspect::after { content: " ▸"; color: var(--text-muted); }
-.suspect[aria-expanded=true]::after { content: " ▾"; }
 .signal { display: block; width: fit-content; margin-top: 6px; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); }
 .signal.strong { background: var(--accent-soft); color: var(--accent-hover); }
-.suspect:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.suspect-chart { margin: 0 0 12px; }
-.suspect-chart svg { width: 100%; max-width: 320px; display: block; }
-.suspect-chart .axis { stroke: var(--border-strong); stroke-width: 1; }
-.suspect-chart .value { font-size: 13px; font-weight: 700; fill: var(--text); }
-.suspect-chart .cat { font-size: 12px; fill: var(--text-muted); }
-.suspect-chart figcaption { font-size: 12px; }
+/* Insights: what showed up each week of a product. Cells are tinted by the share of logged days. */
+.weeks { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.weeks th, .weeks td { padding: 8px 4px; text-align: center; border-top: 1px solid var(--border); }
+.weeks thead th { border-top: none; font-size: 11.5px; font-weight: 600; color: var(--text-muted); vertical-align: bottom; line-height: 1.25; }
+.weeks th[scope=row], .weeks thead th:first-child { text-align: left; font-weight: 600; }
+.weeks th[scope=row] small { display: block; font-weight: 400; font-size: 11.5px; color: var(--text-muted); }
+.weeks td[colspan] { font-size: 13px; }
+.weeks .sign-dot { display: block; width: 8px; height: 8px; border-radius: 50%; margin: 0 auto 4px; background: var(--sign); }
+.weeks [data-sign=new_spot] { --sign: var(--ev-new_spot); }
+.weeks [data-sign=forming] { --sign: var(--ev-forming); }
+.weeks [data-sign=irritated] { --sign: var(--ev-irritated); }
+.weeks .sign-cell { font-weight: 700; background: color-mix(in srgb, var(--sign) var(--share), transparent); background-clip: padding-box; border-radius: 0; }
 
 /* tags */
 .toggle.muted-chip { border-style: dashed; opacity: .75; }

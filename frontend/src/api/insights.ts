@@ -1,5 +1,10 @@
 import { apiGet, apiSend } from "./http";
-import type { Recap, SharedIngredient, Suspects } from "./types";
+import type { ProductWeeks, Recap, SharedIngredient, Suspects } from "./types";
+
+/** Each product, week by week: days with a new pimple, something forming, or redness. */
+export async function getProductWeeks(): Promise<ProductWeeks[]> {
+  return (await apiGet<{ products: ProductWeeks[] }>("/api/insights/products")).products;
+}
 
 export function getSuspects(): Promise<Suspects> {
   return apiGet<Suspects>("/api/insights/suspects");

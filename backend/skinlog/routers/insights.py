@@ -1,4 +1,5 @@
-"""Suspects: what tends to come before breakouts. Plus a weekly recap for the early days."""
+"""What showed up while using each product, a weekly recap, and suspects (still behind the
+cycle card and the ingredient check)."""
 
 from datetime import timedelta
 
@@ -10,13 +11,21 @@ from skinlog import clock, weather
 from skinlog.analysis.dataset import breakout_events, build_dataset, outcome_days
 from skinlog.analysis import ingredients
 from skinlog.analysis.cycle import cycle
+from skinlog.analysis.product_weeks import BEFORE_DAYS, day_signs, product_weeks
 from skinlog.analysis.recap import WEEK_DAYS, recap
 from skinlog.analysis.suspects import suspects
 from skinlog.db import get_db
 from skinlog.deps import current_user
 from skinlog.models import DayLog, Product, Tag, User
 from skinlog.weather import WeatherSource, get_weather_source
-from skinlog.schemas import IngredientCheckIn, IngredientCheckOut, Recap, SharedIngredient, SuspectsOut
+from skinlog.schemas import (
+    IngredientCheckIn,
+    IngredientCheckOut,
+    ProductWeeksOut,
+    Recap,
+    SharedIngredient,
+    SuspectsOut,
+)
 
 router = APIRouter(prefix="/insights")
 
@@ -32,6 +41,24 @@ def get_recap(user: User = Depends(current_user), db: Session = Depends(get_db))
     today = clock.today_for(user)
     records = build_dataset(db, user, today - timedelta(days=2 * WEEK_DAYS - 1), today)
     return Recap(**recap(records, today))
+
+
+@router.get("/products")
+def get_product_weeks(user: User = Depends(current_user), db: Session = Depends(get_db)) -> ProductWeeksOut:
+    """Week by week for each product: days with a new pimple, something forming, or redness.
+
+    Products still in use come first, newest first; then stopped ones, latest stopped first.
+    """
+    today = clock.today_for(user)
+    products = [
+        p for p in db.scalars(select(Product).where(Product.user_id == user.id)) if p.started_on <= today
+    ]
+    if not products:
+        return ProductWeeksOut(products=[])
+    start = min(p.started_on for p in products) - timedelta(days=BEFORE_DAYS)
+    signs = day_signs(build_dataset(db, user, start, today))
+    products.sort(key=lambda p: (p.retired_on is not None, -(p.retired_on or p.started_on).toordinal()))
+    return ProductWeeksOut(products=[product_weeks(p, signs, today) for p in products])
 
 
 def _suspects(db: Session, user: User, source: WeatherSource) -> tuple[SuspectsOut, dict[int, Product]]:

@@ -433,6 +433,30 @@ class CycleOut(BaseModel):
     confidence: Literal["strong", "weak"] | None
 
 
+class WeekRow(BaseModel):
+    """One stretch of days for one product, e.g. "Week 2", with how many days had each sign."""
+
+    label: str
+    start: date
+    end: date
+    logged_days: int
+    new_spot: int
+    forming: int
+    irritated: int
+
+
+class ProductWeeks(BaseModel):
+    product_id: int
+    name: str
+    started_on: date
+    retired_on: date | None
+    rows: list[WeekRow]
+
+
+class ProductWeeksOut(BaseModel):
+    products: list[ProductWeeks]
+
+
 class SuspectsOut(BaseModel):
     status: Literal["collecting", "ready"]
     logged_days: int

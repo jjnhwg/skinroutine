@@ -2,10 +2,10 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { backfill, getBackfillDates } from "../api/backfill";
-import { getRecap, getSuspects } from "../api/insights";
+import { getProductWeeks, getRecap, getSuspects } from "../api/insights";
 import { getRoutine } from "../api/routine";
 import { listTrials } from "../api/trials";
-import type { Suspects } from "../api/types";
+import type { ProductWeeks, Suspects } from "../api/types";
 import { product, trial } from "../test/fixtures";
 import { renderWithApp } from "../test/render";
 import { InsightsScreen } from "./InsightsScreen";
@@ -49,6 +49,27 @@ const READY: Suspects = {
   cycle: null,
 };
 
+const RETINAL: ProductWeeks = {
+  product_id: 7,
+  name: "Retinal",
+  started_on: "2026-09-22",
+  retired_on: null,
+  rows: [
+    { label: "Before you started", start: "2026-09-08", end: "2026-09-21", logged_days: 0, new_spot: 0, forming: 0, irritated: 0 },
+    { label: "Week 1", start: "2026-09-22", end: "2026-09-28", logged_days: 5, new_spot: 3, forming: 1, irritated: 2 },
+    { label: "Week 2", start: "2026-09-29", end: "2026-10-05", logged_days: 4, new_spot: 0, forming: 2, irritated: 0 },
+  ],
+};
+
+const OLD_ACID: ProductWeeks = {
+  ...RETINAL,
+  product_id: 9,
+  name: "Old Acid",
+  started_on: "2026-09-01",
+  retired_on: "2026-09-15",
+  rows: [{ label: "Week 1 after stopping", start: "2026-09-15", end: "2026-09-21", logged_days: 2, new_spot: 1, forming: 0, irritated: 0 }],
+};
+
 const RECAP = {
   week: { start: "2026-10-03", end: "2026-10-09", logged_days: 6, clear_days: 4, breakout_days: 2, breakouts: 3, top_zone: "chin" as const },
   previous: { start: "2026-09-26", end: "2026-10-02", logged_days: 5, clear_days: 1, breakout_days: 4, breakouts: 6, top_zone: "chin" as const },
@@ -56,6 +77,7 @@ const RECAP = {
 };
 
 beforeEach(() => {
+  vi.mocked(getProductWeeks).mockReset().mockResolvedValue([RETINAL, OLD_ACID]);
   vi.mocked(getSuspects).mockReset().mockResolvedValue(READY);
   vi.mocked(getRecap).mockReset().mockResolvedValue(RECAP);
   vi.mocked(getBackfillDates).mockReset().mockResolvedValue([]);
@@ -63,70 +85,48 @@ beforeEach(() => {
 });
 
 describe("InsightsScreen", () => {
-  it("shows progress while collecting", async () => {
-    vi.mocked(getSuspects).mockResolvedValue({ ...READY, status: "collecting", logged_days: 9, suspects: [], low_contrast: [] });
+  it("shows each product week by week", async () => {
     renderWithApp(<InsightsScreen />);
 
-    expect(await screen.findByText("9 of 14 days logged — insights start at 14.")).toBeInTheDocument();
-    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "9");
+    const card = (await screen.findByRole("heading", { name: "Retinal" })).closest(".card") as HTMLElement;
+    expect(within(card).getByText("Started Sep 22 · still using")).toBeInTheDocument();
+    const week1 = within(card).getByRole("row", { name: /Week 1/ });
+    expect(within(week1).getByText("Sep 22 – 28")).toBeInTheDocument();
+    expect(within(week1).getByLabelText("New pimple: 3 of 5 days")).toHaveTextContent("3");
+    expect(within(week1).getByLabelText("Forming: 1 of 5 days")).toBeInTheDocument();
+    expect(within(week1).getByLabelText("Red: 2 of 5 days")).toBeInTheDocument();
+    expect(within(card).getByRole("row", { name: /Week 2/ })).toHaveTextContent("Sep 29 – Oct 5");
   });
 
-  it("lists each suspect as a sentence", async () => {
+  it("says when nothing was logged before a product started", async () => {
     renderWithApp(<InsightsScreen />);
 
-    expect(await screen.findByText(/Mystery Serum tends to come before breakouts/)).toBeInTheDocument();
-    expect(screen.getByText(/“Alcohol” tends to come before breakouts/)).toBeInTheDocument();
+    const card = (await screen.findByRole("heading", { name: "Retinal" })).closest(".card") as HTMLElement;
+    expect(within(card).getByRole("row", { name: /Before you started/ })).toHaveTextContent("Nothing logged");
   });
 
-  it("expands a suspect into a chart with both groups", async () => {
-    const user = userEvent.setup();
+  it("shows the weeks after a product was stopped", async () => {
     renderWithApp(<InsightsScreen />);
 
-    await user.click(await screen.findByRole("button", { name: /Mystery Serum tends to come before/ }));
-
-    const chart = screen.getByRole("img", { name: /Breakouts a day: 1.0 after Mystery Serum, 0.0 on other days/ });
-    expect(within(chart).getByText("1.0")).toBeInTheDocument();
-    expect(within(chart).getByText("0.0")).toBeInTheDocument();
-    expect(screen.getByText(/25 days after · 3 other days · within 1–5 days/)).toBeInTheDocument();
+    const card = (await screen.findByRole("heading", { name: "Old Acid" })).closest(".card") as HTMLElement;
+    expect(within(card).getByText("Started Sep 1 · stopped Sep 15")).toBeInTheDocument();
+    expect(within(card).getByRole("row", { name: /Week 1 after stopping/ })).toBeInTheDocument();
   });
 
-  it("labels each suspect strong or too few to be sure", async () => {
+  it("points to Products when there are none", async () => {
+    vi.mocked(getProductWeeks).mockResolvedValue([]);
     renderWithApp(<InsightsScreen />);
 
-    expect(await screen.findByRole("button", { name: /Mystery Serum.*Strong signal/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Alcohol.*Weak signal · too few breakouts to be sure/ })).toBeInTheDocument();
-  });
-
-  it("points out an ingredient shared by suspects", async () => {
-    vi.mocked(getSuspects).mockResolvedValue({
-      ...READY,
-      shared_ingredients: [{ ingredient: "coconut oil", products: ["Mystery Serum", "Night Cream"] }],
-    });
-    renderWithApp(<InsightsScreen />);
-
-    expect(await screen.findByText(/Both suspects contain/)).toHaveTextContent(
-      "Both suspects contain coconut oil (Mystery Serum, Night Cream).",
-    );
-  });
-
-  it("lists what couldn't be judged, with the reason", async () => {
-    const user = userEvent.setup();
-    renderWithApp(<InsightsScreen />);
-
-    await user.click(await screen.findByText("Not enough contrast to judge (1)"));
-
-    expect(screen.getByText("Cleanser")).toBeInTheDocument();
-    expect(screen.getByText("used on nearly every day")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Products" })).toHaveAttribute("href", "#/products");
   });
 
   it("only says 'cause' in the footnote", async () => {
     renderWithApp(<InsightsScreen />);
-    await screen.findByText(/Mystery Serum tends to come before/);
+    await screen.findByRole("heading", { name: "Retinal" });
 
     const text = document.body.textContent ?? "";
-    const mentions = text.match(/cause/gi) ?? [];
-    expect(mentions).toHaveLength(1);
-    expect(screen.getByText(/not what causes them/)).toBeInTheDocument();
+    expect(text.match(/caus/gi) ?? []).toHaveLength(1);
+    expect(screen.getByText(/not what caused it/)).toBeInTheDocument();
   });
 
   it("summarises running trials", async () => {
@@ -141,13 +141,6 @@ describe("InsightsScreen", () => {
 
     expect(await screen.findByText("4 clear days, 2 with breakouts, mostly chin.")).toBeInTheDocument();
     expect(screen.getByText("Fewer breakouts than last week: 1.2 → 0.5 a day.")).toBeInTheDocument();
-  });
-
-  it("counts breakouts while collecting", async () => {
-    vi.mocked(getSuspects).mockResolvedValue({ ...READY, status: "collecting", logged_days: 9, breakouts: 1, suspects: [], low_contrast: [] });
-    renderWithApp(<InsightsScreen />);
-
-    expect(await screen.findByText(/a few breakouts to compare against: 1 of 3 so far/)).toBeInTheDocument();
   });
 
   it("offers to fill in the last 2 weeks from the routine", async () => {

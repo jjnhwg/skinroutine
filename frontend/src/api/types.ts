@@ -241,6 +241,27 @@ export interface Suspect {
   confidence: Confidence;
 }
 
+/** What GET /api/insights/products counts on each day; the same keys as the Overall chips. */
+export type Sign = "new_spot" | "forming" | "irritated";
+
+/** One stretch of days for one product, e.g. "Week 2". Each sign is a number of days. */
+export interface WeekRow extends Record<Sign, number> {
+  label: string;
+  start: string;
+  end: string;
+  logged_days: number;
+}
+
+/** What showed up before, while and after using one product. */
+export interface ProductWeeks {
+  product_id: number;
+  name: string;
+  started_on: string;
+  retired_on: string | null;
+  /** "Before you started" first (even with nothing logged), then weeks that have logged days. */
+  rows: WeekRow[];
+}
+
 export interface Suspects {
   status: "collecting" | "ready";
   logged_days: number;

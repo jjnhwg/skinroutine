@@ -1,26 +1,28 @@
 import { useEffect, useState } from "react";
 import { getBackfillDates } from "../api/backfill";
-import { getSuspects } from "../api/insights";
+import { getProductWeeks, getSuspects } from "../api/insights";
 import { listTrials } from "../api/trials";
-import type { Suspects, Trial } from "../api/types";
-import { useSettings } from "../api/useSettings";
+import type { ProductWeeks, Suspects, Trial } from "../api/types";
 import { BackfillSheet } from "../components/BackfillSheet";
+import { ProductWeeksCard } from "../components/ProductWeeksCard";
 import { RecapCard } from "../components/RecapCard";
-import { SuspectChart } from "../components/SuspectChart";
 import { TrialVerdict } from "../components/TrialVerdict";
 
 export function InsightsScreen() {
-  const { settings } = useSettings();
-  const [data, setData] = useState<Suspects | null>(null);
+  const [products, setProducts] = useState<ProductWeeks[] | null>(null);
   const [failed, setFailed] = useState(false);
+  // Only for the cycle card and the "fill in the last 2 weeks" offer.
+  const [data, setData] = useState<Suspects | null>(null);
   const [trials, setTrials] = useState<Trial[]>([]);
-  const [open, setOpen] = useState<number | null>(null);
   const [viewing, setViewing] = useState<Trial | null>(null);
   const [openDays, setOpenDays] = useState(0);
   const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
     let live = true;
+    getProductWeeks()
+      .then((loaded) => live && setProducts(loaded))
+      .catch(() => live && setFailed(true));
     getSuspects()
       .then((loaded) => {
         if (!live) return;
@@ -32,7 +34,7 @@ export function InsightsScreen() {
             .catch(() => {});
         }
       })
-      .catch(() => live && setFailed(true));
+      .catch(() => {});
     listTrials()
       .then((loaded) => live && setTrials(loaded.filter((t) => t.status === "active")))
       .catch(() => {});
@@ -41,15 +43,11 @@ export function InsightsScreen() {
     };
   }, []);
 
-  const lo = settings.lookahead_min_days;
-  const hi = settings.lookahead_max_days;
-  const window = lo === hi ? `${lo} day${lo === 1 ? "" : "s"}` : `${lo}–${hi} days`;
-
   return (
     <>
       <h2 className="page-title">Insights</h2>
       <p className="page-sub">
-        What tends to come before changes in your skin.
+        What showed up while you were using each product, week by week.
       </p>
 
       <RecapCard />
@@ -72,46 +70,15 @@ export function InsightsScreen() {
         </div>
       )}
 
-      {failed && <div className="warn">Couldn't load insights — is the server running?</div>}
-      {!data && !failed && <p className="muted">Loading…</p>}
-
-      {data?.status === "collecting" && (
+      {data?.status === "collecting" && openDays > 0 && (
         <div className="card">
-          <h2>Keep logging</h2>
-          <div
-            className="progress"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={data.required}
-            aria-valuenow={data.logged_days}
-            aria-label="Days logged"
-          >
-            <span style={{ width: `${(100 * data.logged_days) / data.required}%` }} />
-          </div>
-          <p>
-            {data.logged_days} of {data.required} days logged — insights start at {data.required}.
+          <p className="muted" style={{ marginTop: 0, marginBottom: 6 }}>
+            Already using your routine before you started logging? Record it for the last 2 weeks so your
+            products have a "before" to compare with.
           </p>
-          <p className="muted">
-            Only full check-ins count: days you confirmed or skipped from the missed-day prompt
-            don't.
-          </p>
-          {data.breakouts < data.required_breakouts && (
-            <p className="muted">
-              Patterns also need a few breakouts to compare against: {data.breakouts} of{" "}
-              {data.required_breakouts} so far.
-            </p>
-          )}
-          {openDays > 0 && (
-            <>
-              <p className="muted" style={{ marginBottom: 6 }}>
-                Already using your routine before you started logging? Record it for the last 2 weeks so
-                your trials have a baseline.
-              </p>
-              <button type="button" className="btn small" onClick={() => setBackfilling(true)}>
-                Fill in the last 2 weeks
-              </button>
-            </>
-          )}
+          <button type="button" className="btn small" onClick={() => setBackfilling(true)}>
+            Fill in the last 2 weeks
+          </button>
         </div>
       )}
 
@@ -136,71 +103,26 @@ export function InsightsScreen() {
         </div>
       )}
 
-      {data?.status === "ready" && (
+      {failed && <div className="warn">Couldn't load insights — is the server running?</div>}
+      {!products && !failed && <p className="muted">Loading…</p>}
+      {products?.length === 0 && (
         <div className="card">
-          <h2>Tends to come before</h2>
-          {data.suspects.length === 0 && data.breakouts < data.required_breakouts ? (
-            <p className="muted">
-              Only {data.breakouts} breakout{data.breakouts === 1 ? "" : "s"} logged so far, so there's
-              little to compare yet. That's good news for your skin — this will update as you log.
-            </p>
-          ) : data.suspects.length === 0 ? (
-            <p className="muted">
-              Nothing stands out yet across {data.logged_days} logged days. That's good news — keep
-              logging and this will update.
-            </p>
-          ) : (
-            <ul className="suspects">
-              {data.suspects.map((s, i) => (
-                <li key={`${s.factor.kind}-${s.factor.id}-${s.kind}`}>
-                  <button
-                    type="button"
-                    className="suspect"
-                    aria-expanded={open === i}
-                    onClick={() => setOpen(open === i ? null : i)}
-                  >
-                    {s.sentence}
-                    <span className={`signal ${s.confidence}`}>
-                      {s.confidence === "strong" ? "Strong signal" : "Weak signal · too few breakouts to be sure"}
-                    </span>
-                  </button>
-                  {open === i && <SuspectChart suspect={s} window={window} />}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {data.shared_ingredients.length > 0 && (
-            <div className="warn">
-              {data.shared_ingredients.map((s) => (
-                <div key={s.ingredient}>
-                  {s.products.length === 2 ? "Both" : `All ${s.products.length}`} suspects contain{" "}
-                  <b>{s.ingredient}</b> ({s.products.join(", ")}). Watch for it in new products.
-                </div>
-              ))}
-            </div>
-          )}
-
-          {data.low_contrast.length > 0 && (
-            <details style={{ marginTop: 14 }}>
-              <summary className="muted">Not enough contrast to judge ({data.low_contrast.length})</summary>
-              <ul className="detail-list" style={{ marginTop: 8 }}>
-                {data.low_contrast.map((f) => (
-                  <li key={`${f.kind}-${f.id}`}>
-                    <b>{f.name}</b> — <span className="muted">{f.reason}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
+          <p className="muted" style={{ margin: 0 }}>
+            Add the products you use on the <a href="#/products">Products</a> tab, and this will show what
+            showed up each week you used them.
+          </p>
         </div>
       )}
+      {products?.map((p) => <ProductWeeksCard key={p.product_id} product={p} />)}
 
-      <p className="muted" style={{ fontSize: 13 }}>
-        These show what tends to come before changes in your skin, not what causes them. Each one
-        compares days within {window} after a product or tag with other days; change that window
-        in <a href="#/settings">Settings</a>.
-      </p>
+      {products && products.length > 0 && (
+        <p className="muted" style={{ fontSize: 13 }}>
+          Each number is how many logged days had it. A day counts what you picked under Overall; if you
+          picked nothing, it's read from the face map: more active spots than your last log is a new
+          pimple, more "coming up" is something forming, and any red pin is red. These show what showed up
+          while you used a product, not what caused it.
+        </p>
+      )}
 
       {backfilling && (
         <BackfillSheet
