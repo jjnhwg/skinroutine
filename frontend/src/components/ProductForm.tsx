@@ -281,41 +281,47 @@ export function ProductForm({ initial, today, submitLabel, onSubmit, onCancel }:
         </div>
       </div>
 
-      <label className="field" htmlFor={`${idPrefix}-ingredients`}>
-        Ingredients <span className="muted" style={{ fontWeight: 400 }}>(optional)</span>
-      </label>
-      <textarea
-        id={`${idPrefix}-ingredients`}
-        placeholder="Paste the list from the label or the shop's page: Water, Niacinamide, Zinc PCA…"
-        value={ingredients}
-        onChange={(e) => setIngredients(e.target.value)}
-      />
-      {suspectMatches.length > 0 && (
-        <div className="warn" role="status">
-          {suspectMatches.map((m) => (
-            <div key={m.ingredient}>
-              Contains <b>{m.ingredient}</b>, which was also in {m.products.join(" and ")}, a product that
-              tends to come before your breakouts.
+      {/* Editing only. When adding, the name still ticks "may purge" and a picked product
+          still brings its ingredients; they're just saved without being shown. */}
+      {initial && (
+        <>
+          <label className="field" htmlFor={`${idPrefix}-ingredients`}>
+            Ingredients <span className="muted" style={{ fontWeight: 400 }}>(optional)</span>
+          </label>
+          <textarea
+            id={`${idPrefix}-ingredients`}
+            placeholder="Paste the list from the label or the shop's page: Water, Niacinamide, Zinc PCA…"
+            value={ingredients}
+            onChange={(e) => setIngredients(e.target.value)}
+          />
+          {suspectMatches.length > 0 && (
+            <div className="warn" role="status">
+              {suspectMatches.map((m) => (
+                <div key={m.ingredient}>
+                  Contains <b>{m.ingredient}</b>, which was also in {m.products.join(" and ")}, a product that
+                  tends to come before your breakouts.
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      <label className="check-row" style={{ marginTop: 10, alignSelf: "auto" }}>
-        <input
-          type="checkbox"
-          checked={mayPurge}
-          onChange={(e) => {
-            setMayPurge(e.target.checked);
-            setPurgeTouched(true);
-          }}
-        />
-        May cause purging
-      </label>
-      <p className="muted" style={{ fontSize: 13, margin: "0 0 4px" }}>
-        Retinoids and exfoliating acids (AHA, BHA) can make skin break out for a few weeks before it
-        improves. Trials of these default to 6 weeks, and the verdict watches for purging.
-      </p>
+          <label className="check-row" style={{ marginTop: 10, alignSelf: "auto" }}>
+            <input
+              type="checkbox"
+              checked={mayPurge}
+              onChange={(e) => {
+                setMayPurge(e.target.checked);
+                setPurgeTouched(true);
+              }}
+            />
+            May cause purging
+          </label>
+          <p className="muted" style={{ fontSize: 13, margin: "0 0 4px" }}>
+            Retinoids and exfoliating acids (AHA, BHA) can make skin break out for a few weeks before it
+            improves. Trials of these default to 6 weeks, and the verdict watches for purging.
+          </p>
+        </>
+      )}
 
       {error && (
         <div className="warn" role="alert">

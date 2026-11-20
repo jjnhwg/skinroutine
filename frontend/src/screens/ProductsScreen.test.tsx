@@ -108,19 +108,19 @@ describe("ProductsScreen", () => {
     expect(uploadProductPhoto).not.toHaveBeenCalled();
   });
 
-  it("ticks 'May cause purging' for a retinoid until the user decides", async () => {
+  it("leaves ingredients and purging off the add form, but still marks a retinoid", async () => {
+    vi.mocked(createProduct).mockResolvedValue(product({ id: 3, name: "Retinal 0.1%" }));
     const user = userEvent.setup();
     renderWithApp(<ProductsScreen />);
     await screen.findByText("Snail Mucin");
 
     await user.click(screen.getByText("Add a product"));
-    const box = screen.getByRole("checkbox", { name: "May cause purging" });
+    expect(screen.queryByLabelText(/Ingredients/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "May cause purging" })).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Name"), "Retinal 0.1%");
-    expect(box).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Add product" }));
 
-    await user.click(box);
-    await user.type(screen.getByLabelText("Name"), " Serum");
-    expect(box).not.toBeChecked();
+    expect(createProduct).toHaveBeenCalledWith(expect.objectContaining({ may_purge: true }));
   });
 
   it("shows the type icon when there is no photo", async () => {
@@ -214,17 +214,17 @@ describe("ProductsScreen trials", () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("warns when a new product shares an ingredient with a suspect", async () => {
+  it("warns when an edited product shares an ingredient with a suspect", async () => {
     vi.mocked(checkIngredients).mockResolvedValue([{ ingredient: "coconut oil", products: ["Mystery Serum"] }]);
     const user = userEvent.setup();
     renderWithApp(<ProductsScreen />);
-    await screen.findByText("Snail Mucin");
+    const row = (await screen.findByText("Snail Mucin")).closest(".product") as HTMLElement;
 
-    await user.click(screen.getByText("Add a product"));
+    await user.click(within(row).getByRole("button", { name: "Edit" }));
     await user.type(screen.getByLabelText(/Ingredients/), "Water, Coconut Oil");
 
     expect(await screen.findByText(/which was also in Mystery Serum/)).toBeInTheDocument();
-    expect(checkIngredients).toHaveBeenLastCalledWith("Water, Coconut Oil", undefined);
+    expect(checkIngredients).toHaveBeenLastCalledWith("Water, Coconut Oil", expect.any(Number));
   });
 
   it("suggests 6 weeks for a product that may purge", async () => {
