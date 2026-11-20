@@ -80,6 +80,25 @@ describe("CheckInForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Red / irritated area, pin 1" }));
     expect(screen.getByRole("group", { name: "Change to" })).toHaveTextContent(/^Red \/ irritated area$/);
+    // Only spots can be marked "not from my products".
+    expect(screen.queryByRole("checkbox", { name: /Not from my products/ })).not.toBeInTheDocument();
+  });
+
+  it("marks a spot as not from my products, and keeps it through a stage change", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={{ pins: [{ ...CHIN, kind: "active" }] }} />);
+
+    await user.click(screen.getByRole("button", { name: "Active pimple, pin 1" }));
+    await user.click(screen.getByRole("checkbox", { name: /Not from my products/ }));
+    expect(current().pins).toEqual([{ ...CHIN, kind: "active", unrelated: true }]);
+    expect(screen.getByRole("button", { name: "Active pimple (not from my products), pin 1" })).toBeInTheDocument();
+    expect(screen.getByText("1 active · 1 not from products")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "→ Healing" }));
+    expect(current().pins).toEqual([{ ...CHIN, kind: "healing", unrelated: true }]);
+
+    await user.click(screen.getByRole("checkbox", { name: /Not from my products/ }));
+    expect(current().pins).toEqual([{ ...CHIN, kind: "healing", unrelated: false }]);
   });
 
   it("removes a pin, and clears them all", async () => {

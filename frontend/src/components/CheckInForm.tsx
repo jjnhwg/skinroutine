@@ -71,7 +71,8 @@ export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) 
     setPins(pins.filter((_, i) => i !== index));
     setSelected(null);
   };
-  const summary = pinSummary(pins);
+  const unrelatedCount = pins.filter((p) => p.unrelated).length;
+  const summary = [...pinSummary(pins), ...(unrelatedCount ? [`${unrelatedCount} not from products`] : [])];
   // Only worth explaining when yesterday's active pimples were carried into today.
   const showGuide = !guideHidden && !!carriedFrom && pins.some((p) => p.kind === "active");
   const hideGuide = () => {
@@ -210,6 +211,21 @@ export function CheckInForm({ value, onChange, carriedFrom }: CheckInFormProps) 
               </button>
             ))}
           </div>
+          {!isCondition(chosen.kind) && (
+            <label className="unrelated-toggle">
+              <input
+                type="checkbox"
+                checked={!!chosen.unrelated}
+                onChange={(e) => update(selected, { unrelated: e.target.checked })}
+              />
+              <span>
+                <b>Not from my products</b>
+                <span className="muted" style={{ display: "block" }}>
+                  Stress, period, picking, sleep… Insights won't count it against what you're using.
+                </span>
+              </span>
+            </label>
+          )}
           <button type="button" className="link-btn pin-remove" onClick={() => remove(selected)}>
             Remove this pin
           </button>

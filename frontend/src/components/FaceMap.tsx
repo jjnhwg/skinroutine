@@ -106,11 +106,12 @@ export function FaceMap({ pins, selected = null, onAdd, onSelect, onMove, label 
               key={i}
               className="face-pin"
               data-kind={pin.kind}
+              data-unrelated={pin.unrelated || undefined}
               aria-pressed={editable ? selected === i : undefined}
               {...(editable && {
                 role: "button",
                 tabIndex: 0,
-                "aria-label": `${PIN_LABELS[pin.kind]}, pin ${i + 1}`,
+                "aria-label": `${PIN_LABELS[pin.kind]}${pin.unrelated ? " (not from my products)" : ""}, pin ${i + 1}`,
                 onClick: (e: MouseEvent) => {
                   e.stopPropagation();
                   onSelect?.(i);

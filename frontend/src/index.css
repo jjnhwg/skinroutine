@@ -184,6 +184,10 @@ button { font: inherit; cursor: pointer; }
 .face-pin-ring { fill: none; stroke: var(--text); stroke-width: 1.5; pointer-events: none; }
 .face-pin:focus-visible .face-pin-ring, .face-pin:focus-visible .face-pin-dot { stroke: var(--focus); stroke-width: 2.5; }
 .face-pin-hit { fill: transparent; }
+/* Not from my products: hollow, so it reads as "there, but not counted". */
+.face-pin[data-unrelated] .face-pin-dot { fill: var(--surface); stroke: var(--pin); stroke-width: 2; stroke-dasharray: 2 1.5; }
+.unrelated-toggle { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 0; font-size: 14px; cursor: pointer; }
+.unrelated-toggle input { margin-top: 3px; accent-color: var(--text); }
 .pin-kinds { display: grid; gap: 8px; margin-top: 12px; }
 .pin-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; min-height: 36px; font-size: 13px; }
 .event-chip { display: inline-flex; align-items: center; gap: 6px; }

@@ -92,6 +92,8 @@ export interface Pin {
   x: number;
   y: number;
   kind: PinKind;
+  /** "Not from my products" (stress, period, picking…): Insights leaves it out. Spots only. */
+  unrelated?: boolean;
 }
 
 export interface ProductUse {
