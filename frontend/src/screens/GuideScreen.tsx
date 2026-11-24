@@ -85,11 +85,6 @@ export function GuideScreen({ signedIn }: { signedIn: boolean }) {
       <header className="guide-head">
         <span className="eyebrow">Barrier repair guide</span>
         <h2 className="display">Your routine, step by step. Pick what fits your skin.</h2>
-        <p className="lead">
-          <b>Made for a damaged barrier and sensitive skin, and just as good for keeping a healthy one strong.</b> A
-          stronger barrier makes skin more tolerant, so this helps whatever your main concern is. It’s a good routine if
-          you’re just starting skincare, and worth keeping after your skin heals. Each product says who it’s best for.
-        </p>
 
         <section className="guide-base" aria-labelledby="guide-start-h">
           <b id="guide-start-h">How to start</b>
