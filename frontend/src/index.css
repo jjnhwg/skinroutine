@@ -492,6 +492,8 @@ nav.tabs .inner { display: flex; max-width: 640px; margin: 0 auto; }
 nav.tabs a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px 10px; color: var(--text-muted); text-decoration: none; font-size: 11px; font-weight: 600; }
 nav.tabs a svg { width: 24px; height: 24px; }
 nav.tabs a[aria-current=page] { color: var(--accent); }
+nav.tabs a { white-space: nowrap; }
+nav.tabs .label-full { display: none; }
 
 /* toast & lightbox */
 .toast {
@@ -563,6 +565,8 @@ nav.tabs a[aria-current=page] { color: var(--accent); }
   nav.tabs a:hover { background: var(--surface-2); }
   nav.tabs a[aria-current=page] { background: var(--accent-soft); color: var(--accent); }
   nav.tabs a[aria-current=page] svg { color: var(--accent); }
+  nav.tabs .label-full { display: inline; }
+  nav.tabs .label-short { display: none; }
 
   .page-title { font-size: 46px; margin-top: 16px; }
   main.tab-home { padding: 0; }
