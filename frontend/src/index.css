@@ -547,6 +547,13 @@ nav.tabs .label-full { display: none; }
 .save-bar { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); display: flex; gap: 10px; padding: 12px 0 4px; background: linear-gradient(to bottom, rgba(246, 250, 252, 0), var(--bg) 30%); }
 [hidden] { display: none !important; }
 
+/* small desktops: icons and "Product recommendations" don't fit in the header, so text only and "Picks" */
+@media (min-width: 900px) and (max-width: 1279px) {
+  nav.tabs a svg { display: none; }
+  nav.tabs a .label-full { display: none !important; }
+  nav.tabs a .label-short { display: inline !important; }
+}
+
 /* desktop: wider page, links in the header, dialogs in the middle of the screen */
 @media (min-width: 900px) {
   body { padding-bottom: 48px; }
@@ -560,7 +567,9 @@ nav.tabs .label-full { display: none; }
   /* The tabs take the free space, so the account button sits right after them. */
   nav.tabs { margin-left: auto; }
   .account, .login-btn { margin-left: 0; }
-  nav.tabs a { flex: none; flex-direction: row; gap: 8px; padding: 9px 16px; border-radius: 999px; font-size: 14px; color: var(--text); }
+  /* The name never shrinks; without this it got squeezed and "Skinjourney" ran into the "Log" tab. */
+  header.top .home { flex: none; }
+  nav.tabs a { flex: none; flex-direction: row; gap: 8px; padding: 9px 12px; border-radius: 999px; font-size: 14px; color: var(--text); }
   nav.tabs a svg { width: 18px; height: 18px; color: var(--text-muted); }
   nav.tabs a:hover { background: var(--surface-2); }
   nav.tabs a[aria-current=page] { background: var(--accent-soft); color: var(--accent); }
@@ -845,3 +854,8 @@ main:has(> .signup) { max-width: 1060px; }
   100% { transform: scale(1) rotate(0); }
 }
 @media (prefers-reduced-motion: reduce) { .chat-thumb, .chat-cheer .chat-bubble { animation: none; } }
+
+/* big screens: the header gets more width than the page so every tab fits with its icon and full name */
+@media (min-width: 1280px) {
+  header.top .inner { max-width: 1240px; }
+}
