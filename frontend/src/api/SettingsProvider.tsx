@@ -33,7 +33,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   if (!value) {
     return (
-      <main id="app">
+      <main id="app" className="boot">
         {failed ? (
           <div className="card empty">
             <strong>Can't reach the server</strong>
@@ -50,7 +50,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             </button>
           </div>
         ) : (
-          <p className="muted">Loading…</p>
+          <div className="boot-loading" role="status">
+            <span className="boot-name">Skinjourney</span>
+            <span className="boot-spinner" aria-hidden="true" />
+            <span className="sr-only">Loading…</span>
+          </div>
         )}
       </main>
     );

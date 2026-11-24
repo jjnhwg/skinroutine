@@ -855,6 +855,19 @@ main:has(> .signup) { max-width: 1060px; }
 }
 @media (prefers-reduced-motion: reduce) { .chat-thumb, .chat-cheer .chat-bubble { animation: none; } }
 
+/* First load: the name and a small spinner, centered on the page (not "Loading…" in the corner). */
+#app.boot { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+#app.boot .card { max-width: 360px; text-align: center; }
+.boot-loading { display: flex; flex-direction: column; align-items: center; gap: 18px; animation: boot-in .4s ease-out .15s both; }
+.boot-name { font-family: var(--font-display); font-size: 34px; font-weight: 500; color: var(--text); letter-spacing: .01em; }
+.boot-spinner { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--accent-ring); border-top-color: var(--accent); animation: boot-spin .8s linear infinite; }
+@keyframes boot-spin { to { transform: rotate(360deg); } }
+@keyframes boot-in { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .boot-loading { animation: none; }
+  .boot-spinner { animation-duration: 2.4s; }
+}
+
 /* big screens: the header gets more width than the page so every tab fits with its icon and full name */
 @media (min-width: 1280px) {
   header.top .inner { max-width: 1240px; }
